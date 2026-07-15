@@ -30,13 +30,19 @@ router.get('/estado', requireUpdaterAuth, (req, res) => {
 
 // POST /api/updater/actualizar — descarga el .zip del repo, sobreescribe y reinicia.
 router.post('/actualizar', requireUpdaterAuth, async (req, res, next) => {
+  console.log('[updater] 0/6 solicitud de actualización recibida');
   try {
     const info = await updaterService.descargarYAplicar();
+    console.log('[updater] enviando respuesta al navegador');
     res.json({ ok: true, ...info, mensaje: 'Actualización aplicada. El servicio se está reiniciando…' });
+    console.log('[updater] respuesta enviada, reiniciando en 800ms');
     // Deja que la respuesta llegue al navegador antes de salir. NSSM (producción) y
     // nodemon (dev, npm run dev) reinician el proceso al detectar que salió.
     setTimeout(() => process.exit(0), 800);
-  } catch (e) { next(e); }
+  } catch (e) {
+    console.error('[updater] ERROR:', e);
+    next(e);
+  }
 });
 
 module.exports = router;

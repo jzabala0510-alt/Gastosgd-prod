@@ -66,5 +66,15 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).json({ error: err.message || 'Error interno del servidor' });
 });
 
+// Diagnóstico temporal: si el proceso muere sin loguear nada (visto en producción
+// al usar el actualizador), esto captura la causa — señal de terminación externa
+// (antivirus, Task Manager, etc.) o un error no atrapado en algún punto del código.
+['SIGTERM', 'SIGINT', 'SIGHUP'].forEach((sig) => {
+  process.on(sig, () => { console.error(`[diagnostico] Proceso recibió señal ${sig} — se está cerrando.`); process.exit(0); });
+});
+process.on('uncaughtException', (err) => { console.error('[diagnostico] uncaughtException:', err); });
+process.on('unhandledRejection', (err) => { console.error('[diagnostico] unhandledRejection:', err); });
+process.on('exit', (code) => { console.error(`[diagnostico] Proceso saliendo con código ${code}.`); });
+
 const PORT = Number(process.env.PORT || 3101);
 app.listen(PORT, () => console.log(`[server] API escuchando en http://localhost:${PORT}`));

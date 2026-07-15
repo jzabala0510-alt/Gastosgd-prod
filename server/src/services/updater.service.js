@@ -73,21 +73,28 @@ async function descargarYAplicar(opts = {}) {
   if (!owner || !repo) throw new Error('UPDATE_REPO_OWNER / UPDATE_REPO_NAME no configurados en .env');
 
   const url = `https://codeload.github.com/${owner}/${repo}/zip/refs/heads/${branch}`;
+  console.log(`[updater] 1/6 descargando ${url}`);
   const res = await fetch(url);
+  console.log(`[updater] 2/6 respuesta HTTP ${res.status}`);
   if (!res.ok) throw new Error(`No se pudo descargar el repositorio (HTTP ${res.status})`);
   const buffer = Buffer.from(await res.arrayBuffer());
+  console.log(`[updater] 3/6 descarga completa: ${buffer.length} bytes`);
 
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gastosgd-update-'));
+  console.log(`[updater] 4/6 extrayendo a carpeta temporal ${tmpDir}`);
   try {
     const zip = new AdmZip(buffer);
     zip.extractAllTo(tmpDir, true);
+    console.log('[updater] 5/6 extracción completa');
 
     // GitHub mete todo el contenido bajo una única carpeta raíz "{repo}-{branch}/".
     const entradas = fs.readdirSync(tmpDir);
     if (!entradas.length) throw new Error('El .zip descargado está vacío');
     const origen = path.join(tmpDir, entradas[0]);
 
+    console.log(`[updater] 6/6 copiando ${origen} -> ${targetDir}`);
     fs.cpSync(origen, targetDir, { recursive: true, force: true, filter: crearFiltro(targetDir) });
+    console.log('[updater] copia completa, listo para reiniciar');
 
     return { owner, repo, branch, targetDir, aplicadoEn: new Date().toISOString() };
   } finally {
