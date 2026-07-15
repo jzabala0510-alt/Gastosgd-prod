@@ -1,0 +1,3418 @@
+{
+ "hoja": "BANCO TIENDAS 01-07-2026",
+ "columnas_banco": [
+  "BANESCO (cta Principal) NUEVA",
+  "BANCAMIGA",
+  "BANCO PROVINCIAL",
+  "BANCO DE VENEZUELA",
+  "BANCO BANESCO C/H",
+  "100% BANCO",
+  "BANCO BNC",
+  "BANCO BNC  CAJA CHICA",
+  "BANCO DELSUR",
+  "BANCO MERCANTIL",
+  "BANCO DEL Tesoro (cta gastos) NUEVA"
+ ],
+ "tiendas": [
+  {
+   "fila": 2,
+   "zona": "BARQUISIMETO",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "ADIDAS",
+   "rs1": "ADI DASSLER, C.A. (CERRADA EN BANCO)",
+   "rs2": "COMERCIAL ADIDAS BARQUISIMETO,C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 604306.05
+   },
+   "total": 604306.05
+  },
+  {
+   "fila": 3,
+   "zona": "BARQUISIMETO",
+   "grupo": "THA MARGARITA (TIENDAS)",
+   "marca": "TOMMY HILFIGER",
+   "rs1": "AMERICAN GROUP, C.A. (CERRADA EN BANCO)",
+   "rs2": "COMERCIAL THA BARQUISIMETO,C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 46441.47
+   },
+   "total": 46441.47
+  },
+  {
+   "fila": 4,
+   "zona": "BARQUISIMETO",
+   "grupo": "SPORT TIME, C.A.",
+   "marca": "CLARKS",
+   "rs1": "CLARKS BARQUISIMETO,C.A.",
+   "rs2": "CLARKS BARQUISIMETO,C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 183829.78
+   },
+   "total": 183829.78
+  },
+  {
+   "fila": 5,
+   "zona": "BARQUISIMETO",
+   "grupo": "GRUPO FITLAB DE VZLA",
+   "marca": "FITLAB",
+   "rs1": "CALGARY, C.A (CERRADA EN BANCO)",
+   "rs2": "COMERCIAL FITLAB BARQUISIMETO,C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 196787.77
+   },
+   "total": 196787.77
+  },
+  {
+   "fila": 6,
+   "zona": "BARQUISIMETO",
+   "grupo": "GRUPO NASA, C.A.",
+   "marca": "THE CHILDREN´S PLACE",
+   "rs1": "JUSTICE BARQUISIMETO, C.A. (CERRADA EN BANCO)",
+   "rs2": "COMERCIAL TCP BARQUISIMETO,C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1054521.68
+   },
+   "total": 1054521.68
+  },
+  {
+   "fila": 7,
+   "zona": "BARQUISIMETO",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "REEBOK",
+   "rs1": "TOMMY USA, C.A. (CERRADA EN BANCO)",
+   "rs2": "COMERCIAL RBK BARQUISIMETO,C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 28386.86
+   },
+   "total": 28386.86
+  },
+  {
+   "fila": 8,
+   "zona": "BARQUISIMETO",
+   "grupo": "METAS, C.A.",
+   "marca": "VICTORIA´S SECRET",
+   "rs1": "VS BARQUISIMETO, C.A. (CERRADA EN BANCO)",
+   "rs2": "COMERCIAL VS BARQUISIMETO,C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 23821.73,
+    "BANCO BNC": 139.66
+   },
+   "total": 23961.39
+  },
+  {
+   "fila": 9,
+   "zona": "BARQUISIMETO",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "SPORTLAND",
+   "rs1": "",
+   "rs2": "COMERCIAL ADILAND BARQUISIMETO, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 2369008.05,
+    "BANCO BNC": 863632.13
+   },
+   "total": 3232640.18
+  },
+  {
+   "fila": 10,
+   "zona": "BARQUISIMETO",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "SPORTLAND",
+   "rs1": "",
+   "rs2": "COMERCIAL LARA SPORT 2023, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1795477.41,
+    "BANCO BNC": 2136.81
+   },
+   "total": 1797614.22
+  },
+  {
+   "fila": 11,
+   "zona": "BARQUISIMETO",
+   "grupo": "SPORT TIME, C.A.",
+   "marca": "CLARKS",
+   "rs1": "",
+   "rs2": "CLK LAS TRINITARIAS BARQUISIMETO, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 269362.26,
+    "BANCO BNC": 152748.09
+   },
+   "total": 422110.35
+  },
+  {
+   "fila": 12,
+   "zona": "BARQUISIMETO",
+   "grupo": "THA MARGARITA (TIENDAS)",
+   "marca": "CALVIN KLEIN",
+   "rs1": "",
+   "rs2": "SPORT  GRUPO  BARQUISIMETO, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1054811.39,
+    "BANCO BNC": 950.54
+   },
+   "total": 1055761.93
+  },
+  {
+   "fila": 13,
+   "zona": "BARQUISIMETO",
+   "grupo": "GRUPO NASA, C.A.",
+   "marca": "AMERICAN EAGLE",
+   "rs1": "",
+   "rs2": "COMERCIAL BRANDS BARQUISIMETO 2023, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 375663.15,
+    "BANCO BNC": 1500.97
+   },
+   "total": 377164.12
+  },
+  {
+   "fila": 14,
+   "zona": "BARQUISIMETO",
+   "grupo": "ROYAL CANADIAN, (TUMI, SAM)",
+   "marca": "SAMSONITE",
+   "rs1": "",
+   "rs2": "COMERCIAL TOP SPORT BARQUISIMETO 2023, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 2229807.34,
+    "BANCO BNC": 2790.96
+   },
+   "total": 2232598.3
+  },
+  {
+   "fila": 15,
+   "zona": "BARQUISIMETO",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "ADIDAS",
+   "rs1": "",
+   "rs2": "ADIDAS FO BQTO, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 4425492.05,
+    "BANCO DE VENEZUELA": 133393.79,
+    "BANCO BNC": 2376494.14,
+    "BANCO MERCANTIL": 2726108.38
+   },
+   "total": 9661488.36
+  },
+  {
+   "fila": 16,
+   "zona": "BARQUISIMETO",
+   "grupo": "SUPREME, C.A. (COTTON, AR, LU)",
+   "marca": "ARDENE",
+   "rs1": "",
+   "rs2": "FUTWEAR GROUP BARQUISIMETO, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 200562.14,
+    "BANCO BNC": 6121.13,
+    "BANCO MERCANTIL": 3604.13
+   },
+   "total": 210287.4
+  },
+  {
+   "fila": 17,
+   "zona": "BARQUISIMETO",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "ADIDAS",
+   "rs1": "ADIKIDS BARQUISIMETO, C.A",
+   "rs2": "ADIKIDS BARQUISIMETO, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 206650.19,
+    "BANCO BNC": 1701501.73,
+    "BANCO MERCANTIL": 174144.57
+   },
+   "total": 2082296.49
+  },
+  {
+   "fila": 18,
+   "zona": "BARQUISIMETO",
+   "grupo": "METAS, C.A.",
+   "marca": "VICTORIA´S SECRET",
+   "rs1": "COMERCIAL VSFA BARQUISIMETO, C.A",
+   "rs2": "COMERCIAL VSFA BARQUISIMETO, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 231827.63,
+    "BANCO BNC": 15179497.21,
+    "BANCO MERCANTIL": 299970.57
+   },
+   "total": 15711295.41
+  },
+  {
+   "fila": 19,
+   "zona": "BARQUISIMETO",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "ADIDAS",
+   "rs1": "ADIKIDS BARQUISIMETO, C.A",
+   "rs2": "ADIORIGINALS BARQUISIMETO, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 219122.74,
+    "BANCO BNC": 9058.58,
+    "BANCO MERCANTIL": 156981.85
+   },
+   "total": 385163.17
+  },
+  {
+   "fila": 20,
+   "zona": "BARQUISIMETO",
+   "grupo": "METAS, C.A.",
+   "marca": "BATH AND BODY WORKS",
+   "rs1": "",
+   "rs2": "COMERCIAL BBW BARQUISIMETO 2025, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 228284.23,
+    "BANCO BNC": 5000.29,
+    "BANCO MERCANTIL": 39.16
+   },
+   "total": 233323.68
+  },
+  {
+   "fila": 21,
+   "zona": "BARQUISIMETO",
+   "grupo": "ADM BQT",
+   "marca": "ADMINISTRATIVA",
+   "rs1": "",
+   "rs2": "ADMINISTRACION GD BARQUISIMETO, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 16511.07
+   },
+   "total": 16511.07
+  },
+  {
+   "fila": 22,
+   "zona": "BARQUISIMETO",
+   "grupo": "",
+   "marca": "",
+   "rs1": "",
+   "rs2": "TOTAL ZONA",
+   "subtotal": true,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 15760674.99,
+    "BANCO DE VENEZUELA": 133393.79,
+    "BANCO BNC": 20301572.24,
+    "BANCO MERCANTIL": 3360848.66
+   },
+   "total": 39556489.68
+  },
+  {
+   "fila": 23,
+   "zona": "PTO ORDAZ",
+   "grupo": "METAS, C.A.",
+   "marca": "BATH AND BODY WORKS",
+   "rs1": "",
+   "rs2": "COMERCIAL BRALETTE PZO, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 4060804.18,
+    "BANCO BNC": 220822.4,
+    "BANCO MERCANTIL": 53315.48
+   },
+   "total": 4334942.06
+  },
+  {
+   "fila": 24,
+   "zona": "PTO ORDAZ",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "ADIDAS",
+   "rs1": "AVO, C.A. (CERRADA EN BANCO)",
+   "rs2": "DISTRIBUIDORA ADI PUERTO ORDAZ,C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 4726404.01,
+    "BANCO BNC": 472764.18
+   },
+   "total": 5199168.19
+  },
+  {
+   "fila": 25,
+   "zona": "PTO ORDAZ",
+   "grupo": "GRUPO FITLAB DE VZLA",
+   "marca": "FITLAB",
+   "rs1": "CLAIRES PZO, C.A (CERRADA EN BANCO)",
+   "rs2": "FITLAB PUERTO ORDAZ,C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1226717.33
+   },
+   "total": 1226717.33
+  },
+  {
+   "fila": 26,
+   "zona": "PTO ORDAZ",
+   "grupo": "DADA",
+   "marca": "TOMMY HILFIGER",
+   "rs1": "DADA GROUP, C.A.",
+   "rs2": "DISTRIBUIDORA TH PUERTO ORDAZ,C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 2485991.54,
+    "BANCO BNC": 487189.66
+   },
+   "total": 2973181.2
+  },
+  {
+   "fila": 27,
+   "zona": "PTO ORDAZ",
+   "grupo": "GRUPO NASA, C.A.",
+   "marca": "THE CHILDREN´S PLACE",
+   "rs1": "JUSTICE PZO, C.A.(CERRADA EN BANCO)",
+   "rs2": "COMERCIAL CHILDREN´S PZO,C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1116672.64,
+    "BANCO BNC": 98949.6
+   },
+   "total": 1215622.24
+  },
+  {
+   "fila": 28,
+   "zona": "PTO ORDAZ",
+   "grupo": "SPORT TIME, C.A.",
+   "marca": "CLARKS",
+   "rs1": "ORIGINALS GROUP, C.A.(CERRADA EN BANCO)",
+   "rs2": "COMERCIAL NATURE PZO,C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1766981.35,
+    "BANCO BNC": 180574.17
+   },
+   "total": 1947555.52
+  },
+  {
+   "fila": 29,
+   "zona": "PTO ORDAZ",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "REEBOK",
+   "rs1": "THA, C.A.(CERRADA EN BANCO)",
+   "rs2": "COMERCIAL TRAINING PZO, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1001176.26,
+    "BANCO BNC": 37207.3
+   },
+   "total": 1038383.56
+  },
+  {
+   "fila": 30,
+   "zona": "PTO ORDAZ",
+   "grupo": "METAS, C.A.",
+   "marca": "VICTORIA´S SECRET",
+   "rs1": "VS BOLIVAR, C.A (CERRADA EN BANCO)",
+   "rs2": "AMERICAN FASHIOIN TRADING, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANCO BNC": 2790380.44,
+    "BANCO MERCANTIL": 9931140.14
+   },
+   "total": 12721520.58
+  },
+  {
+   "fila": 31,
+   "zona": "PTO ORDAZ",
+   "grupo": "SUPREME, C.A. (COTTON, AR, LU)",
+   "marca": "COTTON ON",
+   "rs1": "",
+   "rs2": "COMERCIAL MIST & LOCION PZO, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 2637267.89,
+    "BANCO BNC": 294470.73
+   },
+   "total": 2931738.62
+  },
+  {
+   "fila": 32,
+   "zona": "PTO ORDAZ",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "SPORTLAND",
+   "rs1": "",
+   "rs2": "DISTRIBUIDORA SPORTLAND PZO 2024, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 3832761.87,
+    "BANCO DE VENEZUELA": 2440.56,
+    "BANCO BNC": 184039.42
+   },
+   "total": 4019241.85
+  },
+  {
+   "fila": 33,
+   "zona": "PTO ORDAZ",
+   "grupo": "METAS, C.A.",
+   "marca": "VICTORIA´S SECRET",
+   "rs1": "",
+   "rs2": "SPORT WEAR GROUP PUERTO ORDAZ, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 6377095.07,
+    "BANCO BNC": 562256.9,
+    "BANCO MERCANTIL": 44449.73
+   },
+   "total": 6983801.7
+  },
+  {
+   "fila": 34,
+   "zona": "PTO ORDAZ",
+   "grupo": "THA MARGARITA (TIENDAS)",
+   "marca": "CALVIN KLEIN",
+   "rs1": "",
+   "rs2": "DISTRIBUIDORA SPORTS 2024, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 2128058.96,
+    "BANCO BNC": 78737.02
+   },
+   "total": 2206795.98
+  },
+  {
+   "fila": 35,
+   "zona": "PTO ORDAZ",
+   "grupo": "SUPREME, C.A. (WAIKIKI)",
+   "marca": "WAIKIKI",
+   "rs1": "",
+   "rs2": "WWKIKI GROUP PUERTO ORDAZ, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 6059647.38,
+    "BANCO BNC": 593449.52,
+    "BANCO MERCANTIL": 28978.98
+   },
+   "total": 6682075.88
+  },
+  {
+   "fila": 36,
+   "zona": "PTO ORDAZ",
+   "grupo": "ADM PZO",
+   "marca": "ADMINISTRATIVA",
+   "rs1": "",
+   "rs2": "GD PUERTO ORDAZ, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 287819.42
+   },
+   "total": 287819.42
+  },
+  {
+   "fila": 37,
+   "zona": "PTO ORDAZ",
+   "grupo": "",
+   "marca": "",
+   "rs1": "",
+   "rs2": "TOTAL ZONA",
+   "subtotal": true,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 37707397.9,
+    "BANCO DE VENEZUELA": 2440.56,
+    "BANCO BNC": 6000841.34,
+    "BANCO MERCANTIL": 10057884.33
+   },
+   "total": 53768564.13
+  },
+  {
+   "fila": 38,
+   "zona": "MARACAIBO",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "ADIDAS",
+   "rs1": "ADIPERFORMANCE, C.A. (CERRADA EN BANCO)",
+   "rs2": "ADIDAS MARACAIBO, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 8484650.73
+   },
+   "total": 8484650.73
+  },
+  {
+   "fila": 39,
+   "zona": "MARACAIBO",
+   "grupo": "GRUPO NASA, C.A.",
+   "marca": "THE CHILDREN´S PLACE",
+   "rs1": "JUST MARACAIBO, C.A.(CERRADA EN BANCO)",
+   "rs2": "TCP MARACAIBO, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 2208277.23
+   },
+   "total": 2208277.23
+  },
+  {
+   "fila": 40,
+   "zona": "MARACAIBO",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "REEBOK",
+   "rs1": "RBK MARACAIBO, C.A.(CERRADA EN BANCO)",
+   "rs2": "REEBOK MARACAIBO, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 168307.88
+   },
+   "total": 168307.88
+  },
+  {
+   "fila": 41,
+   "zona": "MARACAIBO",
+   "grupo": "METAS, C.A.",
+   "marca": "VICTORIA´S SECRET",
+   "rs1": "VS MARACAIBO, C.A.(CERRADA EN BANCO)",
+   "rs2": "VICTORIA`S MCBO, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 2847463.98
+   },
+   "total": 2847463.98
+  },
+  {
+   "fila": 42,
+   "zona": "MARACAIBO",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "SPORTLAND",
+   "rs1": "",
+   "rs2": "SPORT BRANDS MARACAIBO 2023, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 2022315.39,
+    "BANCO DE VENEZUELA": 8431.23,
+    "BANCO BNC": 187630.67
+   },
+   "total": 2218377.29
+  },
+  {
+   "fila": 43,
+   "zona": "MARACAIBO",
+   "grupo": "SPORT TIME, C.A.",
+   "marca": "CLARKS",
+   "rs1": "",
+   "rs2": "CLK MARACAIBO, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 2202938.98,
+    "BANCO DE VENEZUELA": 16445.88,
+    "BANCO BNC": 70342.14
+   },
+   "total": 2289727.0
+  },
+  {
+   "fila": 44,
+   "zona": "MARACAIBO",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "SPORTLAND",
+   "rs1": "",
+   "rs2": "SPORTLAND SAN FRANCISCO, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 3743149.7,
+    "BANCO BNC": 263325.11
+   },
+   "total": 4006474.81
+  },
+  {
+   "fila": 45,
+   "zona": "MARACAIBO",
+   "grupo": "GRUPO NASA, C.A.",
+   "marca": "THE CHILDREN´S PLACE",
+   "rs1": "",
+   "rs2": "TCP SAN FRANCISCO, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 905757.36,
+    "BANCO BNC": 209804.92
+   },
+   "total": 1115562.28
+  },
+  {
+   "fila": 46,
+   "zona": "MARACAIBO",
+   "grupo": "SUPREME, C.A. (WAIKIKI)",
+   "marca": "WAIKIKI",
+   "rs1": "",
+   "rs2": "ASSFSTORE, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 13359840.22,
+    "BANCO BNC": 1014758.97,
+    "BANCO MERCANTIL": 15990.38
+   },
+   "total": 14390589.57
+  },
+  {
+   "fila": 47,
+   "zona": "MARACAIBO",
+   "grupo": "METAS, C.A.",
+   "marca": "BATH AND BODY WORKS",
+   "rs1": "",
+   "rs2": "BBW SBL MCBO, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 3868196.64,
+    "BANCO BNC": 245660.4,
+    "BANCO MERCANTIL": 1168.71
+   },
+   "total": 4115025.75
+  },
+  {
+   "fila": 48,
+   "zona": "MARACAIBO",
+   "grupo": "SUPREME, C.A. (EH, ISTIKBAL)",
+   "marca": "ISTIKBAL",
+   "rs1": "ISTIKBAL MARACAIBO C,A",
+   "rs2": "ISTIKBAL MARACAIBO, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 3085418.3,
+    "BANCO BNC": 243929.06
+   },
+   "total": 3329347.36
+  },
+  {
+   "fila": 49,
+   "zona": "MARACAIBO",
+   "grupo": "ADM MCBO",
+   "marca": "ADMINISTRATIVA",
+   "rs1": "MAYS, C.A.(CERRADA EN BANCO)",
+   "rs2": "ADMINISTRACION MCBO, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 228728.86
+   },
+   "total": 228728.86
+  },
+  {
+   "fila": 50,
+   "zona": "MARACAIBO",
+   "grupo": "",
+   "marca": "",
+   "rs1": "",
+   "rs2": "TOTAL ZONA",
+   "subtotal": true,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 43125045.27,
+    "BANCO DE VENEZUELA": 24877.11,
+    "BANCO BNC": 2235451.27,
+    "BANCO MERCANTIL": 17159.09
+   },
+   "total": 45402532.74
+  },
+  {
+   "fila": 51,
+   "zona": "MARACAY",
+   "grupo": "GRUPO FITLAB DE VZLA",
+   "marca": "FITLAB",
+   "rs1": "",
+   "rs2": "FITLAB MARACAY, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 399255.52
+   },
+   "total": 399255.52
+  },
+  {
+   "fila": 52,
+   "zona": "MARACAY",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "ADIDAS",
+   "rs1": "ADIMARACAY, C.A. (CERRADA EN BANCO)",
+   "rs2": "SPORT ADIMARACAY, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 2038286.97
+   },
+   "total": 2038286.97
+  },
+  {
+   "fila": 53,
+   "zona": "MARACAY",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "REEBOK",
+   "rs1": "RBK MARACAY, C.A. (CERRADA EN BANCO)",
+   "rs2": "SPORT RBK MARACAY, C.A.",
+   "subtotal": false,
+   "bancos": {},
+   "total": 0.0
+  },
+  {
+   "fila": 54,
+   "zona": "MARACAY",
+   "grupo": "SPORT TIME, C.A.",
+   "marca": "CLARKS",
+   "rs1": "ORIGINAL´S MARACAY, C.A. (CERRADA EN BANCO)",
+   "rs2": "SPORT CLK MARACAY, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1018013.14
+   },
+   "total": 1018013.14
+  },
+  {
+   "fila": 55,
+   "zona": "MARACAY",
+   "grupo": "METAS, C.A.",
+   "marca": "VICTORIA´S SECRET",
+   "rs1": "VS MARACAY, C.A. (CERRADA EN BANCO)",
+   "rs2": "SPORTS VS  MARACAY, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1463718.39
+   },
+   "total": 1463718.39
+  },
+  {
+   "fila": 56,
+   "zona": "MARACAY",
+   "grupo": "GRUPO NASA, C.A.",
+   "marca": "AMERICAN EAGLE",
+   "rs1": "",
+   "rs2": "SPORTS SM MARACAY, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 997940.74
+   },
+   "total": 997940.74
+  },
+  {
+   "fila": 57,
+   "zona": "MARACAY",
+   "grupo": "ROYAL CANADIAN, (TUMI, SAM)",
+   "marca": "SAMSONITE",
+   "rs1": "",
+   "rs2": "SPORTS TH MARACAY,C.A",
+   "subtotal": false,
+   "bancos": {},
+   "total": 0.0
+  },
+  {
+   "fila": 58,
+   "zona": "MARACAY",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "SPORTLAND",
+   "rs1": "",
+   "rs2": "SPORTS THA MARACAY, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1413959.19,
+    "BANCO BNC": 3535.58
+   },
+   "total": 1417494.77
+  },
+  {
+   "fila": 59,
+   "zona": "MARACAY",
+   "grupo": "SUPREME, C.A. (WAIKIKI)",
+   "marca": "WAIKIKI",
+   "rs1": "",
+   "rs2": "SPORTS WW AVIADORES, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 2339317.15,
+    "BANCO BNC": 168673.72
+   },
+   "total": 2507990.87
+  },
+  {
+   "fila": 60,
+   "zona": "MARACAY",
+   "grupo": "GRUPO NASA, C.A.",
+   "marca": "THE CHILDREN´S PLACE",
+   "rs1": "",
+   "rs2": "SPORTS ADILAND MARACAY, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1273946.26,
+    "BANCO BNC": 17859.19
+   },
+   "total": 1291805.45
+  },
+  {
+   "fila": 61,
+   "zona": "MARACAY",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "SPORTLAND",
+   "rs1": "",
+   "rs2": "TOP SPORT MARACAY, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1206111.89,
+    "BANCO BNC": 95118.13
+   },
+   "total": 1301230.02
+  },
+  {
+   "fila": 62,
+   "zona": "MARACAY",
+   "grupo": "THA MARGARITA (TIENDAS)",
+   "marca": "CALVIN KLEIN",
+   "rs1": "",
+   "rs2": "SPORTS CK 2023 MARACAY, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1234083.5,
+    "BANCO BNC": 10197.78
+   },
+   "total": 1244281.28
+  },
+  {
+   "fila": 63,
+   "zona": "MARACAY",
+   "grupo": "GRUPO NASA, C.A.",
+   "marca": "THE CHILDREN´S PLACE",
+   "rs1": "",
+   "rs2": "SPORTS KIDS MARACAY, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 610907.04,
+    "BANCO BNC": 15467.03
+   },
+   "total": 626374.07
+  },
+  {
+   "fila": 64,
+   "zona": "MARACAY",
+   "grupo": "SPORT TIME, C.A.",
+   "marca": "CLARKS",
+   "rs1": "",
+   "rs2": "CLK UNI MARACAY, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 675679.01,
+    "BANCO BNC": 51521.16
+   },
+   "total": 727200.17
+  },
+  {
+   "fila": 65,
+   "zona": "MARACAY",
+   "grupo": "METAS, C.A.",
+   "marca": "BATH AND BODY WORKS",
+   "rs1": "",
+   "rs2": "SPORT BRANDS MARACAY 2023, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1190036.18,
+    "BANCO BNC": 143398.81
+   },
+   "total": 1333434.99
+  },
+  {
+   "fila": 66,
+   "zona": "MARACAY",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "ADIDAS",
+   "rs1": "",
+   "rs2": "ADI FO MARACAY, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 4268689.69,
+    "BANCO BNC": 1225660.93,
+    "BANCO MERCANTIL": 2977.23
+   },
+   "total": 5497327.85
+  },
+  {
+   "fila": 67,
+   "zona": "MARACAY",
+   "grupo": "ADM MCY",
+   "marca": "ADMINISTRATIVA",
+   "rs1": "LS MARACAY, C.A.",
+   "rs2": "ADMON  GD MARACAY, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 16284.37,
+    "BANCO BNC  CAJA CHICA": 575959.97
+   },
+   "total": 592244.34
+  },
+  {
+   "fila": 68,
+   "zona": "MARACAY",
+   "grupo": "",
+   "marca": "",
+   "rs1": "",
+   "rs2": "TOTAL ZONA",
+   "subtotal": true,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 20146229.04,
+    "BANCO BNC": 1731432.33,
+    "BANCO BNC  CAJA CHICA": 575959.97,
+    "BANCO MERCANTIL": 2977.23
+   },
+   "total": 22456598.57
+  },
+  {
+   "fila": 69,
+   "zona": "VALENCIA",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "ADIDAS",
+   "rs1": "INV. MUNICH, C.A. (CERRADA EN BANCO)",
+   "rs2": "INV. ADI METROPOLIS, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1526326.45
+   },
+   "total": 1526326.45
+  },
+  {
+   "fila": 70,
+   "zona": "VALENCIA",
+   "grupo": "GRUPO NASA, C.A.",
+   "marca": "THE CHILDREN´S PLACE",
+   "rs1": "JUST VALENCIA, C.A. (CERRADA EN BANCO)",
+   "rs2": "INV. TCP VALENCIA, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1192900.42
+   },
+   "total": 1192900.42
+  },
+  {
+   "fila": 71,
+   "zona": "VALENCIA",
+   "grupo": "SPORT TIME, C.A.",
+   "marca": "CLARKS",
+   "rs1": "OSS SHOES, C.A. (CERRADA EN BANCO)",
+   "rs2": "INV. CLK VALENCIA, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1258704.59
+   },
+   "total": 1258704.59
+  },
+  {
+   "fila": 72,
+   "zona": "VALENCIA",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "REEBOK",
+   "rs1": "RBK VALENCIA, C.A. (CERRADA EN BANCO)",
+   "rs2": "INV. RBK METROPOLIS, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 4150.73
+   },
+   "total": 4150.73
+  },
+  {
+   "fila": 73,
+   "zona": "VALENCIA",
+   "grupo": "METAS, C.A.",
+   "marca": "VICTORIA´S SECRET",
+   "rs1": "VS VALENCIA, C.A. (CERRADA EN BANCO)",
+   "rs2": "INV. VS VALENCIA, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1627396.25,
+    "BANCO BNC": 580140.7
+   },
+   "total": 2207536.95
+  },
+  {
+   "fila": 74,
+   "zona": "VALENCIA",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "ADIDAS",
+   "rs1": "",
+   "rs2": "INVERSIONES  ADI  SBL 2023 (TIENDA CERRADA) (X CERRAR CTA)",
+   "subtotal": false,
+   "bancos": {},
+   "total": 0.0
+  },
+  {
+   "fila": 75,
+   "zona": "VALENCIA",
+   "grupo": "THA MARGARITA (TIENDAS)",
+   "marca": "CALVIN KLEIN",
+   "rs1": "",
+   "rs2": "COMERCIAL CK  VALENCIA, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1733308.07,
+    "BANCO BNC": 35527.87
+   },
+   "total": 1768835.94
+  },
+  {
+   "fila": 76,
+   "zona": "VALENCIA",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "ADIDAS",
+   "rs1": "",
+   "rs2": "INVERSIONES ADILAND VALENCIA, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 896399.78,
+    "BANCO BNC": 209562.55
+   },
+   "total": 1105962.33
+  },
+  {
+   "fila": 77,
+   "zona": "VALENCIA",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "ADIDAS",
+   "rs1": "",
+   "rs2": "INVERSIONES CARABOBO 2023, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 4206626.44,
+    "BANCO BNC": 866352.76
+   },
+   "total": 5072979.2
+  },
+  {
+   "fila": 78,
+   "zona": "VALENCIA",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "SPORTLAND",
+   "rs1": "",
+   "rs2": "INVERSIONES AEO VALENCIA, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 3428011.39,
+    "BANCO DE VENEZUELA": 5827.04,
+    "BANCO BNC": 5141.39
+   },
+   "total": 3438979.82
+  },
+  {
+   "fila": 79,
+   "zona": "VALENCIA",
+   "grupo": "ROYAL CANADIAN, (TUMI, SAM)",
+   "marca": "SAMSONITE",
+   "rs1": "",
+   "rs2": "INVERSIONES SAMSONITE VALENCIA, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 827478.2,
+    "BANCO BNC": 4778.78
+   },
+   "total": 832256.98
+  },
+  {
+   "fila": 80,
+   "zona": "VALENCIA",
+   "grupo": "METAS, C.A.",
+   "marca": "LA MARTINA",
+   "rs1": "",
+   "rs2": "INVERSIONES LA MARTINA VALENCIA, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1324285.39,
+    "BANCO BNC": 530889.44
+   },
+   "total": 1855174.83
+  },
+  {
+   "fila": 81,
+   "zona": "VALENCIA",
+   "grupo": "INVERSIONES TH VALENCIA 2025, C.A",
+   "marca": "TOMMY HILFIGER",
+   "rs1": "",
+   "rs2": "INVERSIONES TH VALENCIA 2025, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 106914.75,
+    "BANCO BNC": 1843.39
+   },
+   "total": 108758.14
+  },
+  {
+   "fila": 82,
+   "zona": "VALENCIA",
+   "grupo": "METAS, C.A.",
+   "marca": "BATH AND BODY WORKS",
+   "rs1": "",
+   "rs2": "COMERCIAL BBW  VALENCIA,C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 2660285.36,
+    "BANCO BNC": 56159.45,
+    "BANCO MERCANTIL": 696862.65
+   },
+   "total": 3413307.46
+  },
+  {
+   "fila": 83,
+   "zona": "VALENCIA",
+   "grupo": "ADM VLC",
+   "marca": "ADMINISTRATIVA",
+   "rs1": "",
+   "rs2": "ADMINISTRACION GD VALENCIA, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 70537.13,
+    "BANCO BNC  CAJA CHICA": 1296825.56
+   },
+   "total": 1367362.69
+  },
+  {
+   "fila": 84,
+   "zona": "VALENCIA",
+   "grupo": "",
+   "marca": "",
+   "rs1": "",
+   "rs2": "TOTAL ZONA",
+   "subtotal": true,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 20863324.95,
+    "BANCO DE VENEZUELA": 5827.04,
+    "BANCO BNC": 2290396.33,
+    "BANCO BNC  CAJA CHICA": 1296825.56,
+    "BANCO MERCANTIL": 696862.65
+   },
+   "total": 25153236.53
+  },
+  {
+   "fila": 85,
+   "zona": "SAN CRISTOBAL",
+   "grupo": "METAS, C.A.",
+   "marca": "VICTORIA´S SECRET",
+   "rs1": "VS SAN CRISTOBAL,C.A.(CERRADA EN BANCO)",
+   "rs2": "VICTORIA`S SAN CRISTOBAL, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 2165069.45
+   },
+   "total": 2165069.45
+  },
+  {
+   "fila": 86,
+   "zona": "SAN CRISTOBAL",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "ADIDAS",
+   "rs1": "INV. DOLE, C.A.(CERRADA EN BANCO)",
+   "rs2": "ADIDAS SAN CRISTOBAL, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1090922.93
+   },
+   "total": 1090922.93
+  },
+  {
+   "fila": 87,
+   "zona": "SAN CRISTOBAL",
+   "grupo": "SPORT TIME, C.A.",
+   "marca": "CLARKS",
+   "rs1": "CLARKS SAN CRISTOBAL,C.A.",
+   "rs2": "CLARKS SAN CRISTOBAL,C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 863249.72
+   },
+   "total": 863249.72
+  },
+  {
+   "fila": 88,
+   "zona": "SAN CRISTOBAL",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "REEBOK",
+   "rs1": "INV. SPORT GROUP, C.A.(CERRADA EN BANCO)",
+   "rs2": "RBK SAN CRISTOBAL, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 9411.65,
+    "BANCO BNC": 1280.53
+   },
+   "total": 10692.18
+  },
+  {
+   "fila": 89,
+   "zona": "SAN CRISTOBAL",
+   "grupo": "GRUPO NASA, C.A.",
+   "marca": "THE CHILDREN´S PLACE",
+   "rs1": "TCP SAN CRISTOBAL,C.A.",
+   "rs2": "TCP SAN CRISTOBAL,C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 519769.04
+   },
+   "total": 519769.04
+  },
+  {
+   "fila": 90,
+   "zona": "SAN CRISTOBAL",
+   "grupo": "GRUPO NASA, C.A.",
+   "marca": "AMERICAN EAGLE",
+   "rs1": "",
+   "rs2": "AEO SAN CRISTOBAL, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1026001.36
+   },
+   "total": 1026001.36
+  },
+  {
+   "fila": 91,
+   "zona": "SAN CRISTOBAL",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "SPORTLAND",
+   "rs1": "",
+   "rs2": "SPORT BRANDS SAN CRISTOBAL 2023,C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1044218.07,
+    "BANCO DE VENEZUELA": 470777.44,
+    "BANCO BNC": 69026.21
+   },
+   "total": 1584021.72
+  },
+  {
+   "fila": 92,
+   "zona": "SAN CRISTOBAL",
+   "grupo": "ADM SAN CRT",
+   "marca": "ADMINISTRATIVA",
+   "rs1": "",
+   "rs2": "ADMINISTRACION GD SAN CRISTOBAL, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1432.84,
+    "BANCO BNC  CAJA CHICA": 382438.91
+   },
+   "total": 383871.75
+  },
+  {
+   "fila": 93,
+   "zona": "SAN CRISTOBAL",
+   "grupo": "",
+   "marca": "",
+   "rs1": "",
+   "rs2": "TOTAL ZONA",
+   "subtotal": true,
+   "bancos": {},
+   "total": 7643598.15
+  },
+  {
+   "fila": 94,
+   "zona": "PARAGUANA",
+   "grupo": "GRUPO NASA, C.A.",
+   "marca": "THE CHILDREN´S PLACE",
+   "rs1": "",
+   "rs2": "TCP PARAGUANA 2024, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 518798.03,
+    "BANCO BNC": 67406.48
+   },
+   "total": 586204.51
+  },
+  {
+   "fila": 95,
+   "zona": "PARAGUANA",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "ADIDAS",
+   "rs1": "",
+   "rs2": "ADI SBL PF, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 6346869.77,
+    "BANCO BNC": 16534.38
+   },
+   "total": 6363404.15
+  },
+  {
+   "fila": 96,
+   "zona": "PARAGUANA",
+   "grupo": "METAS, C.A.",
+   "marca": "VICTORIA´S SECRET",
+   "rs1": "",
+   "rs2": "VS SBL PF, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1790366.31,
+    "BANCO BNC": 267671.92
+   },
+   "total": 2058038.23
+  },
+  {
+   "fila": 97,
+   "zona": "PARAGUANA",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "SPORTLAND",
+   "rs1": "",
+   "rs2": "SPORTLAND PF, C,A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 7880763.06,
+    "BANCO BNC": 312292.65
+   },
+   "total": 8193055.71
+  },
+  {
+   "fila": 98,
+   "zona": "PARAGUANA",
+   "grupo": "SPORT TIME, C.A.",
+   "marca": "CLARKS",
+   "rs1": "CLK SBL PF, C.A.",
+   "rs2": "CLK SBL PF, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANCO BNC": 563599.68
+   },
+   "total": 563599.68
+  },
+  {
+   "fila": 99,
+   "zona": "PARAGUANA",
+   "grupo": "ADM PTO FIJO",
+   "marca": "ADMINISTRATIVA",
+   "rs1": "",
+   "rs2": "ADMINISTRACION PARAGUANA, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1867.49,
+    "BANCO BNC  CAJA CHICA": 739334.91
+   },
+   "total": 741202.4
+  },
+  {
+   "fila": 100,
+   "zona": "PARAGUANA",
+   "grupo": "",
+   "marca": "",
+   "rs1": "",
+   "rs2": "TOTAL ZONA",
+   "subtotal": true,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 16538664.66,
+    "BANCO BNC": 1227505.11,
+    "BANCO BNC  CAJA CHICA": 739334.91
+   },
+   "total": 18505504.68
+  },
+  {
+   "fila": 101,
+   "zona": "CARACAS",
+   "grupo": "SPORT TIME, C.A.",
+   "marca": "CLARKS",
+   "rs1": "ALWAYS CLASSIC, C.A.",
+   "rs2": "CLIK LIDER, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1894028.88
+   },
+   "total": 1894028.88
+  },
+  {
+   "fila": 102,
+   "zona": "CARACAS",
+   "grupo": "GRUPO NASA, C.A.",
+   "marca": "AMERICAN EAGLE",
+   "rs1": "ABSOLUT FASHION, C.A.",
+   "rs2": "AEO SBL CCS, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 870509.26,
+    "BANCO BNC": 643087.3
+   },
+   "total": 1513596.56
+  },
+  {
+   "fila": 103,
+   "zona": "CARACAS",
+   "grupo": "METAS, C.A.",
+   "marca": "VICTORIA´S SECRET",
+   "rs1": "ADIKIDS MERCEDES, C.A. (CERRADA EN BANCO)",
+   "rs2": "INT TOLON, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 626426.0
+   },
+   "total": 626426.0
+  },
+  {
+   "fila": 104,
+   "zona": "CARACAS",
+   "grupo": "SPORT TIME, C.A.",
+   "marca": "CLARKS",
+   "rs1": "ENGLAND SHOES, C.A.(CERRADA EN BANCO)",
+   "rs2": "CLK SBL, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1112231.3,
+    "BANCO BNC": 478.77
+   },
+   "total": 1112710.07
+  },
+  {
+   "fila": 105,
+   "zona": "CARACAS",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "REEBOK",
+   "rs1": "GRUPO BREMEN, C.A.(CERRADA EN BANCO)",
+   "rs2": "RBK SBL CCS, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 736851.57,
+    "BANCO BNC": 490.16
+   },
+   "total": 737341.73
+  },
+  {
+   "fila": 106,
+   "zona": "CARACAS",
+   "grupo": "GRUPO NASA, C.A.",
+   "marca": "THE CHILDREN´S PLACE",
+   "rs1": "GRUPO KINGSTON, C.A",
+   "rs2": "TPC SBL, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 886838.08
+   },
+   "total": 886838.08
+  },
+  {
+   "fila": 107,
+   "zona": "CARACAS",
+   "grupo": "METAS, C.A.",
+   "marca": "INTENZZA",
+   "rs1": "INVERSIONES ORILLIA, C.A.(CERRADA EN BANCO)",
+   "rs2": "INT SBL CCS, C.A. (CUENTA CERRADA)",
+   "subtotal": false,
+   "bancos": {},
+   "total": 0.0
+  },
+  {
+   "fila": 108,
+   "zona": "CARACAS",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "ADIDAS",
+   "rs1": "INV. HALIFAX, C.A.(CERRADA EN BANCO)",
+   "rs2": "ADI TOLON CCS, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 777873.69,
+    "BANCO BNC": 633.43
+   },
+   "total": 778507.12
+  },
+  {
+   "fila": 109,
+   "zona": "CARACAS",
+   "grupo": "GRUPO NASA, C.A.",
+   "marca": "THE CHILDREN´S PLACE",
+   "rs1": "TWEEN MERCEDES, C.A. (CERRADA EN BANCO)",
+   "rs2": "TCP TOLON CCS, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 724857.59
+   },
+   "total": 724857.59
+  },
+  {
+   "fila": 110,
+   "zona": "CARACAS",
+   "grupo": "GRUPO FITLAB DE VZLA",
+   "marca": "FITLAB",
+   "rs1": "GYMBO CHACAO, C.A. (CERRADA EN BANCO)",
+   "rs2": "FTL SBL CCS, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 719311.06
+   },
+   "total": 719311.06
+  },
+  {
+   "fila": 111,
+   "zona": "CARACAS",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "ADIDAS",
+   "rs1": "SUPPER SPORT, C.A.",
+   "rs2": "ADI LIDER CCS, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1705681.36,
+    "BANCO BNC": 44565.05
+   },
+   "total": 1750246.41
+  },
+  {
+   "fila": 112,
+   "zona": "CARACAS",
+   "grupo": "GRUPO NASA, C.A.",
+   "marca": "AMERICAN EAGLE",
+   "rs1": "",
+   "rs2": "AKEIBA, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 789303.8,
+    "BANCO BNC": 338.65
+   },
+   "total": 789642.45
+  },
+  {
+   "fila": 113,
+   "zona": "CARACAS",
+   "grupo": "GRUPO NASA, C.A.",
+   "marca": "THE CHILDREN´S PLACE",
+   "rs1": "",
+   "rs2": "COMERCIAL ATENAS 2022,C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 297465.83,
+    "BANCO BNC": 258.09
+   },
+   "total": 297723.92
+  },
+  {
+   "fila": 114,
+   "zona": "CARACAS",
+   "grupo": "SUPREME, C.A. (WAIKIKI)",
+   "marca": "WAIKIKI",
+   "rs1": "",
+   "rs2": "COPOAZU, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 2276462.91,
+    "BANCO BNC": 61786.52
+   },
+   "total": 2338249.43
+  },
+  {
+   "fila": 115,
+   "zona": "CARACAS",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "SPORTLAND",
+   "rs1": "",
+   "rs2": "MARUDI, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 717159.31,
+    "BANCO BNC": 180384.91
+   },
+   "total": 897544.22
+  },
+  {
+   "fila": 116,
+   "zona": "CARACAS",
+   "grupo": "SUPREME, C.A. (WAIKIKI)",
+   "marca": "WAIKIKI",
+   "rs1": "",
+   "rs2": "COMERCIAL MILFORD 2022, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1575486.89,
+    "BANCO BNC": 8396.0
+   },
+   "total": 1583882.89
+  },
+  {
+   "fila": 117,
+   "zona": "CARACAS",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "REEBOK",
+   "rs1": "",
+   "rs2": "COMERCIAL BAXTER 2022, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 284909.86,
+    "BANCO BNC": 578.05
+   },
+   "total": 285487.91
+  },
+  {
+   "fila": 118,
+   "zona": "CARACAS",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "SPORTLAND",
+   "rs1": "",
+   "rs2": "COMERCIAL MERCER 2022, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 691187.73,
+    "BANCO BNC": 94.59
+   },
+   "total": 691282.32
+  },
+  {
+   "fila": 119,
+   "zona": "CARACAS",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "ADIDAS",
+   "rs1": "",
+   "rs2": "COMERCIAL HEBRON 2022, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 362789.81,
+    "BANCO BNC": 91913.51
+   },
+   "total": 454703.32
+  },
+  {
+   "fila": 120,
+   "zona": "CARACAS",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "SPORTLAND",
+   "rs1": "",
+   "rs2": "COMERCIAL SALEM 2022, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1053611.49,
+    "BANCO BNC": 852.54
+   },
+   "total": 1054464.03
+  },
+  {
+   "fila": 121,
+   "zona": "CARACAS",
+   "grupo": "SPORT TIME, C.A.",
+   "marca": "CLARKS",
+   "rs1": "",
+   "rs2": "COMERCIAL SPARTA 2022, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 729278.6,
+    "BANCO BNC": 558.33
+   },
+   "total": 729836.93
+  },
+  {
+   "fila": 122,
+   "zona": "CARACAS",
+   "grupo": "SPORT TIME, C.A.",
+   "marca": "CLARKS",
+   "rs1": "",
+   "rs2": "COMERCIAL DURAN 2022, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 841453.03,
+    "BANCO BNC": 600.84
+   },
+   "total": 842053.87
+  },
+  {
+   "fila": 123,
+   "zona": "CARACAS",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "SPORTLAND",
+   "rs1": "",
+   "rs2": "COMERCIAL SELMER 2022, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 800581.33,
+    "BANCO BNC": 4906.01
+   },
+   "total": 805487.34
+  },
+  {
+   "fila": 124,
+   "zona": "CARACAS",
+   "grupo": "ROYAL CANADIAN, (TUMI, SAM)",
+   "marca": "SAMSONITE",
+   "rs1": "",
+   "rs2": "PORTAFOLIO GROUP SBL CCS, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 680692.7,
+    "BANCO DE VENEZUELA": 2770.47,
+    "BANCO BNC": 580.96
+   },
+   "total": 684044.13
+  },
+  {
+   "fila": 125,
+   "zona": "CARACAS",
+   "grupo": "METAS, C.A.",
+   "marca": "VICTORIA´S SECRET",
+   "rs1": "",
+   "rs2": "COCONUT SBL CCS, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 4386528.34,
+    "BANCO BNC": 145.44
+   },
+   "total": 4386673.78
+  },
+  {
+   "fila": 126,
+   "zona": "CARACAS",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "ADIDAS",
+   "rs1": "",
+   "rs2": "COMERCIAL HAZEN 2022, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1126811.58,
+    "BANCO DE VENEZUELA": 3260.37,
+    "BANCO BNC": 65555.53
+   },
+   "total": 1195627.48
+  },
+  {
+   "fila": 127,
+   "zona": "CARACAS",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "SPORTLAND",
+   "rs1": "",
+   "rs2": "SPORTLAND LA CASTELLANA, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 521364.76,
+    "BANCO DE VENEZUELA": 560.46,
+    "BANCO BNC": 116073.18
+   },
+   "total": 637998.4
+  },
+  {
+   "fila": 128,
+   "zona": "CARACAS",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "ADIDAS",
+   "rs1": "",
+   "rs2": "LEBRON PERFONMANCE SBL CCS, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1304476.73,
+    "BANCO DE VENEZUELA": 2922.71,
+    "BANCO BNC": 9526.66
+   },
+   "total": 1316926.1
+  },
+  {
+   "fila": 129,
+   "zona": "CARACAS",
+   "grupo": "SUPREME, C.A. (COTTON, AR, LU)",
+   "marca": "COTTON ON",
+   "rs1": "",
+   "rs2": "SPORTS FOOT SBL CCS, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 772337.64,
+    "BANCO DE VENEZUELA": 3875.91,
+    "BANCO BNC": 7405.94
+   },
+   "total": 783619.49
+  },
+  {
+   "fila": 130,
+   "zona": "CARACAS",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "SPORTLAND",
+   "rs1": "",
+   "rs2": "EH SBL CCS 2024, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 637140.68,
+    "BANCO BNC": 527.84
+   },
+   "total": 637668.52
+  },
+  {
+   "fila": 131,
+   "zona": "CARACAS",
+   "grupo": "SUPREME, C.A. (COTTON, AR, LU)",
+   "marca": "ARDENE",
+   "rs1": "",
+   "rs2": "EH CANDELARIA, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 896950.62,
+    "BANCO DE VENEZUELA": 1038.59,
+    "BANCO BNC": 28855.06,
+    "BANCO MERCANTIL": 5567.6
+   },
+   "total": 932411.87
+  },
+  {
+   "fila": 132,
+   "zona": "CARACAS",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "SPORTLAND",
+   "rs1": "",
+   "rs2": "SPORTLAND CANDELARIA, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 795611.28,
+    "BANCO DE VENEZUELA": 3561.02,
+    "BANCO BNC": 495680.41
+   },
+   "total": 1294852.71
+  },
+  {
+   "fila": 133,
+   "zona": "CARACAS",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "LOLE",
+   "rs1": "",
+   "rs2": "SPORTGEAR SBL CCS 2024, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANCO BNC": 2030.02
+   },
+   "total": 2030.02
+  },
+  {
+   "fila": 134,
+   "zona": "CARACAS",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "SPORTLAND",
+   "rs1": "",
+   "rs2": "SPORTLAND SBL CCS, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 692269.13,
+    "BANCO DE VENEZUELA": 6883.23,
+    "BANCO BNC": 673.02
+   },
+   "total": 699825.38
+  },
+  {
+   "fila": 135,
+   "zona": "CARACAS",
+   "grupo": "ROYAL CANADIAN, (TUMI, SAM)",
+   "marca": "TUMI",
+   "rs1": "",
+   "rs2": "BAG GROUP SBL CCS 2024, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 569274.14,
+    "BANCO DE VENEZUELA": 3196.98,
+    "BANCO BNC": 3596.89
+   },
+   "total": 576068.01
+  },
+  {
+   "fila": 136,
+   "zona": "CARACAS",
+   "grupo": "ROYAL CANADIAN, (TUMI, SAM)",
+   "marca": "TUMI",
+   "rs1": "",
+   "rs2": "BAG GROUP CCS, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 785891.41,
+    "BANCO DE VENEZUELA": 11803.61,
+    "BANCO BNC": 10411.76
+   },
+   "total": 808106.78
+  },
+  {
+   "fila": 137,
+   "zona": "CARACAS",
+   "grupo": "SUPREME, C.A. (EH, ISTIKBAL)",
+   "marca": "ISTIKBAL",
+   "rs1": "",
+   "rs2": "FURNITURE CCS 2024, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 616537.68,
+    "BANCO DE VENEZUELA": 555.0,
+    "BANCO BNC": 744.45
+   },
+   "total": 617837.13
+  },
+  {
+   "fila": 138,
+   "zona": "CARACAS",
+   "grupo": "SUPREME, C.A. (COTTON, AR, LU)",
+   "marca": "COTTON ON",
+   "rs1": "",
+   "rs2": "COTTON ON CV, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1644055.98,
+    "BANCO DE VENEZUELA": 4997.02,
+    "BANCO BNC": 130230.06
+   },
+   "total": 1779283.06
+  },
+  {
+   "fila": 139,
+   "zona": "CARACAS",
+   "grupo": "GRUPO NASA, C.A.",
+   "marca": "THE CHILDREN´S PLACE",
+   "rs1": "",
+   "rs2": "TCP LIDER CCS, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1045787.12,
+    "BANCO BNC": 1081.13
+   },
+   "total": 1046868.25
+  },
+  {
+   "fila": 140,
+   "zona": "CARACAS",
+   "grupo": "METAS, C.A.",
+   "marca": "BATH AND BODY WORKS",
+   "rs1": "",
+   "rs2": "BBW SBL CCS 2024, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 819372.3,
+    "BANCO DE VENEZUELA": 149091.96,
+    "BANCO BNC": 17122.53
+   },
+   "total": 985586.79
+  },
+  {
+   "fila": 141,
+   "zona": "CARACAS",
+   "grupo": "GRUPO NASA, C.A.",
+   "marca": "AMERICAN EAGLE",
+   "rs1": "",
+   "rs2": "AEO CANDELARIA 2024, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1103127.58,
+    "BANCO DE VENEZUELA": 46635.19,
+    "BANCO BNC": 367.58
+   },
+   "total": 1150130.35
+  },
+  {
+   "fila": 142,
+   "zona": "CARACAS",
+   "grupo": "METAS, C.A.",
+   "marca": "LA MARTINA",
+   "rs1": "",
+   "rs2": "COMERCIAL LM CCS 2024, C.A",
+   "subtotal": false,
+   "bancos": {},
+   "total": 0.0
+  },
+  {
+   "fila": 143,
+   "zona": "CARACAS",
+   "grupo": "THA MARGARITA (TIENDAS)",
+   "marca": "KARL LAGERFELD",
+   "rs1": "",
+   "rs2": "KL CANDELARIA, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 606295.76,
+    "BANCO BNC": 777.02
+   },
+   "total": 607072.78
+  },
+  {
+   "fila": 144,
+   "zona": "CARACAS",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "ADIDAS",
+   "rs1": "",
+   "rs2": "ADI FO CCS 2024, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 2351926.93,
+    "BANCO BNC": 70700.32
+   },
+   "total": 2422627.25
+  },
+  {
+   "fila": 145,
+   "zona": "CARACAS",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "SPORTLAND",
+   "rs1": "",
+   "rs2": "MIL SPORT CCS, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 111955.31,
+    "BANCO BNC": 930.05
+   },
+   "total": 112885.36
+  },
+  {
+   "fila": 146,
+   "zona": "CARACAS",
+   "grupo": "SUPREME, C.A. (WAIKIKI)",
+   "marca": "WAIKIKI",
+   "rs1": "",
+   "rs2": "MODA LCW LIDER CCS, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 2668904.41,
+    "BANCO BNC": 5251.4
+   },
+   "total": 2674155.81
+  },
+  {
+   "fila": 147,
+   "zona": "CARACAS",
+   "grupo": "THA MARGARITA (TIENDAS)",
+   "marca": "TOMMY HILFIGER",
+   "rs1": "",
+   "rs2": "TH LIDER CCS, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1398761.01,
+    "BANCO BNC": 1188.37
+   },
+   "total": 1399949.38
+  },
+  {
+   "fila": 148,
+   "zona": "CARACAS",
+   "grupo": "THA MARGARITA (TIENDAS)",
+   "marca": "TOMMY HILFIGER",
+   "rs1": "",
+   "rs2": "TH CCCT CCS, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1654326.34,
+    "BANCO BNC": 899.62
+   },
+   "total": 1655225.96
+  },
+  {
+   "fila": 149,
+   "zona": "CARACAS",
+   "grupo": "THA MARGARITA (TIENDAS)",
+   "marca": "TOMMY HILFIGER",
+   "rs1": "",
+   "rs2": "TH BOLEITA CCS, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 646648.03,
+    "BANCO BNC": 6789.83
+   },
+   "total": 653437.86
+  },
+  {
+   "fila": 150,
+   "zona": "CARACAS",
+   "grupo": "THA MARGARITA (TIENDAS)",
+   "marca": "TOMMY HILFIGER",
+   "rs1": "",
+   "rs2": "TH SBL CCS,C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 902830.42,
+    "BANCO BNC": 178212.03
+   },
+   "total": 1081042.45
+  },
+  {
+   "fila": 151,
+   "zona": "CARACAS",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "ADIDAS",
+   "rs1": "",
+   "rs2": "ADI FO BOLEITA, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1404364.52,
+    "BANCO BNC": 354.01
+   },
+   "total": 1404718.53
+  },
+  {
+   "fila": 152,
+   "zona": "CARACAS",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "SPORTLAND",
+   "rs1": "",
+   "rs2": "SPORTLAND LA CASCADA, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 759288.41,
+    "BANCO BNC": 67.91
+   },
+   "total": 759356.32
+  },
+  {
+   "fila": 153,
+   "zona": "CARACAS",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "ADIDAS",
+   "rs1": "",
+   "rs2": "ADI ORIGINALS CCS, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 891415.85,
+    "BANCO BNC": 193421.96
+   },
+   "total": 1084837.81
+  },
+  {
+   "fila": 154,
+   "zona": "CARACAS",
+   "grupo": "METAS, C.A.",
+   "marca": "BATH AND BODY WORKS",
+   "rs1": "",
+   "rs2": "BBW SBL CANDELARIA, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 830385.15,
+    "BANCO BNC": 2578.67,
+    "BANCO MERCANTIL": 50016.43
+   },
+   "total": 882980.25
+  },
+  {
+   "fila": 155,
+   "zona": "CARACAS",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "ADIDAS",
+   "rs1": "",
+   "rs2": "ADIDAS CV CCS, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1309004.78,
+    "BANCO BNC": 460.25,
+    "BANCO MERCANTIL": 291852.61
+   },
+   "total": 1601317.64
+  },
+  {
+   "fila": 156,
+   "zona": "CARACAS",
+   "grupo": "METAS, C.A.",
+   "marca": "BATH AND BODY WORKS",
+   "rs1": "BBW CV CCS, C.A.",
+   "rs2": "BBW CV CCS, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 267396.58,
+    "BANCO BNC": 228253.55
+   },
+   "total": 495650.13
+  },
+  {
+   "fila": 157,
+   "zona": "CARACAS",
+   "grupo": "ADM CCS",
+   "marca": "ADMINISTRATIVA",
+   "rs1": "ASIA CHIC, C.A.",
+   "rs2": "GD CASTELLANA, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1243766.4,
+    "BANCAMIGA": 102672.26,
+    "BANCO BANESCO C/H": 1711.71,
+    "BANCO BNC  CAJA CHICA": 698740.26,
+    "BANCO DELSUR": 20712086.0,
+    "BANCO DEL Tesoro (cta gastos) NUEVA": 775328.72
+   },
+   "total": 23534305.35
+  },
+  {
+   "fila": 158,
+   "zona": "CARACAS",
+   "grupo": "",
+   "marca": "",
+   "rs1": "",
+   "rs2": "TOTAL ZONA",
+   "subtotal": true,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 55919798.95,
+    "BANCAMIGA": 102672.26,
+    "BANCO DE VENEZUELA": 241152.52,
+    "BANCO BANESCO C/H": 1711.71,
+    "BANCO BNC": 2620416.2,
+    "BANCO BNC  CAJA CHICA": 698740.26,
+    "BANCO DELSUR": 20712086.0,
+    "BANCO MERCANTIL": 347436.64,
+    "BANCO DEL Tesoro (cta gastos) NUEVA": 775328.72
+   },
+   "total": 81419343.26
+  },
+  {
+   "fila": 159,
+   "zona": "CUMANA",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "ADIDAS",
+   "rs1": "ADICUMANA, C.A.",
+   "rs2": "INVERSIONES SUPER STAR 2023, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1814334.21
+   },
+   "total": 1814334.21
+  },
+  {
+   "fila": 160,
+   "zona": "CUMANA",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "REEBOK",
+   "rs1": "RBK CUMANA, C.A.",
+   "rs2": "INVERSIONES BRONCE 2023, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 10287.93
+   },
+   "total": 10287.93
+  },
+  {
+   "fila": 161,
+   "zona": "CUMANA",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "ADIDAS",
+   "rs1": "ADICUMANA, C.A.",
+   "rs2": "ADI FO PLC, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 839049.27,
+    "BANCO BNC": 2416575.23
+   },
+   "total": 3255624.5
+  },
+  {
+   "fila": 162,
+   "zona": "CUMANA",
+   "grupo": "GRUPO NASA, C.A.",
+   "marca": "THE CHILDREN´S PLACE",
+   "rs1": "ADICUMANA, C.A.",
+   "rs2": "INV. TCP CNA, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 661886.58,
+    "BANCO BNC": 615844.43
+   },
+   "total": 1277731.01
+  },
+  {
+   "fila": 163,
+   "zona": "CUMANA",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "SPORTLAND",
+   "rs1": "",
+   "rs2": "INV. SPORTLAND CNA, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 740560.63,
+    "BANCO BNC": 674890.73
+   },
+   "total": 1415451.36
+  },
+  {
+   "fila": 164,
+   "zona": "CUMANA",
+   "grupo": "ADM GD CUMANA, C.A.",
+   "marca": "ADMINISTRATIVA",
+   "rs1": "ASIA CHIC, C.A.",
+   "rs2": "ADM GD CUMANA, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1160.4,
+    "BANCO BNC  CAJA CHICA": 864887.69
+   },
+   "total": 866048.09
+  },
+  {
+   "fila": 165,
+   "zona": "CUMANA",
+   "grupo": "",
+   "marca": "",
+   "rs1": "",
+   "rs2": "TOTAL ZONA",
+   "subtotal": true,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 4067279.02,
+    "BANCO BNC": 3707310.39,
+    "BANCO BNC  CAJA CHICA": 864887.69
+   },
+   "total": 8639477.1
+  },
+  {
+   "fila": 166,
+   "zona": "MARGARITA",
+   "grupo": "METAS, C.A.",
+   "marca": "BATH AND BODY WORKS",
+   "rs1": "BBW MARGARITA, C.A.",
+   "rs2": "BBW MARGARITA, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 2294893.8,
+    "BANCO BNC": 421574.22
+   },
+   "total": 2716468.02
+  },
+  {
+   "fila": 167,
+   "zona": "MARGARITA",
+   "grupo": "SPORT TIME, C.A.",
+   "marca": "CLARKS",
+   "rs1": "BIG BANG, C.A.",
+   "rs2": "BIG BANG, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1019396.21,
+    "BANCO BNC": 143630.09
+   },
+   "total": 1163026.3
+  },
+  {
+   "fila": 168,
+   "zona": "MARGARITA",
+   "grupo": "SPORT TIME, C.A.",
+   "marca": "CLARKS",
+   "rs1": "BISCAY, C.A.",
+   "rs2": "BISCAY, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 2178668.43,
+    "BANCO BNC": 17206.63
+   },
+   "total": 2195875.06
+  },
+  {
+   "fila": 169,
+   "zona": "MARGARITA",
+   "grupo": "METAS, C.A.",
+   "marca": "MULTI MARCAS",
+   "rs1": "FONTANA CENTER,C.A",
+   "rs2": "FONTANA CENTER,C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1268284.4,
+    "BANCO BNC": 1370.63
+   },
+   "total": 1269655.03
+  },
+  {
+   "fila": 170,
+   "zona": "MARGARITA",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "ADIDAS",
+   "rs1": "S.Y.W,C.A.",
+   "rs2": "S.Y.W,C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1371071.02,
+    "BANCO BNC": 149765.26
+   },
+   "total": 1520836.28
+  },
+  {
+   "fila": 171,
+   "zona": "MARGARITA",
+   "grupo": "GRUPO NASA, C.A.",
+   "marca": "THE CHILDREN´S PLACE",
+   "rs1": "COMERCIAL ST ORIENTE, C.A.",
+   "rs2": "COMERCIAL ST ORIENTE, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1065073.78,
+    "BANCO BNC": 125007.52
+   },
+   "total": 1190081.3
+  },
+  {
+   "fila": 172,
+   "zona": "MARGARITA",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "REEBOK",
+   "rs1": "IN SPORT, C.A.",
+   "rs2": "IN SPORT, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 265962.95,
+    "BANCO BNC": 39.27
+   },
+   "total": 266002.22
+  },
+  {
+   "fila": 173,
+   "zona": "MARGARITA",
+   "grupo": "THA MARGARITA (TIENDAS)",
+   "marca": "TOMMY HILFIGER",
+   "rs1": "YUMAH, C.A.",
+   "rs2": "YUMAH, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1450184.93,
+    "BANCO BNC": 8991.49
+   },
+   "total": 1459176.42
+  },
+  {
+   "fila": 174,
+   "zona": "MARGARITA",
+   "grupo": "THA MARGARITA (TIENDAS)",
+   "marca": "TOMMY HILFIGER",
+   "rs1": "JIHAN, CA",
+   "rs2": "JIHAN, C.A. (TIENDA CERRADA) (X CERRAR CTA)",
+   "subtotal": false,
+   "bancos": {},
+   "total": 0.0
+  },
+  {
+   "fila": 175,
+   "zona": "MARGARITA",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "MULTI MARCAS",
+   "rs1": "NAUTICA SHOP, C.A.",
+   "rs2": "NAUTICA SHOP, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1062437.08,
+    "BANCO BNC": 4882.07
+   },
+   "total": 1067319.15
+  },
+  {
+   "fila": 176,
+   "zona": "MARGARITA",
+   "grupo": "GRUPO NASA, C.A.",
+   "marca": "THE CHILDREN´S PLACE",
+   "rs1": "SAMI, C.A.",
+   "rs2": "SAMI, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1417066.57,
+    "BANCO BNC": 30355.51
+   },
+   "total": 1447422.08
+  },
+  {
+   "fila": 177,
+   "zona": "MARGARITA",
+   "grupo": "METAS, C.A.",
+   "marca": "VICTORIA´S SECRET",
+   "rs1": "SPORT LINE, C.A.",
+   "rs2": "SPORT LINE, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 2763355.45,
+    "BANCO BNC": 110240.49
+   },
+   "total": 2873595.94
+  },
+  {
+   "fila": 178,
+   "zona": "MARGARITA",
+   "grupo": "THA MARGARITA (TIENDAS)",
+   "marca": "TOMMY HILFIGER",
+   "rs1": "YOULIN, C.A. (CERRADA EN BANCO)",
+   "rs2": "TOMMY LA VELA 2022, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 2992022.09,
+    "BANCO BNC": 5920.71
+   },
+   "total": 2997942.8
+  },
+  {
+   "fila": 179,
+   "zona": "MARGARITA",
+   "grupo": "SUPREME, C.A. (EH, ISTIKBAL)",
+   "marca": "ENGLISH HOME",
+   "rs1": "UNITED GROUP,C.A.",
+   "rs2": "UNITED GROUP,C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 496752.46,
+    "BANCO BNC": 36276.74
+   },
+   "total": 533029.2
+  },
+  {
+   "fila": 180,
+   "zona": "MARGARITA",
+   "grupo": "ROYAL CANADIAN, (TUMI, SAM)",
+   "marca": "TUMI",
+   "rs1": "",
+   "rs2": "BAG GROUP MGTA, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 806020.95,
+    "BANCO BNC": 403.53
+   },
+   "total": 806424.48
+  },
+  {
+   "fila": 181,
+   "zona": "MARGARITA",
+   "grupo": "METAS, C.A.",
+   "marca": "BATH AND BODY WORKS",
+   "rs1": "",
+   "rs2": "BBW GROUP MGTA, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 3661717.6,
+    "BANCO BNC": 182377.22
+   },
+   "total": 3844094.82
+  },
+  {
+   "fila": 182,
+   "zona": "MARGARITA",
+   "grupo": "SUPREME, C.A. (EH, ISTIKBAL)",
+   "marca": "ISTIKBAL",
+   "rs1": "",
+   "rs2": "EH MGTA, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 11123679.72,
+    "BANCO BNC": 810102.07
+   },
+   "total": 11933781.79
+  },
+  {
+   "fila": 183,
+   "zona": "MARGARITA",
+   "grupo": "ROYAL CANADIAN, (TUMI, SAM)",
+   "marca": "SAMSONITE",
+   "rs1": "",
+   "rs2": "PORTAFOLIO GROUP MGTA, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 403994.0,
+    "BANCO BNC": 1822.15
+   },
+   "total": 405816.15
+  },
+  {
+   "fila": 184,
+   "zona": "MARGARITA",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "REEBOK",
+   "rs1": "",
+   "rs2": "RBK GROUP MGTA, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 851728.68,
+    "BANCO BNC": 138123.42
+   },
+   "total": 989852.1
+  },
+  {
+   "fila": 185,
+   "zona": "MARGARITA",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "ADIDAS",
+   "rs1": "",
+   "rs2": "SNK GROUP MGTA, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1801708.21,
+    "BANCO DE VENEZUELA": 732.46,
+    "BANCO BNC": 117302.6
+   },
+   "total": 1919743.27
+  },
+  {
+   "fila": 186,
+   "zona": "MARGARITA",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "LOLE",
+   "rs1": "",
+   "rs2": "SPORTGEAR MGTA, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 851082.54,
+    "BANCO BNC": 181411.9
+   },
+   "total": 1032494.44
+  },
+  {
+   "fila": 187,
+   "zona": "MARGARITA",
+   "grupo": "SUPREME, C.A. (COTTON, AR, LU)",
+   "marca": "LUFIAN",
+   "rs1": "",
+   "rs2": "SPORTLUFI 2023, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 5744739.57,
+    "BANCO BNC": 133201.07
+   },
+   "total": 5877940.64
+  },
+  {
+   "fila": 188,
+   "zona": "MARGARITA",
+   "grupo": "THA MARGARITA (TIENDAS)",
+   "marca": "CALVIN KLEIN",
+   "rs1": "",
+   "rs2": "SPORT WEAR GROUP MGTA, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 970905.76,
+    "BANCO BNC": 9591.51
+   },
+   "total": 980497.27
+  },
+  {
+   "fila": 189,
+   "zona": "MARGARITA",
+   "grupo": "GRUPO NASA, C.A.",
+   "marca": "AMERICAN EAGLE",
+   "rs1": "",
+   "rs2": "SPORTS BRANDS MGTA, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1827354.15,
+    "BANCO BNC": 414.71
+   },
+   "total": 1827768.86
+  },
+  {
+   "fila": 190,
+   "zona": "MARGARITA",
+   "grupo": "SUPREME, C.A. (COTTON, AR, LU)",
+   "marca": "COTTON ON",
+   "rs1": "",
+   "rs2": "SPORTS FOOT MGTA, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 5660530.62,
+    "BANCO BNC": 29740.3
+   },
+   "total": 5690270.92
+  },
+  {
+   "fila": 191,
+   "zona": "MARGARITA",
+   "grupo": "METAS, C.A.",
+   "marca": "VICTORIA´S SECRET",
+   "rs1": "",
+   "rs2": "VS GROUP MGTA,C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 3686494.55,
+    "BANCO BNC": 211403.31
+   },
+   "total": 3897897.86
+  },
+  {
+   "fila": 192,
+   "zona": "MARGARITA",
+   "grupo": "SUPREME, C.A. (WAIKIKI)",
+   "marca": "WAIKIKI",
+   "rs1": "",
+   "rs2": "WWKIKI GROUP MGTA, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 4164562.83,
+    "BANCO BNC": 915411.16
+   },
+   "total": 5079973.99
+  },
+  {
+   "fila": 193,
+   "zona": "MARGARITA",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "ADIDAS",
+   "rs1": "",
+   "rs2": "ADI LA VELA 2024, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1716156.5,
+    "BANCO BNC": 550442.18
+   },
+   "total": 2266598.68
+  },
+  {
+   "fila": 194,
+   "zona": "MARGARITA",
+   "grupo": "SUPREME, C.A. (COTTON, AR, LU)",
+   "marca": "ARDENE",
+   "rs1": "",
+   "rs2": "FUTWEAR GROUP MGTA, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1746424.27,
+    "BANCO DE VENEZUELA": 3248.66,
+    "BANCO BNC": 99602.06
+   },
+   "total": 1849274.99
+  },
+  {
+   "fila": 195,
+   "zona": "MARGARITA",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "SPORTLAND",
+   "rs1": "",
+   "rs2": "SPORTLAND LA VELA CAP, C.A (TIENDA CERRADA)",
+   "subtotal": false,
+   "bancos": {
+    "BANCO BNC": 21.8
+   },
+   "total": 21.8
+  },
+  {
+   "fila": 196,
+   "zona": "MARGARITA",
+   "grupo": "THA MARGARITA (TIENDAS)",
+   "marca": "KARL LAGERFELD",
+   "rs1": "",
+   "rs2": "INVERSIONES KARLAG LA VELA II, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 959754.87,
+    "BANCO BNC": 12199.94
+   },
+   "total": 971954.81
+  },
+  {
+   "fila": 197,
+   "zona": "MARGARITA",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "SPORTLAND",
+   "rs1": "SPORTLAND MGTA, C.A.",
+   "rs2": "SPORTLAND MGTA, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1110410.0,
+    "BANCO BNC": 3485.21,
+    "BANCO MERCANTIL": 2805937.14
+   },
+   "total": 3919832.35
+  },
+  {
+   "fila": 198,
+   "zona": "MARGARITA",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "ADIDAS",
+   "rs1": "ADI KIDS MGTA LA VELA II, C.A.",
+   "rs2": "ADI KIDS MGTA LA VELA II, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1335464.62,
+    "BANCO BNC": 261835.87
+   },
+   "total": 1597300.49
+  },
+  {
+   "fila": 199,
+   "zona": "MARGARITA",
+   "grupo": "METAS, C.A.",
+   "marca": "LA MARTINA",
+   "rs1": "",
+   "rs2": "INVERSIONES POLO SPORTS 2024, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 918720.29,
+    "BANCO BNC": 565961.21
+   },
+   "total": 1484681.5
+  },
+  {
+   "fila": 200,
+   "zona": "MARGARITA",
+   "grupo": "TOP GROUP, C.A.",
+   "marca": "ADIDAS",
+   "rs1": "",
+   "rs2": "ADIDAS FO SANTIAGO MARIÑO, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 3686877.78,
+    "BANCO BNC": 251953.63,
+    "BANCO MERCANTIL": 310392.81
+   },
+   "total": 4249224.22
+  },
+  {
+   "fila": 201,
+   "zona": "MARGARITA",
+   "grupo": "ADM GD MARGARITA, C.A",
+   "marca": "ADMINISTRATIVA",
+   "rs1": "CANALI COLOR SIETE, C.A. (CERRADA EN BANCO)",
+   "rs2": "ADMINISTRACION GD MARGARITA, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 25732857.91
+   },
+   "total": 25732857.91
+  },
+  {
+   "fila": 202,
+   "zona": "MARGARITA",
+   "grupo": "",
+   "marca": "",
+   "rs1": "",
+   "rs2": "TOTAL ZONA",
+   "subtotal": true,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 98406354.59,
+    "BANCO DE VENEZUELA": 3981.12,
+    "BANCO BNC": 5532067.48,
+    "BANCO MERCANTIL": 3116329.95
+   },
+   "total": 107058733.1
+  },
+  {
+   "fila": 203,
+   "zona": "MARGARITA",
+   "grupo": "ADM THA M",
+   "marca": "ADMINISTRATIVA",
+   "rs1": "INV. OPTIMA 18, C.A",
+   "rs2": "INV. OPTIMA 18, C.A",
+   "subtotal": false,
+   "bancos": {},
+   "total": 0.0
+  },
+  {
+   "fila": 204,
+   "zona": "MARGARITA",
+   "grupo": "ADM THA M",
+   "marca": "ADMINISTRATIVA",
+   "rs1": "THA MARGARITA, C.A.",
+   "rs2": "THA MARGARITA, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 559914.89
+   },
+   "total": 559914.89
+  },
+  {
+   "fila": 205,
+   "zona": "MARGARITA",
+   "grupo": "TROPICS 2022, C.A (TIENDA/C) OPERATIVOS",
+   "marca": "ADMINISTRATIVA",
+   "rs1": "TROPICS CENTER, C.A. (TIENDA CERRADA)",
+   "rs2": "TROPICS 2022, C.A (TIENDA/C) OPERATIVOS",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 6068.9,
+    "BANCO BNC  CAJA CHICA": 5398487.04
+   },
+   "total": 5404555.94
+  },
+  {
+   "fila": 206,
+   "zona": "MARGARITA",
+   "grupo": "BELLO HORIZONTE, C.A.",
+   "marca": "ADMINISTRATIVA",
+   "rs1": "",
+   "rs2": "BELLO HORIZONTE, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 12130.13
+   },
+   "total": 12130.13
+  },
+  {
+   "fila": 207,
+   "zona": "MARGARITA",
+   "grupo": "INVERSIONES 2567P, C.A (EL AVION)",
+   "marca": "ADMINISTRATIVA",
+   "rs1": "",
+   "rs2": "INVERSIONES 2567P, C.A (EL AVION)",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 492.79
+   },
+   "total": 492.79
+  },
+  {
+   "fila": 208,
+   "zona": "MARGARITA",
+   "grupo": "CAFETIN CORPORATIVO",
+   "marca": "ADMINISTRATIVA",
+   "rs1": "",
+   "rs2": "CAFETIN CORPORATIVO",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 275.7
+   },
+   "total": 275.7
+  },
+  {
+   "fila": 209,
+   "zona": "MARGARITA",
+   "grupo": "",
+   "marca": "",
+   "rs1": "",
+   "rs2": "TOTAL ZONA",
+   "subtotal": true,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 578882.41,
+    "BANCO BNC  CAJA CHICA": 5398487.04
+   },
+   "total": 5977369.45
+  },
+  {
+   "fila": 210,
+   "zona": "MARGARITA",
+   "grupo": "GRUPO FITLAB DE VZLA",
+   "marca": "FITLAB",
+   "rs1": "INV. 268907, C.A.",
+   "rs2": "INV. 268907, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 2455305.83,
+    "BANCO BNC": 377457.19
+   },
+   "total": 2832763.02
+  },
+  {
+   "fila": 211,
+   "zona": "MARGARITA",
+   "grupo": "GRUPO FITLAB DE VZLA",
+   "marca": "FITLAB",
+   "rs1": "WORKOUT, C.A.",
+   "rs2": "WORKOUT, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1443565.3,
+    "BANCO BNC": 756583.38
+   },
+   "total": 2200148.68
+  },
+  {
+   "fila": 212,
+   "zona": "MARGARITA",
+   "grupo": "GRUPO FITLAB DE VZLA",
+   "marca": "FITLAB",
+   "rs1": "SPORTLAB, C.A.",
+   "rs2": "SPORTLAB, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1071616.08,
+    "BANCO BNC": 326875.02
+   },
+   "total": 1398491.1
+  },
+  {
+   "fila": 213,
+   "zona": "FITLAB DE VZLA",
+   "grupo": "ADM FITLAB DE VZLA",
+   "marca": "ADMINISTRATIVA",
+   "rs1": "FITLAB DE VZLA, C.A.",
+   "rs2": "FITLAB DE VZLA, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 596648.18
+   },
+   "total": 596648.18
+  },
+  {
+   "fila": 214,
+   "zona": "FITLAB DE VZLA",
+   "grupo": "",
+   "marca": "",
+   "rs1": "",
+   "rs2": "TOTAL ZONA",
+   "subtotal": true,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 5567135.39,
+    "BANCO BNC": 1460915.59
+   },
+   "total": 7028050.98
+  },
+  {
+   "fila": 215,
+   "zona": "",
+   "grupo": "",
+   "marca": "",
+   "rs1": "TOTAL GENERAL",
+   "rs2": "",
+   "subtotal": true,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 318680787.2,
+    "BANCAMIGA": 102672.26,
+    "BANCO DE VENEZUELA": 411672.14,
+    "BANCO BANESCO C/H": 1711.71,
+    "BANCO BNC": 47107908.28,
+    "BANCO BNC  CAJA CHICA": 9574235.43,
+    "BANCO DELSUR": 20712086.0,
+    "BANCO MERCANTIL": 17599498.55,
+    "BANCO DEL Tesoro (cta gastos) NUEVA": 775328.72
+   },
+   "total": 422609498.4
+  },
+  {
+   "fila": 219,
+   "zona": "",
+   "grupo": "",
+   "marca": "",
+   "rs1": "EMPRESAS",
+   "rs2": "EMPRESAS GRUPO MAYOR",
+   "subtotal": false,
+   "bancos": {},
+   "total": null
+  },
+  {
+   "fila": 220,
+   "zona": "",
+   "grupo": "",
+   "marca": "",
+   "rs1": "SPORT MASTER, C.A.",
+   "rs2": "TOP GROUP, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 127521993.4
+   },
+   "total": null
+  },
+  {
+   "fila": 221,
+   "zona": "",
+   "grupo": "",
+   "marca": "",
+   "rs1": "METAS, C.A.",
+   "rs2": "METAS, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 84931324.97
+   },
+   "total": null
+  },
+  {
+   "fila": 222,
+   "zona": "",
+   "grupo": "",
+   "marca": "",
+   "rs1": "GRUPO NASA, C.A.",
+   "rs2": "GRUPO NASA, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 24364803.59
+   },
+   "total": null
+  },
+  {
+   "fila": 223,
+   "zona": "",
+   "grupo": "",
+   "marca": "",
+   "rs1": "SPORT TIME, C.A.",
+   "rs2": "SPORT TIME, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 17211521.06
+   },
+   "total": null
+  },
+  {
+   "fila": 224,
+   "zona": "",
+   "grupo": "",
+   "marca": "",
+   "rs1": "SR. NABIL",
+   "rs2": "GRUPO FITLAB DE VZLA",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 8973474.48
+   },
+   "total": null
+  },
+  {
+   "fila": 225,
+   "zona": "",
+   "grupo": "",
+   "marca": "",
+   "rs1": "THA MARGARITA (TIENDAS)",
+   "rs2": "THA MARGARITA (TIENDAS)",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 18128416.33
+   },
+   "total": null
+  },
+  {
+   "fila": 226,
+   "zona": "",
+   "grupo": "",
+   "marca": "",
+   "rs1": "",
+   "rs2": "INVERSIONES TH VALENCIA 2025, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 108758.14
+   },
+   "total": null
+  },
+  {
+   "fila": 227,
+   "zona": "",
+   "grupo": "",
+   "marca": "",
+   "rs1": "",
+   "rs2": "DADA",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 2973181.2
+   },
+   "total": null
+  },
+  {
+   "fila": 228,
+   "zona": "",
+   "grupo": "",
+   "marca": "",
+   "rs1": "",
+   "rs2": "SUPREME, C.A. (WAIKIKI)",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 35256918.44
+   },
+   "total": null
+  },
+  {
+   "fila": 229,
+   "zona": "",
+   "grupo": "",
+   "marca": "",
+   "rs1": "",
+   "rs2": "SUPREME, C.A. (EH, ISTIKBAL)",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 16413995.48
+   },
+   "total": null
+  },
+  {
+   "fila": 230,
+   "zona": "",
+   "grupo": "",
+   "marca": "",
+   "rs1": "",
+   "rs2": "SUPREME, C.A. (COTTON, AR, LU)",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 20054826.99
+   },
+   "total": null
+  },
+  {
+   "fila": 231,
+   "zona": "",
+   "grupo": "",
+   "marca": "",
+   "rs1": "",
+   "rs2": "ROYAL CANADIAN, (TUMI, SAM)",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 6345314.83
+   },
+   "total": null
+  },
+  {
+   "fila": 237,
+   "zona": "",
+   "grupo": "",
+   "marca": "",
+   "rs1": "EMPRESAS",
+   "rs2": "EMPRESAS",
+   "subtotal": false,
+   "bancos": {},
+   "total": null
+  },
+  {
+   "fila": 238,
+   "zona": "",
+   "grupo": "",
+   "marca": "",
+   "rs1": "ADM GD MARGARITA, C.A",
+   "rs2": "ADM GD MARGARITA, C.A",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 25732857.91
+   },
+   "total": null
+  },
+  {
+   "fila": 239,
+   "zona": "",
+   "grupo": "",
+   "marca": "",
+   "rs1": "",
+   "rs2": "BELLO HORIZONTE, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 12130.13
+   },
+   "total": null
+  },
+  {
+   "fila": 240,
+   "zona": "",
+   "grupo": "",
+   "marca": "",
+   "rs1": "",
+   "rs2": "CAFETIN CORPORATIVO",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 275.7
+   },
+   "total": null
+  },
+  {
+   "fila": 241,
+   "zona": "",
+   "grupo": "",
+   "marca": "",
+   "rs1": "",
+   "rs2": "INVERSIONES 2567P, C.A (EL AVION)",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 492.79
+   },
+   "total": null
+  },
+  {
+   "fila": 242,
+   "zona": "",
+   "grupo": "",
+   "marca": "",
+   "rs1": "ADM THA M",
+   "rs2": "ADM THA M",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 559914.89
+   },
+   "total": null
+  },
+  {
+   "fila": 243,
+   "zona": "",
+   "grupo": "",
+   "marca": "",
+   "rs1": "",
+   "rs2": "TROPICS 2022, C.A (TIENDA/C) OPERATIVOS",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 5404555.94
+   },
+   "total": null
+  },
+  {
+   "fila": 244,
+   "zona": "",
+   "grupo": "",
+   "marca": "",
+   "rs1": "",
+   "rs2": "ADM FITLAB DE VZLA",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 596648.18
+   },
+   "total": null
+  },
+  {
+   "fila": 245,
+   "zona": "",
+   "grupo": "",
+   "marca": "",
+   "rs1": "ADM BQT",
+   "rs2": "ADM BQT",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 16511.07
+   },
+   "total": null
+  },
+  {
+   "fila": 246,
+   "zona": "",
+   "grupo": "",
+   "marca": "",
+   "rs1": "ADM PZO",
+   "rs2": "ADM PZO",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 287819.42
+   },
+   "total": null
+  },
+  {
+   "fila": 247,
+   "zona": "",
+   "grupo": "",
+   "marca": "",
+   "rs1": "ADM MCBO",
+   "rs2": "ADM MCBO",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 228728.86
+   },
+   "total": null
+  },
+  {
+   "fila": 248,
+   "zona": "",
+   "grupo": "",
+   "marca": "",
+   "rs1": "ADM MCY",
+   "rs2": "ADM MCY",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 592244.34
+   },
+   "total": null
+  },
+  {
+   "fila": 249,
+   "zona": "",
+   "grupo": "",
+   "marca": "",
+   "rs1": "ADM VLC",
+   "rs2": "ADM VLC",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 1367362.69
+   },
+   "total": null
+  },
+  {
+   "fila": 250,
+   "zona": "",
+   "grupo": "",
+   "marca": "",
+   "rs1": "ADM SAN CRT",
+   "rs2": "ADM SAN CRT",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 383871.75
+   },
+   "total": null
+  },
+  {
+   "fila": 251,
+   "zona": "",
+   "grupo": "",
+   "marca": "",
+   "rs1": "",
+   "rs2": "ADM GD CUMANA, C.A.",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 866048.09
+   },
+   "total": null
+  },
+  {
+   "fila": 252,
+   "zona": "",
+   "grupo": "",
+   "marca": "",
+   "rs1": "ADM PTO FIJO",
+   "rs2": "ADM PTO FIJO",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 741202.4
+   },
+   "total": null
+  },
+  {
+   "fila": 253,
+   "zona": "",
+   "grupo": "",
+   "marca": "",
+   "rs1": "ADM CCS",
+   "rs2": "ADM CCS",
+   "subtotal": false,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 23534305.35
+   },
+   "total": null
+  },
+  {
+   "fila": 256,
+   "zona": "",
+   "grupo": "",
+   "marca": "",
+   "rs1": "Total General",
+   "rs2": "Total General",
+   "subtotal": true,
+   "bancos": {
+    "BANESCO (cta Principal) NUEVA": 422609498.4
+   },
+   "total": null
+  }
+ ]
+}
