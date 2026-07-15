@@ -11,11 +11,13 @@
           <router-link v-if="auth.esPagador" to="/pagos" :class="{ active: $route.path === '/pagos' }">Pagos<span v-if="notif.pago" class="nav-badge">{{ notif.pago }}</span></router-link>
           <router-link v-if="auth.esPagador" to="/pagadas" :class="{ active: $route.path === '/pagadas' }">Pagadas</router-link>
           <router-link v-if="auth.esSaldos" to="/fondos" :class="{ active: $route.path === '/fondos' }">Saldos</router-link>
-          <router-link v-if="auth.esSaldos" to="/fondos/importar" :class="{ active: $route.path === '/fondos/importar' }">Importar</router-link>
           <router-link v-if="auth.esReportes" to="/reportes" :class="{ active: $route.path === '/reportes' }">Reportes</router-link>
           <router-link v-if="auth.esAdmin" to="/admin/usuarios" :class="{ active: $route.path === '/admin/usuarios' }">Usuarios</router-link>
           <router-link v-if="auth.esAdmin" to="/admin/bancos" :class="{ active: $route.path === '/admin/bancos' }">Bancos</router-link>
-          <router-link v-if="auth.esAdmin" to="/admin/alias-tiendas" :class="{ active: $route.path === '/admin/alias-tiendas' }">Alias de tiendas</router-link>
+          <router-link v-if="auth.esAdmin" to="/actualizador" :class="{ active: $route.path === '/actualizador' }">Actualizador</router-link>
+          <!-- Importar (Excel) y Alias de tiendas: ocultos por ahora, no van a producción
+               (los saldos se cargan manual). Rutas y backend siguen intactos por si se
+               reactivan más adelante — ver /fondos/importar y /admin/alias-tiendas. -->
         </nav>
         <div class="topbar__user">
           <CampanaNotificaciones />

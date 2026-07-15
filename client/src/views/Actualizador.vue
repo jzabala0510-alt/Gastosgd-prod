@@ -1,7 +1,7 @@
 <template>
   <div class="upd">
     <div class="upd__card">
-      <h1 class="upd__title">Actualizador</h1>
+      <h1 class="upd__title">Actualizador <span class="upd__version">v1</span></h1>
       <p class="upd__hint">Sección de administración interna, con clave propia (no las credenciales ICG).</p>
 
       <template v-if="!autenticado">
@@ -161,6 +161,7 @@ onMounted(async () => {
 .upd { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; background: var(--bg, #f5f6f8); }
 .upd__card { background: var(--surface, #fff); border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,.05), 0 20px 40px rgba(0,0,0,.08); padding: 36px 40px; width: 100%; max-width: 420px; }
 .upd__title { margin: 0 0 6px; font-size: 20px; }
+.upd__version { font-size: 12px; font-weight: 600; color: var(--muted, #6b7280); vertical-align: middle; }
 .upd__hint { margin: 0 0 24px; font-size: 13px; color: var(--muted, #6b7280); }
 .upd__form { display: flex; flex-direction: column; gap: 14px; }
 .upd__error { color: #b91c1c; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 8px 10px; font-size: 13px; margin: 4px 0 0; }

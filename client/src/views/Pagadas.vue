@@ -10,7 +10,7 @@
     <div class="card"><SelectorZMT :store="store" @buscar="onTienda" /></div>
 
     <p v-if="loading" class="page__hint">Cargando…</p>
-    <template v-else-if="store.codTienda && tiendaItems.length">
+    <template v-else-if="tiendaItems.length">
       <div class="card filtros">
         <div class="field" :class="{ 'field--active': filtros.desde }"><label>Desde</label><input type="date" v-model="filtros.desde" /></div>
         <div class="field" :class="{ 'field--active': filtros.hasta }"><label>Hasta</label><input type="date" v-model="filtros.hasta" /></div>
@@ -27,10 +27,14 @@
       <p class="page__hint">{{ filtradas.length }} de {{ tiendaItems.length }} facturas</p>
       <div class="table-wrap"><table class="grid">
         <thead>
-          <tr><th>Factura</th><th>Fecha</th><th>Proveedor</th><th>Tipo de gasto</th><th class="r">Total (Bs)</th><th>Estado</th><th>Acciones</th></tr>
+          <tr>
+            <th v-if="!store.codTienda">Tienda</th>
+            <th>Factura</th><th>Fecha</th><th>Proveedor</th><th>Tipo de gasto</th><th class="r">Total (Bs)</th><th>Estado</th><th>Acciones</th>
+          </tr>
         </thead>
         <tbody>
           <tr v-for="g in filtradas" :key="g.codTienda + '-' + g.numserie + '-' + g.numfactura">
+            <td v-if="!store.codTienda" style="white-space:nowrap">{{ g.marca }} · {{ g.tienda }}</td>
             <td><code>{{ g.numserie }}-{{ g.numfactura }}</code></td>
             <td>{{ fecha(g.fecha) }}</td>
             <td>{{ g.proveedor || '—' }}</td>
@@ -48,7 +52,7 @@
       </table></div>
       <p v-if="!filtradas.length" class="page__hint">Sin resultados para los filtros aplicados.</p>
     </template>
-    <div v-else-if="store.codTienda" class="empty card">Aún no hay facturas pagadas para esta tienda.</div>
+    <div v-else-if="buscado" class="empty card">Aún no hay facturas pagadas para esta selección.</div>
     <p v-else class="page__hint">Elige una tienda arriba.</p>
   </section>
 </template>
@@ -63,12 +67,16 @@ import { money, fecha } from '../utils/format';
 const store = usePagadasStore();
 const allItems = ref([]);
 const loading = ref(false);
+const buscado = ref(false);
 const enc = encodeURIComponent;
 const filtros = ref({ desde: '', hasta: '', proveedor: '', tipoGasto: '' });
 
-const tiendaItems = computed(() =>
-  store.codTienda ? allItems.value.filter((g) => Number(g.codTienda) === Number(store.codTienda)) : [],
-);
+const tiendaItems = computed(() => {
+  if (!buscado.value) return [];
+  if (store.codTienda) return allItems.value.filter((g) => Number(g.codTienda) === Number(store.codTienda));
+  const scope = new Set(store.tiendas.map((t) => Number(t.CodTienda)));
+  return scope.size ? allItems.value.filter((g) => scope.has(Number(g.codTienda))) : [];
+});
 const tiposGasto = computed(() =>
   [...new Set(tiendaItems.value.map((g) => g.tipoGasto || 'SIN ESPECIFICAR'))].sort(),
 );
@@ -86,7 +94,7 @@ const filtradas = computed(() => {
 });
 
 function limpiar() { filtros.value = { desde: '', hasta: '', proveedor: '', tipoGasto: '' }; }
-function onTienda() { limpiar(); }
+function onTienda() { buscado.value = true; limpiar(); }
 
 onMounted(async () => {
   loading.value = true;
