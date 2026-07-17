@@ -88,9 +88,8 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import { getUsuarios, setUsuario, setUsuarioZonas } from '../api/admin';
 import { getZonas } from '../api/facturas';
+import { ROLES, ROL_LABEL } from '../utils/roles';
 
-const ROLES = ['ANALISTA', 'TESORERIA', 'AUDITOR', 'PAGADOR', 'SALDOS', 'REPORTES', 'ADMIN'];
-const ROL_LABEL = { ANALISTA: 'Analista', TESORERIA: 'Tesorería', AUDITOR: 'Auditor', PAGADOR: 'Pagos', SALDOS: 'Saldos', REPORTES: 'Reportes', ADMIN: 'Administrador' };
 const PORPAGINA = 15;
 
 const usuarios = ref([]);

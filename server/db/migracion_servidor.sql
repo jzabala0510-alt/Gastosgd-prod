@@ -453,6 +453,29 @@ ELSE
     PRINT '⏭  Ya existe al menos un ADMIN.';
 GO
 
+-- ============================================================
+-- 7b. Compatibilidad de permisos por módulo — Saldos y Reportes dejaron de
+--     otorgarse implícito por tener ANALISTA/TESORERIA/AUDITOR (ahora cada
+--     módulo depende solo de su propio permiso). Para no quitarle acceso a
+--     nadie que ya lo tenía implícito, se lo agrega explícito acá.
+--     Idempotente: no lo vuelve a agregar si ya lo tiene.
+-- ============================================================
+UPDATE dbo.GD_Usuario
+SET Rol = Rol + ',SALDOS'
+WHERE (',' + Rol + ',' LIKE '%,ANALISTA,%' OR ',' + Rol + ',' LIKE '%,TESORERIA,%')
+  AND ',' + Rol + ',' NOT LIKE '%,SALDOS,%'
+  AND ',' + Rol + ',' NOT LIKE '%,ADMIN,%';
+PRINT '✅ SALDOS preservado para usuarios ANALISTA/TESORERIA que no lo tenían.';
+GO
+
+UPDATE dbo.GD_Usuario
+SET Rol = Rol + ',REPORTES'
+WHERE (',' + Rol + ',' LIKE '%,ANALISTA,%' OR ',' + Rol + ',' LIKE '%,TESORERIA,%' OR ',' + Rol + ',' LIKE '%,AUDITOR,%')
+  AND ',' + Rol + ',' NOT LIKE '%,REPORTES,%'
+  AND ',' + Rol + ',' NOT LIKE '%,ADMIN,%';
+PRINT '✅ REPORTES preservado para usuarios ANALISTA/TESORERIA/AUDITOR que no lo tenían.';
+GO
+
 -- ------------------------------------------------------------
 -- PLANTILLA para asignar roles a usuarios reales de producción.
 -- Descomenta y repite por cada persona. El CODUSUARIO se busca por

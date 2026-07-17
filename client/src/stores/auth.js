@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia';
 import http from '../api/http';
-
-const ROL_LABEL = { ANALISTA: 'Analista', TESORERIA: 'Tesorería', AUDITOR: 'Auditor', PAGADOR: 'Pagos', SALDOS: 'Saldos', REPORTES: 'Reportes', ADMIN: 'Administrador' };
+import { ROL_LABEL } from '../utils/roles';
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -22,8 +21,9 @@ export const useAuthStore = defineStore('auth', {
     esTesoreria: (s) => s.roles.includes('TESORERIA') || s.roles.includes('ADMIN'),
     esAuditor: (s) => s.roles.includes('AUDITOR') || s.roles.includes('ADMIN'),
     esPagador: (s) => s.roles.includes('PAGADOR') || s.roles.includes('ADMIN'),
-    esSaldos: (s) => s.roles.some((r) => ['ANALISTA', 'TESORERIA', 'SALDOS', 'ADMIN'].includes(r)),
-    esReportes: (s) => s.roles.some((r) => ['ANALISTA', 'TESORERIA', 'AUDITOR', 'REPORTES', 'ADMIN'].includes(r)),
+    esPagadas: (s) => s.roles.includes('PAGADAS') || s.roles.includes('ADMIN'),
+    esSaldos: (s) => s.roles.includes('SALDOS') || s.roles.includes('ADMIN'),
+    esReportes: (s) => s.roles.includes('REPORTES') || s.roles.includes('ADMIN'),
   },
   actions: {
     async login(password) {
