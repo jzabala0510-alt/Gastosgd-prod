@@ -3,11 +3,8 @@ const { sql, getPool } = require('../config/db');
 // Tiendas de la zona + saldo cargado en esa fecha (agrupado por tienda + banco).
 async function zonaConSaldos({ zona, fecha }) {
   const pool = await getPool();
-  const esNacional = zona === 'NACIONALES';
-  const rq = pool.request().input('f', sql.Date, fecha);
-  const whereZona = esNacional
-    ? `(ec.PROVINCIA IS NULL OR LTRIM(RTRIM(ec.PROVINCIA)) = '') AND LTRIM(RTRIM(ec.DIRECCION)) IN (N'TOP GROUP', N'MAYORES')`
-    : (rq.input('z', sql.NVarChar, zona), `LTRIM(RTRIM(ec.PROVINCIA)) = @z`);
+  const rq = pool.request().input('f', sql.Date, fecha).input('z', sql.NVarChar, zona);
+  const whereZona = `LTRIM(RTRIM(ec.PROVINCIA)) = @z`;
   const r = await rq.query(`
       SELECT t.codTienda, t.tienda, t.marca, d.IdBanco, d.MontoDisponible AS monto
       FROM (

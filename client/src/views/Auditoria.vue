@@ -25,9 +25,15 @@
     <template v-if="tabActivo === 'auditoria'">
       <div class="card"><SelectorZMT :store="store" @buscar="onTienda" /></div>
 
-      <div v-if="pendientes.length" class="card">
-        <h3 class="card__title">Tiendas con pendientes ({{ pendientes.length }})</h3>
-        <ul class="pend-lista">
+      <div v-if="pendientes.length" class="card colapsable-card">
+        <button class="colapsable-toggle" @click="pendientesAbiertos = !pendientesAbiertos">
+          <span class="colapsable-toggle__text">
+            <span class="badge badge--amber">{{ pendientes.length }}</span>
+            Tiendas con pendientes
+          </span>
+          <span class="colapsable-toggle__arrow" :class="{ open: pendientesAbiertos }">›</span>
+        </button>
+        <ul v-if="pendientesAbiertos" class="pend-lista colapsable-lista">
           <li v-for="it in pendientes" :key="it.codTienda" class="pend-row" @click="saltarA(it)">
             <span class="pend-row__lugar"><b>{{ it.tienda }}</b> · {{ it.zona }} · {{ it.marca }}</span>
             <span class="badge badge--amber">{{ it.n }}</span>
@@ -141,6 +147,7 @@ const filtros = ref({ desde: '', hasta: '', proveedor: '', tipoGasto: '' });
 const tabActivo = ref('auditoria');
 
 const pendientes = computed(() => notif.detalle.auditoria);
+const pendientesAbiertos = ref(false);
 function saltarA(it) {
   store.$patch({ zona: it.zona, marca: it.marca, codTienda: it.codTienda, autobuscar: true });
 }

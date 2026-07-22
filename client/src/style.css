@@ -179,6 +179,36 @@ code { background: #f3f4f6; padding: 1px 6px; border-radius: 4px; font-size: 12p
 .pend-row__lugar { flex: 1; font-size: 14px; }
 .pend-row .zona-row__arrow { color: #f59e0b; font-size: 20px; line-height: 1; }
 
+/* Panel colapsable genérico (pendientes/pagadas): oculta listas largas por defecto,
+   para que no compitan con los filtros de arriba como foco principal de la pantalla. */
+.colapsable-card { padding: 0; overflow: hidden; }
+.colapsable-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: transparent;
+  border: none;
+  padding: 14px 20px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  color: #374151;
+  text-align: left;
+}
+.colapsable-toggle:hover { background: #f9fafb; }
+.colapsable-toggle__text { display: flex; align-items: center; gap: 10px; font-weight: 500; }
+.colapsable-toggle__arrow {
+  color: #86bb25;
+  font-size: 20px;
+  line-height: 1;
+  transition: transform .2s;
+  flex-shrink: 0;
+}
+.colapsable-toggle__arrow.open { transform: rotate(90deg); }
+.colapsable-lista { padding: 0 16px 14px; border-top: 1px solid #f3f4f6; margin-top: 0; }
+
 /* ── Botones ────────────────────────────────────────────── */
 .btn {
   display: inline-block; text-decoration: none; cursor: pointer;

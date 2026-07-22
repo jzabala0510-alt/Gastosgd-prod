@@ -14,10 +14,6 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP }) {
   let scope = [];
   if (codTienda) {
     scope = [codTienda];
-  } else if (zona === 'NACIONALES') {
-    const tr = await appPool.request()
-      .query("SELECT DISTINCT CODIGO AS cod FROM GENERAL.dbo.EMPRESASCONTABLES WHERE (PROVINCIA IS NULL OR LTRIM(RTRIM(PROVINCIA)) = '') AND LTRIM(RTRIM(DIRECCION)) IN (N'TOP GROUP', N'MAYORES')");
-    scope = tr.recordset.map((x) => x.cod);
   } else if (zona) {
     const tr = await appPool.request().input('z', sql.NVarChar, zona)
       .query("SELECT DISTINCT CODIGO AS cod FROM GENERAL.dbo.EMPRESASCONTABLES WHERE LTRIM(RTRIM(PROVINCIA)) = @z");
@@ -153,8 +149,6 @@ async function saldos({ zona, codTienda, fecha }) {
   let filtro;
   if (codTienda) {
     filtro = 'ec.CODIGO = @c'; rq.input('c', sql.Int, codTienda);
-  } else if (zona === 'NACIONALES') {
-    filtro = "(ec.PROVINCIA IS NULL OR LTRIM(RTRIM(ec.PROVINCIA)) = '') AND LTRIM(RTRIM(ec.DIRECCION)) IN (N'TOP GROUP', N'MAYORES')";
   } else if (zona) {
     filtro = 'LTRIM(RTRIM(ec.PROVINCIA)) = @z'; rq.input('z', sql.NVarChar, zona);
   } else {
@@ -166,7 +160,7 @@ async function saldos({ zona, codTienda, fecha }) {
       SELECT DISTINCT ec.CODIGO AS codTienda,
              LTRIM(RTRIM(ec.DESCRIPCION)) AS tienda,
              LTRIM(RTRIM(ec.DIRECCION))   AS marca,
-             ISNULL(LTRIM(RTRIM(ec.PROVINCIA)), 'NACIONALES') AS zona
+             LTRIM(RTRIM(ec.PROVINCIA)) AS zona
       FROM GENERAL.dbo.EMPRESASCONTABLES ec
       WHERE ${filtro}
     ) t

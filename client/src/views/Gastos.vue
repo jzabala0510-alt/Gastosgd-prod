@@ -10,15 +10,15 @@
     <div class="card"><SelectorZMT :store="store" @buscar="onTienda" /></div>
 
     <!-- Facturas pagadas recientes (últimas 48 h) — colapsable -->
-    <div v-if="pagadas.length" class="card pagadas-card">
-      <button class="pagadas-toggle" @click="pagadasAbiertas = !pagadasAbiertas">
-        <span class="pagadas-toggle__text">
+    <div v-if="pagadas.length" class="card colapsable-card">
+      <button class="colapsable-toggle" @click="pagadasAbiertas = !pagadasAbiertas">
+        <span class="colapsable-toggle__text">
           <span class="badge badge--green">{{ pagadas.length }}</span>
           Pagadas en las últimas 48 h
         </span>
-        <span class="pagadas-toggle__arrow" :class="{ open: pagadasAbiertas }">›</span>
+        <span class="colapsable-toggle__arrow" :class="{ open: pagadasAbiertas }">›</span>
       </button>
-      <ul v-if="pagadasAbiertas" class="pend-lista pagadas-lista">
+      <ul v-if="pagadasAbiertas" class="pend-lista colapsable-lista">
         <li v-for="p in pagadas" :key="`${p.numserie}-${p.numfactura}-${p.n}`"
             class="pend-row" @click="abrirPagada(p)">
           <span class="pend-row__lugar">
@@ -169,35 +169,3 @@ function abrirPagada(p) {
   router.push(`/factura/${cod}/${encodeURIComponent(p.numserie)}/${p.numfactura}/${encodeURIComponent(p.n)}`);
 }
 </script>
-
-<style scoped>
-.pagadas-card { padding: 0; overflow: hidden; }
-
-.pagadas-toggle {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  background: transparent;
-  border: none;
-  padding: 14px 20px;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 14px;
-  color: #374151;
-  text-align: left;
-}
-.pagadas-toggle:hover { background: #f9fafb; }
-.pagadas-toggle__text { display: flex; align-items: center; gap: 10px; font-weight: 500; }
-.pagadas-toggle__arrow {
-  color: #86bb25;
-  font-size: 20px;
-  line-height: 1;
-  transition: transform .2s;
-  flex-shrink: 0;
-}
-.pagadas-toggle__arrow.open { transform: rotate(90deg); }
-
-.pagadas-lista { padding: 0 16px 14px; border-top: 1px solid #f3f4f6; margin-top: 0; }
-</style>

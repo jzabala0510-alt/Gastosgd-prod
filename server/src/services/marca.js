@@ -1,13 +1,17 @@
 const { sql, getGeneralPool, getBrandPool, parsePathBD } = require('../config/db');
 
-// Datos de una tienda (empresa contable) desde GENERAL.EMPRESASCONTABLES
+// Datos de una tienda (empresa contable) desde GENERAL.EMPRESASCONTABLES.
+// CODIGO no es único por sí solo: algunas empresas tienen una fila por EJERCICIO
+// (ej. una vieja huérfana de un año anterior, sin Marca/Provincia, y la actual).
+// ORDER BY EJERCICIO DESC se queda con la más reciente — sin esto, TOP 1 podía
+// traer la fila vieja y romper la resolución de marca/BD (visto con TOP GROUP).
 async function tiendaInfo(codTienda) {
   const gen = await getGeneralPool();
   const r = await gen.request().input('c', sql.Int, codTienda).query(`
     SELECT TOP 1 LTRIM(RTRIM(DESCRIPCION)) AS Tienda, LTRIM(RTRIM(DIRECCION)) AS Marca,
-      LTRIM(RTRIM(POBLACION)) AS Empresa,
-      ISNULL(LTRIM(RTRIM(PROVINCIA)), 'NACIONALES') AS Zona
-    FROM EMPRESASCONTABLES WHERE CODIGO = @c`);
+      LTRIM(RTRIM(POBLACION)) AS Empresa, LTRIM(RTRIM(PROVINCIA)) AS Zona
+    FROM EMPRESASCONTABLES WHERE CODIGO = @c
+    ORDER BY EJERCICIO DESC`);
   return r.recordset[0] || null;
 }
 

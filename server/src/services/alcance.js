@@ -1,12 +1,8 @@
 const { sql, getGeneralPool } = require('../config/db');
-const { MARCAS_NACIONALES } = require('./jerarquia.service');
 
 // Alcance por zona: un usuario puede quedar limitado a una o varias zonas
 // (EMPRESASCONTABLES.PROVINCIA). Sin zonas asignadas = ve todo (irrestricto).
 // ADMIN siempre es irrestricto (es el supervisor).
-//
-// La zona virtual 'NACIONALES' agrupa las marcas sin provincia (TOP GROUP,
-// MAYORES) — mismo criterio que jerarquia.service.js (única fuente de la constante).
 
 // Zonas permitidas del usuario, o null si no hay restricción.
 function zonasDe(user) {
@@ -30,13 +26,8 @@ async function codTiendasDeZonas(zonas) {
   const rq = gen.request();
   const conds = [];
   zonas.forEach((z, i) => {
-    if (z === 'NACIONALES') {
-      conds.push(`((PROVINCIA IS NULL OR LTRIM(RTRIM(PROVINCIA)) = '')
-        AND LTRIM(RTRIM(DIRECCION)) IN (${MARCAS_NACIONALES.map((m) => `N'${m}'`).join(',')}))`);
-    } else {
-      rq.input(`z${i}`, sql.NVarChar, z);
-      conds.push(`LTRIM(RTRIM(PROVINCIA)) = @z${i}`);
-    }
+    rq.input(`z${i}`, sql.NVarChar, z);
+    conds.push(`LTRIM(RTRIM(PROVINCIA)) = @z${i}`);
   });
   const r = await rq.query(`SELECT DISTINCT CODIGO FROM EMPRESASCONTABLES WHERE ${conds.join(' OR ')}`);
   const set = new Set(r.recordset.map((x) => x.CODIGO));
@@ -60,4 +51,4 @@ async function bloqueadoPorAlcance(user, codTienda) {
   return !a.codTiendas.has(Number(codTienda));
 }
 
-module.exports = { alcanceDe, zonasDe, bloqueadoPorAlcance, MARCAS_NACIONALES };
+module.exports = { alcanceDe, zonasDe, bloqueadoPorAlcance };
