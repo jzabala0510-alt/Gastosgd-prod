@@ -49,14 +49,31 @@ function getGeneralPool() {
 // donde estan las copias de prueba (ARDENE, ADIDAS, BBW). Se cachea un pool por
 // host+BD para soportar marcas repartidas en varios servidores.
 const brandPools = new Map();
+
+// Cache negativo: si una marca no tiene BD accesible, recordar el fallo unos
+// segundos en vez de reintentar la conexión en cada tienda de esa marca. Sin
+// esto, un reporte "todas las zonas" (cientos de tiendas, muchas marcas sin BD
+// local) reintentaba el login fallido una vez por tienda — medido: 86s de
+// espera para un reporte que con este cache baja a unos pocos segundos.
+const brandFallos = new Map();
+const FALLO_TTL_MS = 60 * 1000;
+
 function getBrandPool(database, host) {
   const db = String(database || '').trim();
   if (!db) throw new Error('database de marca vacío');
   const override = (process.env.DB_FORCE_HOST || '').trim();
   const realHost = override || host || process.env.DB_SERVER || 'localhost';
   const key = `${realHost}|${db}`.toUpperCase();
+
+  const fallo = brandFallos.get(key);
+  if (fallo && Date.now() - fallo.ts < FALLO_TTL_MS) return Promise.reject(fallo.error);
+
   if (!brandPools.has(key)) {
-    const p = makePool('brand', db, realHost, 5, `Marca ${db}`).catch((e) => { brandPools.delete(key); throw e; });
+    const p = makePool('brand', db, realHost, 5, `Marca ${db}`).catch((e) => {
+      brandPools.delete(key);
+      brandFallos.set(key, { error: e, ts: Date.now() });
+      throw e;
+    });
     brandPools.set(key, p);
   }
   return brandPools.get(key);

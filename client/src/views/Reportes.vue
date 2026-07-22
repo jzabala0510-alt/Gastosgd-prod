@@ -3,7 +3,7 @@
     <div class="page__head">
       <div>
         <h1 class="page__title">Reportería</h1>
-        <p class="page__hint">Elige el tipo de reporte, la zona/tienda y el rango. Se muestran en pantalla y puedes exportarlos a Excel.</p>
+        <p class="page__hint">Elige el tipo de reporte, la zona/tienda y el rango (por fecha de solicitud). Se muestran en pantalla y puedes exportarlos a Excel.</p>
       </div>
     </div>
 

@@ -1,12 +1,12 @@
 <template>
   <div class="campana">
-    <button class="campana__btn" :class="{ 'is-open': abierto }" @click="abierto = !abierto" title="Notificaciones">
+    <button class="campana__btn" :class="{ 'is-open': abierto, 'campana__btn--nuevo': animando }" @click="abierto = !abierto" title="Notificaciones">
       <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor"
            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
         <path d="M13.73 21a2 2 0 0 1-3.46 0" />
       </svg>
-      <span v-if="total" class="campana__count">{{ total > 99 ? '99+' : total }}</span>
+      <span v-if="total" class="campana__count" :class="{ 'campana__count--nuevo': animando }">{{ total > 99 ? '99+' : total }}</span>
     </button>
 
     <div v-if="abierto" class="campana__overlay" @click="abierto = false"></div>
@@ -47,15 +47,29 @@
 import { ref, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useNotificaciones } from '../composables/useNotificaciones';
+import { reproducirSonidoNotificacion } from '../utils/sonido';
 
 const LIMITE = 3; // filas por sección en el resumen del dropdown
 const router = useRouter();
 const route = useRoute();
 const { secciones, total, irA, limpiarNotifAnalista } = useNotificaciones();
 const abierto = ref(false);
+const animando = ref(false);
+const primerRefresco = ref(true); // no sonar con lo que ya había al entrar/recargar
 
 function ir(s, it) { abierto.value = false; irA(s, it); }
 function verTodas() { abierto.value = false; router.push('/notificaciones'); }
 
 watch(() => route.path, () => { abierto.value = false; }); // cerrar al navegar
+
+// Sonido + animación solo cuando el total SUBE (nueva notificación real), nunca
+// en la primera carga de la sesión (ahí "suben" de 0 a lo que ya había pendiente).
+watch(total, (nuevo, viejo) => {
+  if (primerRefresco.value) { primerRefresco.value = false; return; }
+  if (nuevo > viejo) {
+    reproducirSonidoNotificacion();
+    animando.value = true;
+    setTimeout(() => { animando.value = false; }, 1200);
+  }
+});
 </script>

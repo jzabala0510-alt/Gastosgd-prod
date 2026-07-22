@@ -47,7 +47,9 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP }) {
   const addRow = (cod, d, est) => {
     const k = `${cod}|${(d.NUMSERIE || '').trim()}|${d.NUMFACTURA}|${(d.N || '').trim()}`;
     if (seen.has(k)) return;
-    const fechaIso = d.FECHA ? new Date(d.FECHA).toISOString().slice(0, 10) : '';
+    // El rango Desde/Hasta filtra por Fecha de Solicitud (no la fecha de la factura),
+    // a pedido del cliente. Cuando la marca no tiene esa columna, expr() la trae NULL.
+    const fechaIso = d.FechaSolicitud ? new Date(d.FechaSolicitud).toISOString().slice(0, 10) : '';
     if (desde && fechaIso && fechaIso < desde) return;
     if (hasta && fechaIso && fechaIso > hasta) return;
     if (estado && est !== estado) return;
@@ -58,7 +60,7 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP }) {
       tienda: info && info.tienda ? info.tienda.Tienda : null,
       marca: info && info.tienda ? info.tienda.Marca : null,
       numserie: d.NUMSERIE, numfactura: d.NUMFACTURA, n: d.N,
-      fecha: d.FECHA, proveedor: d.Proveedor, tipoGasto: d.TipoGasto,
+      fecha: d.FechaSolicitud, proveedor: d.Proveedor, tipoGasto: d.TipoGasto,
       totalVes: Number(d.TotalVes) || 0, pendienteVes: Number(d.PendienteVes) || 0, estado: est,
     });
   };
@@ -70,6 +72,7 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP }) {
     const q = await b.pool.request().query(`
       ${CTE_PENDIENTE}
       SELECT ec.CODIGO AS codTienda, f.NUMSERIE, f.NUMFACTURA, f.N, f.FECHA,
+        ${expr(cols, 'FECHASOLICITUD', 'DATE')} AS FechaSolicitud,
         LTRIM(RTRIM(p.NOMPROVEEDOR)) AS Proveedor,
         RIP.F_GET_COTIZACION_RIP(f.TOTALNETO, f.FECHASUFACTURA, f.FACTORMONEDA, f.CODMONEDA, 4) AS TotalVes,
         T.PENDIENTE AS PendienteVes,
@@ -115,6 +118,7 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP }) {
     const q = await b.pool.request().query(`
       ;WITH K(NUMSERIE, NUMFACTURA, N) AS (SELECT * FROM (VALUES ${valores}) v(a, b, c))
       SELECT f.NUMSERIE, f.NUMFACTURA, f.N, f.FECHA,
+        ${expr(cols, 'FECHASOLICITUD', 'DATE')} AS FechaSolicitud,
         LTRIM(RTRIM(p.NOMPROVEEDOR)) AS Proveedor,
         RIP.F_GET_COTIZACION_RIP(f.TOTALNETO, f.FECHASUFACTURA, f.FACTORMONEDA, f.CODMONEDA, 4) AS TotalVes,
         (SELECT SUM(RIP.F_GET_COTIZACION_RIP(ts.IMPORTE, ts.FECHADOCUMENTO, ts.FACTORMONEDA, ts.CODMONEDA, 4))
