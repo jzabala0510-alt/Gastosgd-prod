@@ -7,6 +7,8 @@
       </div>
     </div>
 
+    <ModalFeedback :visible="modal.visible" :titulo="modal.titulo" :mensaje="modal.mensaje" :tipo="modal.tipo" @close="onModalClose" />
+
     <div class="card"><SelectorZMT :store="store" @buscar="onTienda" /></div>
 
     <div v-if="pendientes.length" class="card colapsable-card">
@@ -57,11 +59,12 @@
             <td>{{ g.proveedor || '—' }}</td>
             <td>{{ g.tipoGasto || '—' }}</td>
             <td class="r">{{ money(g.total) }} Bs</td>
-            <td>
+            <td class="acciones-inline">
               <router-link class="btn btn--primary btn--sm"
                 :to="`/factura/${g.codTienda}/${enc(g.numserie)}/${g.numfactura}/${enc(g.n)}`">
                 Registrar pago
               </router-link>
+              <button v-if="auth.esPagosDevolver" class="btn btn--warn btn--sm" :disabled="busy" @click="devolver(g)">Devolver</button>
             </td>
           </tr>
         </tbody>
@@ -76,16 +79,23 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import SelectorZMT from '../components/SelectorZMT.vue';
+import ModalFeedback from '../components/ModalFeedback.vue';
 import { usePagosStore } from '../stores/vistas';
 import { useNotifStore } from '../stores/notificaciones';
-import { getBandeja } from '../api/facturas';
+import { useAuthStore } from '../stores/auth';
+import { useConfirm } from '../composables/useConfirm';
+import { getBandeja, accionPagoDevolver } from '../api/facturas';
 import { money, fecha } from '../utils/format';
 
 const store = usePagosStore();
 const notif = useNotifStore();
+const auth = useAuthStore();
+const { confirm } = useConfirm();
 const allItems = ref([]);
 const loading = ref(false);
 const buscado = ref(false);
+const busy = ref(false);
+const modal = ref({ visible: false, titulo: '', mensaje: '', tipo: 'success' });
 const enc = encodeURIComponent;
 const filtros = ref({ desde: '', hasta: '', proveedor: '', tipoGasto: '' });
 
@@ -120,9 +130,30 @@ const filtradas = computed(() => {
 function limpiar() { filtros.value = { desde: '', hasta: '', proveedor: '', tipoGasto: '' }; }
 function onTienda() { buscado.value = true; limpiar(); }
 
-onMounted(async () => {
+async function cargar() {
   loading.value = true;
   try { allItems.value = await getBandeja('PENDIENTE_PAGO'); }
   finally { loading.value = false; }
-});
+}
+
+async function devolver(g) {
+  const conf = await confirm({
+    titulo: 'Devolver factura', mensaje: 'La factura volverá a Auditoría para su revisión.', tipo: 'warn',
+    pedirComentario: true, comentarioRequerido: true, placeholder: 'Motivo de la devolución…', labelConfirmar: 'Devolver',
+  });
+  if (!conf.ok) return;
+  busy.value = true;
+  try {
+    await accionPagoDevolver({ codTienda: g.codTienda, numserie: g.numserie, numfactura: g.numfactura, n: g.n, marca: g.marca, decision: 'DEVUELTO', comentario: conf.comentario });
+    modal.value = { visible: true, titulo: 'Devuelta', mensaje: 'Factura devuelta a Auditoría.', tipo: 'warn' };
+  } finally { busy.value = false; }
+}
+
+function onModalClose() {
+  modal.value.visible = false;
+  notif.refrescar();
+  cargar();
+}
+
+onMounted(cargar);
 </script>

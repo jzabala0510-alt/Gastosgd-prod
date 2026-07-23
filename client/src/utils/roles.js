@@ -4,7 +4,7 @@
 // El label es el nombre del MÓDULO, no necesariamente igual al tag interno
 // (ej. ANALISTA se muestra como "Gastos": quien aprueba gastos hacia
 // Tesorería es justo quien debe ver esa bandeja).
-export const ROLES = ['ANALISTA', 'TESORERIA', 'AUDITOR', 'PAGADOR', 'PAGADAS', 'SALDOS', 'REPORTES', 'ADMIN'];
+export const ROLES = ['ANALISTA', 'TESORERIA', 'AUDITOR', 'PAGADOR', 'PAGADAS', 'SALDOS', 'REPORTES', 'PAGOS_DEVOLVER', 'ADMIN'];
 
 export const ROL_LABEL = {
   ANALISTA: 'Gastos',
@@ -14,5 +14,6 @@ export const ROL_LABEL = {
   PAGADAS: 'Pagadas',
   SALDOS: 'Saldos',
   REPORTES: 'Reportes',
+  PAGOS_DEVOLVER: 'Devolver en Pagos',
   ADMIN: 'Administrador',
 };

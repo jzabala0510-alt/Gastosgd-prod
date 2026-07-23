@@ -22,6 +22,7 @@ export const setDisponibilidad = (data) => http.post('/facturas/disponibilidad',
 export const accionAnalista = (payload) => http.post('/facturas/analista', payload).then((r) => r.data);
 export const accionTesoreria = (payload) => http.post('/facturas/tesoreria', payload).then((r) => r.data);
 export const accionAuditoria = (payload) => http.post('/facturas/auditoria', payload).then((r) => r.data);
+export const accionPagoDevolver = (payload) => http.post('/facturas/pagos-devolver', payload).then((r) => r.data);
 
 // Soportes
 export const uploadAdjuntos = (formData) => http.post('/facturas/adjuntos', formData).then((r) => r.data);

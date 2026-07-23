@@ -290,6 +290,7 @@ async function accionFactura(etapa, estadosReq, mapEstado, { codTienda, numserie
     return { error: `La factura no está pendiente en esta etapa (estado ${flujo.Estado})`, status: 409 };
   }
   const nuevo = mapEstado[decision];
+  if (!nuevo) return { error: 'Decisión inválida para esta etapa', status: 400 };
   await appPool.request().input('id', sql.Int, flujo.IdFlujo).input('e', sql.NVarChar, nuevo)
     .query('UPDATE dbo.GD_FacturaFlujo SET Estado=@e, FechaActualizacion=GETDATE(), VistoPorAnalista=0 WHERE IdFlujo=@id');
   await appPool.request().input('id', sql.Int, flujo.IdFlujo).input('et', sql.NVarChar, etapa)

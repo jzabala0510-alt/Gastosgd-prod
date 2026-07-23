@@ -24,6 +24,7 @@ export const useAuthStore = defineStore('auth', {
     esPagadas: (s) => s.roles.includes('PAGADAS') || s.roles.includes('ADMIN'),
     esSaldos: (s) => s.roles.includes('SALDOS') || s.roles.includes('ADMIN'),
     esReportes: (s) => s.roles.includes('REPORTES') || s.roles.includes('ADMIN'),
+    esPagosDevolver: (s) => s.roles.includes('PAGOS_DEVOLVER') || s.roles.includes('ADMIN'),
   },
   actions: {
     async login(password) {

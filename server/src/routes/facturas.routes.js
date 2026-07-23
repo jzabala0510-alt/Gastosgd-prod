@@ -149,6 +149,13 @@ router.post('/auditoria', requireRol('AUDITOR'), (req, res, next) =>
   ejecutarAccion(req, res, 'AUDITORIA', 'PENDIENTE_AUDITORIA',
     { APROBADO: 'PENDIENTE_PAGO', DEVUELTO: 'DEVUELTO', RECHAZADO: 'RECHAZADO' }).catch(next));
 
+// Devolver desde Pagos vuelve a Auditoría (la etapa anterior), no al Analista —
+// por eso no reutiliza el estado compartido DEVUELTO. Requiere el permiso aparte
+// PAGOS_DEVOLVER (no todo el que ve Pagos puede devolver).
+router.post('/pagos-devolver', requireRol('PAGOS_DEVOLVER'), (req, res, next) =>
+  ejecutarAccion(req, res, 'PAGADOR', 'PENDIENTE_PAGO',
+    { DEVUELTO: 'PENDIENTE_AUDITORIA' }).catch(next));
+
 // ── POST /api/facturas/pagar (multipart, PAGADOR) ─────────────────────
 // Requiere al menos 1 archivo (comprobante obligatorio).
 router.post('/pagar', requireRol('PAGADOR'), upload.array('archivos', 10), async (req, res, next) => {

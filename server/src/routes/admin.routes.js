@@ -6,7 +6,7 @@ const bancosService = require('../services/bancos.service');
 const router = Router();
 router.use(authenticate, requireRol('ADMIN')); // todo el módulo es solo para ADMIN
 
-const ROLES = ['ANALISTA', 'TESORERIA', 'AUDITOR', 'PAGADOR', 'PAGADAS', 'SALDOS', 'REPORTES', 'ADMIN'];
+const ROLES = ['ANALISTA', 'TESORERIA', 'AUDITOR', 'PAGADOR', 'PAGADAS', 'SALDOS', 'REPORTES', 'PAGOS_DEVOLVER', 'ADMIN'];
 
 // GET /api/admin/usuarios — todos los usuarios ICG (no bloqueados) + sus roles en GastosGD.
 router.get('/usuarios', async (req, res, next) => {
