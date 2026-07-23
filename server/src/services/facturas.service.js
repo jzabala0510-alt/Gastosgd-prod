@@ -1,6 +1,6 @@
 const { sql, getPool } = require('../config/db');
 const { resolverTienda } = require('./marca');
-const { CTE_PENDIENTE, columnasLibres, expr } = require('./facturasCompra.service');
+const { CTE_PENDIENTE_TIENDA, columnasLibres, expr } = require('./facturasCompra.service');
 
 const ESTADO_DEFAULT = 'PENDIENTE_ANALISTA';
 
@@ -28,7 +28,7 @@ async function listarPendientes(codTienda, estadoFiltro) {
 
   const cols = await columnasLibres(r.pool, `${r.host}|${r.dbName}`);
   const fac = await r.pool.request().input('e', sql.Int, codTienda).query(`
-    ${CTE_PENDIENTE}
+    ${CTE_PENDIENTE_TIENDA}
     SELECT f.NUMSERIE, f.NUMFACTURA, f.N, f.SUFACTURA, f.FECHA, f.FECHASUFACTURA, f.CODPROVEEDOR,
       f.TIPODOC,
       LTRIM(RTRIM(p.NOMPROVEEDOR)) AS Proveedor,
@@ -140,7 +140,7 @@ async function cobertura(codTienda, fecha) {
 
   const cols = await columnasLibres(r.pool, `${r.host}|${r.dbName}`);
   const fac = await r.pool.request().input('e', sql.Int, codTienda).query(`
-    ${CTE_PENDIENTE}
+    ${CTE_PENDIENTE_TIENDA}
     SELECT f.NUMSERIE, f.NUMFACTURA, f.N, f.SUFACTURA, f.FECHA,
       LTRIM(RTRIM(p.NOMPROVEEDOR)) AS Proveedor, T.PENDIENTE AS PendienteVes,
       ISNULL(LTRIM(RTRIM(${expr(cols, 'TIPOGASTOS')})), 'SIN ESPECIFICAR') AS TipoGasto
