@@ -32,11 +32,18 @@
             <td><b>{{ u.usuario }}</b></td>
             <td>
               <div class="roles-pick">
-                <label v-for="r in ROLES" :key="r" class="role-chip" :class="{ on: u.roles.includes(r) }">
-                  <input type="checkbox" :checked="u.roles.includes(r)" :disabled="u._saving"
-                    @change="toggleRol(u, r, $event.target.checked)" />
-                  {{ ROL_LABEL[r] }}
-                </label>
+                <template v-for="r in rolesArbol" :key="r.tag">
+                  <label class="role-chip" :class="{ on: u.roles.includes(r.tag) }">
+                    <input type="checkbox" :checked="u.roles.includes(r.tag)" :disabled="u._saving"
+                      @change="toggleRol(u, r.tag, $event.target.checked)" />
+                    {{ r.label }}
+                  </label>
+                  <label v-for="h in r.hijos" :key="h.tag" class="role-chip role-chip--sub" :class="{ on: u.roles.includes(h.tag) }">
+                    <input type="checkbox" :checked="u.roles.includes(h.tag)" :disabled="u._saving"
+                      @change="toggleRol(u, h.tag, $event.target.checked)" />
+                    ↳ {{ h.shortLabel || h.label }}
+                  </label>
+                </template>
               </div>
             </td>
             <td>
@@ -88,9 +95,14 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import { getUsuarios, setUsuario, setUsuarioZonas } from '../api/admin';
 import { getZonas } from '../api/facturas';
-import { ROLES, ROL_LABEL } from '../utils/roles';
+import { ROLES_INFO } from '../utils/roles';
 
 const PORPAGINA = 15;
+
+// Módulos (sin parent) con sus roles-acción anidados (ej. Pagos -> Devolver en Pagos),
+// para que la UI los muestre pegados a su módulo en vez de como un permiso más suelto.
+const rolesArbol = ROLES_INFO.filter((r) => !r.parent)
+  .map((r) => ({ ...r, hijos: ROLES_INFO.filter((h) => h.parent === r.tag) }));
 
 const usuarios = ref([]);
 const zonasDisp = ref([]);
@@ -163,10 +175,16 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.roles-pick { display: flex; flex-wrap: wrap; gap: 6px; }
+.roles-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .role-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border: 1px solid var(--border); border-radius: 999px; font-size: 12px; cursor: pointer; user-select: none; white-space: nowrap; }
 .role-chip.on { background: var(--accent-soft); border-color: var(--accent); color: #4f6f17; font-weight: 600; }
 .role-chip input { margin: 0; cursor: pointer; }
+
+/* Rol-acción (ej. Devolver en Pagos): permiso puntual dentro de un módulo, no
+   un módulo en sí — se muestra pegado a su padre, más chico y con borde
+   punteado para que no se confunda con los módulos completos. */
+.role-chip--sub { font-size: 11px; padding: 3px 9px; border-style: dashed; color: #92400e; margin-left: -2px; }
+.role-chip--sub.on { background: #fef3c7; border-color: #d97706; }
 
 /* Alcance por zona */
 .zona-cell { position: relative; display: inline-block; }
