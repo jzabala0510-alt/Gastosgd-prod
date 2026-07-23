@@ -36,9 +36,21 @@ body {
 .brand__logo { height: 34px; width: auto; display: block; }
 .topbar__subtitle { color: #9ca3af; font-size: 13px; }
 .topbar__user { margin-left: auto; display: flex; align-items: center; gap: 14px; }
-.topbar__userinfo { text-align: right; line-height: 1.2; }
-.topbar__name { display: block; font-size: 14px; font-weight: 600; }
-.topbar__rol { display: block; font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.4px; }
+.topbar__name { font-size: 14px; font-weight: 600; }
+
+/* Permisos del usuario: ocultos por defecto (los módulos visibles en el nav ya
+   lo dicen); solo se muestran al presionar el nombre. */
+.userchip { position: relative; }
+.userchip__btn { display: flex; align-items: center; gap: 6px; background: transparent; border: none; padding: 0; cursor: pointer; color: #fff; font: inherit; }
+.userchip__caret { font-size: 9px; color: #9ca3af; }
+.userchip__overlay { position: fixed; inset: 0; z-index: 55; }
+.userchip__pop {
+  position: absolute; top: calc(100% + 10px); right: 0; min-width: 200px;
+  background: #fff; border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: 0 14px 32px rgba(0,0,0,0.20); z-index: 60; padding: 10px 14px;
+}
+.userchip__poplabel { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--dark-2); margin-bottom: 4px; }
+.userchip__poproles { display: block; font-size: 12px; font-weight: 600; color: var(--accent-dark); }
 .topbar__logout {
   background: transparent; color: #e5e7eb; border: 1px solid var(--dark-2);
   padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 13px;

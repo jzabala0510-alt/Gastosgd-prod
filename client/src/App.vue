@@ -21,9 +21,16 @@
         </nav>
         <div class="topbar__user">
           <CampanaNotificaciones />
-          <div class="topbar__userinfo">
-            <span class="topbar__name">{{ auth.nombre }}</span>
-            <span class="topbar__rol">{{ auth.rolLabel }}</span>
+          <div class="userchip">
+            <button class="userchip__btn" @click="menuAbierto = !menuAbierto">
+              <span class="topbar__name">{{ auth.nombre }}</span>
+              <span class="userchip__caret">▾</span>
+            </button>
+            <div v-if="menuAbierto" class="userchip__overlay" @click="menuAbierto = false"></div>
+            <div v-if="menuAbierto" class="userchip__pop">
+              <span class="userchip__poplabel">Permisos</span>
+              <span class="userchip__poproles">{{ auth.rolLabel }}</span>
+            </div>
           </div>
           <button class="topbar__logout" @click="logout">Salir</button>
         </div>
@@ -36,7 +43,7 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, watch } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from './stores/auth';
 import { useNotifStore } from './stores/notificaciones';
@@ -47,6 +54,9 @@ const auth = useAuthStore();
 const notif = useNotifStore();
 const router = useRouter();
 const route = useRoute();
+const menuAbierto = ref(false);
+
+watch(() => route.path, () => { menuAbierto.value = false; }); // cerrar al navegar
 
 function refrescar() { if (auth.isAuth) notif.refrescar(); }
 
