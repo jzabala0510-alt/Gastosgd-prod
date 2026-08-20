@@ -84,7 +84,7 @@
         <tbody>
           <tr v-for="g in filtradas" :key="keyOf(g)" :class="{ sel: sel[keyOf(g)] }">
             <td><input type="checkbox" v-model="sel[keyOf(g)]" /></td>
-            <td v-if="!codTiendaEfectivo">{{ g._tiendaNombre }}</td>
+            <td v-if="!codTiendaEfectivo" style="white-space:nowrap">{{ g.Marca }} · {{ g._tiendaNombre }}</td>
             <td><code>{{ g.NumSerie }}-{{ g.NumFactura }}</code></td>
             <td>{{ fecha(g.FechaGasto) }}</td>
             <td>{{ g.Proveedor || '—' }}</td>

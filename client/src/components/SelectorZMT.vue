@@ -173,9 +173,10 @@ defineExpose({ restaurar });
    scoped, no hay colisión, y así este componente no depende de otro para renderizarse). */
 .zona-cell { position: relative; display: inline-block; width: 100%; }
 .zona-cell__btn {
+  /* Mismo tamaño que .field select/input (style.css) para que se vea igual que Zona. */
   display: inline-flex; align-items: center; gap: 8px; width: 100%;
-  padding: 5px 12px; border: 1px solid var(--border); border-radius: 8px;
-  background: #fff; font: inherit; font-size: 13px; cursor: pointer; color: #6b7280;
+  padding: 10px 12px; border: 1px solid var(--border); border-radius: 7px;
+  background: #fff; font: inherit; font-size: 14px; cursor: pointer; color: #6b7280;
 }
 .zona-cell__btn.on { border-color: var(--accent); color: #4f6f17; font-weight: 600; }
 .zona-cell__btn span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
