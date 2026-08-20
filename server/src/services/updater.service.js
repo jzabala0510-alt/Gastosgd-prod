@@ -93,7 +93,18 @@ async function descargarYAplicar(opts = {}) {
     const origen = path.join(tmpDir, entradas[0]);
 
     console.log(`[updater] 6/6 copiando ${origen} -> ${targetDir}`);
-    fs.cpSync(origen, targetDir, { recursive: true, force: true, filter: crearFiltro(targetDir) });
+    // No se copia el árbol completo de un solo golpe: si targetDir está instalado
+    // justo un nivel bajo la raíz de una unidad (ej. C:\GastosGD), fs.cpSync intenta
+    // internamente asegurar el padre del destino y termina pidiendo mkdir('C:'), que
+    // Windows rechaza (EPERM) porque una letra de unidad sola no es una ruta válida
+    // para crear. targetDir ya existe siempre (es donde corre este mismo proceso), así
+    // que se copia entrada por entrada dentro de él — el padre de cada copia pasa a ser
+    // targetDir (una carpeta normal que ya existe), nunca la raíz de la unidad.
+    if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
+    const filtro = crearFiltro(targetDir);
+    for (const entrada of fs.readdirSync(origen)) {
+      fs.cpSync(path.join(origen, entrada), path.join(targetDir, entrada), { recursive: true, force: true, filter: filtro });
+    }
     console.log('[updater] copia completa, listo para reiniciar');
 
     return { owner, repo, branch, targetDir, aplicadoEn: new Date().toISOString() };
