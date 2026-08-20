@@ -1,6 +1,7 @@
 const { sql, getPool } = require('../config/db');
 const { resolverTienda } = require('./marca');
 const { CTE_PENDIENTE, columnasLibres, expr } = require('./facturasCompra.service');
+const bancosService = require('./bancos.service');
 
 const esc = (s) => String(s).replace(/'/g, "''");
 
@@ -50,8 +51,12 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP }) {
     // El rango Desde/Hasta filtra por Fecha de Solicitud (no la fecha de la factura),
     // a pedido del cliente. Cuando la marca no tiene esa columna, expr() la trae NULL.
     const fechaIso = d.FechaSolicitud ? new Date(d.FechaSolicitud).toISOString().slice(0, 10) : '';
-    if (desde && fechaIso && fechaIso < desde) return;
-    if (hasta && fechaIso && fechaIso > hasta) return;
+    // Si hay un rango activo y la factura no tiene FechaSolicitud, no se puede confirmar
+    // que caiga dentro del rango — se excluye (antes se colaba siempre, con la columna
+    // Fecha en blanco, sin respetar el rango elegido).
+    if ((desde || hasta) && !fechaIso) return;
+    if (desde && fechaIso < desde) return;
+    if (hasta && fechaIso > hasta) return;
     if (estado && est !== estado) return;
     seen.add(k);
     const info = infoCache[cod];
@@ -146,7 +151,9 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP }) {
   return { rows, totales: { count: rows.length, totalVes: Math.round(totalVes * 100) / 100, porEstado } };
 }
 
-// GET /api/reportes/saldos?zona=&codTienda=&fecha= — saldos y préstamos por tienda.
+// GET /api/reportes/saldos?zona=&codTienda=&fecha= — saldos por tienda, desglosados por
+// banco (mismo patrón que fondos.service.js::zonaConSaldos(), la pantalla de Carga de
+// Saldos) en vez de un solo número unificado.
 async function saldos({ zona, codTienda, fecha }) {
   const pool = await getPool();
   const rq = pool.request().input('f', sql.Date, fecha);
@@ -158,29 +165,64 @@ async function saldos({ zona, codTienda, fecha }) {
   } else {
     filtro = 'ec.CODIGO > 0'; // Todas las zonas
   }
-  const r = await rq.query(`
-    SELECT t.zona, t.tienda, t.marca, ISNULL(d.MontoDisponible, 0) AS saldo
-    FROM (
-      SELECT DISTINCT ec.CODIGO AS codTienda,
-             LTRIM(RTRIM(ec.DESCRIPCION)) AS tienda,
-             LTRIM(RTRIM(ec.DIRECCION))   AS marca,
-             LTRIM(RTRIM(ec.PROVINCIA)) AS zona
-      FROM GENERAL.dbo.EMPRESASCONTABLES ec
-      WHERE ${filtro}
-    ) t
-    OUTER APPLY (
-      -- Suma de bancos cargados + ajuste manual de Tesorería (si lo hubo).
-      SELECT
-        ISNULL((SELECT SUM(MontoDisponible) FROM dbo.GD_DispTienda WHERE CodTienda = t.codTienda AND Fecha = @f), 0)
-        + ISNULL((SELECT MontoAjuste FROM dbo.GD_DispAjuste WHERE CodTienda = t.codTienda AND Fecha = @f), 0)
-        AS MontoDisponible
-    ) d
-    ORDER BY t.tienda`);
-  const rows = r.recordset.map((x) => ({
-    zona: x.zona, tienda: x.tienda, marca: x.marca, saldo: Number(x.saldo) || 0,
-  }));
+  const [r, activos] = await Promise.all([
+    rq.query(`
+      SELECT t.codTienda, t.zona, t.tienda, t.marca, d.IdBanco, d.MontoDisponible AS monto, a.MontoAjuste AS ajuste
+      FROM (
+        SELECT DISTINCT ec.CODIGO AS codTienda,
+               LTRIM(RTRIM(ec.DESCRIPCION)) AS tienda,
+               LTRIM(RTRIM(ec.DIRECCION))   AS marca,
+               LTRIM(RTRIM(ec.PROVINCIA)) AS zona
+        FROM GENERAL.dbo.EMPRESASCONTABLES ec
+        WHERE ${filtro}
+      ) t
+      OUTER APPLY (
+        SELECT IdBanco, MontoDisponible FROM dbo.GD_DispTienda WHERE CodTienda = t.codTienda AND Fecha = @f
+      ) d
+      OUTER APPLY (
+        -- Ajuste manual de Tesorería: es por tienda, sin banco asociado (GD_DispAjuste no tiene IdBanco).
+        SELECT MontoAjuste FROM dbo.GD_DispAjuste WHERE CodTienda = t.codTienda AND Fecha = @f
+      ) a
+      ORDER BY t.tienda`),
+    bancosService.listarActivos(),
+  ]);
+
+  const porTienda = new Map();
+  const idsConDatos = new Set();
+  for (const row of r.recordset) {
+    if (!porTienda.has(row.codTienda)) {
+      porTienda.set(row.codTienda, {
+        codTienda: row.codTienda, zona: row.zona, tienda: row.tienda, marca: row.marca,
+        bancos: {}, ajuste: Number(row.ajuste) || 0,
+      });
+    }
+    if (row.IdBanco != null) {
+      porTienda.get(row.codTienda).bancos[row.IdBanco] = Number(row.monto) || 0;
+      idsConDatos.add(row.IdBanco);
+    }
+  }
+
+  // Columnas: bancos activos + cualquier banco con plata registrada aunque esté inactivo
+  // (para no esconder ese saldo del desglose por haberse dado de baja después de usarse).
+  const idsActivos = new Set(activos.map((b) => b.IdBanco));
+  const idsExtra = [...idsConDatos].filter((id) => !idsActivos.has(id));
+  let bancosExtra = [];
+  if (idsExtra.length) {
+    const rb = await pool.request().query(`SELECT IdBanco, Nombre FROM dbo.GD_Banco WHERE IdBanco IN (${idsExtra.map(Number).join(',')})`);
+    bancosExtra = rb.recordset;
+  }
+  const bancos = [...activos, ...bancosExtra];
+
+  // Total = TODO lo registrado en GD_DispTienda (igual que el cálculo anterior, sin
+  // filtrar por banco activo) + el ajuste — el desglose por banco no debe restar plata
+  // del total que ya se veía.
+  const rows = [...porTienda.values()].map((t) => {
+    const totalBancos = Object.values(t.bancos).reduce((a, v) => a + v, 0);
+    return { ...t, saldo: Math.round((totalBancos + t.ajuste) * 100) / 100 };
+  });
   const totalSaldo = rows.reduce((a, x) => a + x.saldo, 0);
   return {
+    bancos,
     rows,
     totales: { count: rows.length, totalSaldo: Math.round(totalSaldo * 100) / 100 },
   };

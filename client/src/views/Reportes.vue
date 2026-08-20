@@ -54,11 +54,17 @@
           <button class="btn btn--sm" :disabled="!rep.rows.length" @click="exportar" style="margin-left:auto">⬇ Exportar a Excel</button>
         </div>
         <div class="table-wrap" v-if="rep.rows.length"><table class="grid">
-          <thead><tr><th>Zona</th><th>Tienda</th><th>Marca</th><th class="r">Saldo (Bs)</th></tr></thead>
+          <thead><tr>
+            <th>Zona</th><th>Tienda</th><th>Marca</th>
+            <th v-for="b in rep.bancos" :key="b.IdBanco" class="r">{{ b.Nombre }}</th>
+            <th class="r">Ajuste</th><th class="r">Total (Bs)</th>
+          </tr></thead>
           <tbody>
             <tr v-for="(f, i) in rep.rows" :key="i">
               <td>{{ f.zona || '—' }}</td><td>{{ f.tienda || '—' }}</td><td>{{ f.marca || '—' }}</td>
-              <td class="r">{{ money(f.saldo) }}</td>
+              <td v-for="b in rep.bancos" :key="b.IdBanco" class="r">{{ money(f.bancos[b.IdBanco]) }}</td>
+              <td class="r">{{ money(f.ajuste) }}</td>
+              <td class="r"><b>{{ money(f.saldo) }}</b></td>
             </tr>
           </tbody>
         </table></div>
@@ -165,7 +171,13 @@ function exportar() {
   if (!rep.value || !rep.value.rows.length) return;
   let data;
   if (repKind.value === 'saldos') {
-    data = rep.value.rows.map((f) => ({ Zona: f.zona, Tienda: f.tienda, Marca: f.marca, 'Saldo (Bs)': Number(f.saldo) || 0 }));
+    data = rep.value.rows.map((f) => {
+      const fila = { Zona: f.zona, Tienda: f.tienda, Marca: f.marca };
+      for (const b of rep.value.bancos) fila[b.Nombre] = Number(f.bancos[b.IdBanco]) || 0;
+      fila.Ajuste = Number(f.ajuste) || 0;
+      fila['Total (Bs)'] = Number(f.saldo) || 0;
+      return fila;
+    });
   } else {
     data = rep.value.rows.map((f) => ({
       Zona: f.zona, Tienda: f.tienda, Marca: f.marca, Factura: `${f.numserie}-${f.numfactura}`, Fecha: fecha(f.fecha),
