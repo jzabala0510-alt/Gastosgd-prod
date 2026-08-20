@@ -8,8 +8,8 @@
     </div>
 
     <div class="card">
-      <SelectorZMT :store="store" @buscar="onTienda" />
-      <div v-if="store.codTienda && !aviso" class="fondos" style="margin-top:16px">
+      <SelectorZMT :store="store" multiple @buscar="onTienda" />
+      <div v-if="codTiendaEfectivo && !aviso" class="fondos" style="margin-top:16px">
         <div class="field">
           <label>Monto disponible hoy (Bs)</label>
           <InputMonto v-model="monto" />
@@ -21,7 +21,7 @@
         <button class="btn btn--primary" @click="guardar" :disabled="busy">Guardar fondos</button>
       </div>
       <div v-if="cob" class="fondos__resumen">
-        <span>Disponible{{ !store.codTienda ? ' total' : '' }}: <b>{{ money(cob.disponible) }} Bs</b></span>
+        <span>Disponible{{ !codTiendaEfectivo ? ' total' : '' }}: <b>{{ money(cob.disponible) }} Bs</b></span>
         <template v-if="prestamo !== 0">
           <span>Préstamo: <b :class="prestamo < 0 ? 'txt--danger' : 'txt--accent'">{{ prestamo > 0 ? '+' : '' }}{{ money(prestamo) }} Bs</b></span>
           <span>Total efectivo: <b>{{ money(efectivo) }} Bs</b></span>
@@ -76,7 +76,7 @@
         <thead>
           <tr>
             <th><input type="checkbox" :checked="todasMarcadas" @change="toggleTodas($event)" /></th>
-            <th v-if="!store.codTienda">Tienda</th>
+            <th v-if="!codTiendaEfectivo">Tienda</th>
             <th>Factura</th><th>Fecha</th><th>Proveedor</th><th>Tipo de gasto</th><th class="r">Pendiente (Bs)</th><th class="r">Acumulado (Bs)</th>
             <th>Cobertura</th><th>Acciones</th>
           </tr>
@@ -84,7 +84,7 @@
         <tbody>
           <tr v-for="g in filtradas" :key="keyOf(g)" :class="{ sel: sel[keyOf(g)] }">
             <td><input type="checkbox" v-model="sel[keyOf(g)]" /></td>
-            <td v-if="!store.codTienda">{{ g._tiendaNombre }}</td>
+            <td v-if="!codTiendaEfectivo">{{ g._tiendaNombre }}</td>
             <td><code>{{ g.NumSerie }}-{{ g.NumFactura }}</code></td>
             <td>{{ fecha(g.FechaGasto) }}</td>
             <td>{{ g.Proveedor || '—' }}</td>
@@ -128,7 +128,12 @@ const enc = encodeURIComponent;
 const pendientes = computed(() => notif.detalle.tesoreria);
 const pendientesAbiertos = ref(false);
 function saltarA(it) {
-  store.$patch({ zona: it.zona, marca: it.marca, codTienda: it.codTienda, autobuscar: true });
+  store.$patch({
+    zona: it.zona, marca: it.marca, codTienda: it.codTienda,
+    marcasSel: it.marca ? [it.marca] : [],
+    tiendasSel: [{ CodTienda: it.codTienda, Tienda: it.tienda, Marca: it.marca }],
+    autobuscar: true,
+  });
 }
 const monto = ref(0);
 const prestamo = ref(0);
@@ -145,6 +150,10 @@ const keyOf = (g) => `${g.CodTienda || store.codTienda}-${g.NumSerie}-${g.NumFac
 // Disponible real = monto registrado + préstamo/ajuste manual (puede ser negativo).
 const efectivo = computed(() => (cob.value?.disponible || 0) + (prestamo.value || 0));
 const cubre = computed(() => cob.value && cob.value.totalPendiente <= efectivo.value);
+// Tienda "efectiva" sobre la que tiene sentido cargar/editar disponibilidad de un día:
+// la del salto desde notificación, o la única marcada en el selector múltiple. Con 0 o
+// 2+ tiendas marcadas no hay "una" tienda — ver "Guardar fondos".
+const codTiendaEfectivo = computed(() => store.codTienda || (store.tiendasSel.length === 1 ? store.tiendasSel[0].CodTienda : null));
 const tiposGasto = computed(() => {
   if (!cob.value) return [];
   return [...new Set(cob.value.gastos.map((g) => g.TipoGasto || 'SIN ESPECIFICAR'))].sort();
@@ -176,26 +185,29 @@ function toggleTodas(e) {
 
 async function onTienda(cod) {
   cob.value = null; aviso.value = ''; prestamo.value = 0;
-  if (!cod && !store.tiendas.length) return;
+  if (!cod && !store.tiendasSel.length && !store.tiendas.length) return;
   await load();
 }
 
 async function load() {
   loading.value = true;
   try {
-    if (store.codTienda) {
-      // Tienda específica — comportamiento original
-      const r = await getCobertura(store.codTienda, hoy);
+    if (codTiendaEfectivo.value) {
+      // Una sola tienda efectiva (salto desde notificación, o exactamente 1 tienda
+      // marcada en el selector múltiple) — comportamiento original
+      const cod = codTiendaEfectivo.value;
+      const r = await getCobertura(cod, hoy);
       if (r.disponibleLocal === false) { aviso.value = r.aviso; cob.value = null; }
       else {
-        cob.value = { ...r, gastos: r.gastos.map((g) => ({ ...g, CodTienda: store.codTienda, Marca: r.tienda?.Marca || '' })) };
+        cob.value = { ...r, gastos: r.gastos.map((g) => ({ ...g, CodTienda: cod, Marca: r.tienda?.Marca || '' })) };
         monto.value = r.disponible ?? 0;
         Object.keys(sel).forEach((k) => delete sel[k]);
-        r.gastos.forEach((g) => { sel[keyOf({ ...g, CodTienda: store.codTienda })] = !!g.Cubierto; });
+        r.gastos.forEach((g) => { sel[keyOf({ ...g, CodTienda: cod })] = !!g.Cubierto; });
       }
     } else {
-      // Todas las tiendas del scope — llamadas en paralelo, disponibles sumados
-      const scopeTiendas = store.tiendas;
+      // Varias tiendas elegidas en el selector múltiple, o ninguna (toda la zona/marca) —
+      // llamadas en paralelo, disponibles sumados
+      const scopeTiendas = store.tiendasSel.length ? store.tiendasSel : store.tiendas;
       const results = await Promise.all(scopeTiendas.map((t) => getCobertura(t.CodTienda, hoy).catch(() => null)));
       const allGastos = [];
       let totalDisp = 0, totalPend = 0;
@@ -237,10 +249,10 @@ async function load() {
 }
 
 async function guardar() {
-  if (!store.codTienda) return;
+  if (!codTiendaEfectivo.value) return;
   busy.value = true;
   try {
-    await setDisponibilidad({ codTienda: store.codTienda, fecha: hoy, montoDisponible: monto.value });
+    await setDisponibilidad({ codTienda: codTiendaEfectivo.value, fecha: hoy, montoDisponible: monto.value });
     await load();
   } finally { busy.value = false; }
 }
