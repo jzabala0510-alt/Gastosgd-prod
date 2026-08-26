@@ -73,7 +73,7 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPen
       tienda: info && info.tienda ? info.tienda.Tienda : null,
       marca: info && info.tienda ? info.tienda.Marca : null,
       numserie: d.NUMSERIE, numfactura: d.NUMFACTURA, n: d.N,
-      fecha: d.FechaSolicitud, proveedor: d.Proveedor, tipoGasto: d.TipoGasto,
+      fecha: d.FechaSolicitud, fechaFactura: d.FECHA, proveedor: d.Proveedor, tipoGasto: d.TipoGasto,
       totalVes: Number(d.TotalVes) || 0, pendienteVes: Number(d.PendienteVes) || 0, estado: est,
     });
   };

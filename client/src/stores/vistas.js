@@ -59,6 +59,23 @@ export const useTesoreriaStore = defineStore('vista-tesoreria', {
   },
 });
 
+// Archivo: mismo filtro que Gastos (fechas exactas, no rango) a propósito — José
+// pidió que la búsqueda/filtrado se vea igual que en Gastos, no como Reportería.
+export const useArchivoStore = defineStore('vista-archivo', {
+  state: () => ({
+    zona: '',
+    marca: '',
+    codTienda: null,
+    tiendas: [],
+    autobuscar: false,
+    filtros: { fecha: '', fechaSolicitud: '', proveedor: '', estado: '', tipoGasto: '' },
+    seleccion: null,
+  }),
+  actions: {
+    limpiarFiltros() { this.filtros = { fecha: '', fechaSolicitud: '', proveedor: '', estado: '', tipoGasto: '' }; },
+  },
+});
+
 export const useAuditoriaStore = crearVista('auditoria');
 export const usePagosStore = crearVista('pagos');
 export const usePagadasStore = crearVista('pagadas');
