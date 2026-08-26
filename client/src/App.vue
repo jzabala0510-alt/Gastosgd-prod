@@ -12,6 +12,7 @@
           <router-link v-if="auth.esPagadas" to="/pagadas" :class="{ active: $route.path === '/pagadas' }">Pagadas</router-link>
           <router-link v-if="auth.esSaldos" to="/fondos" :class="{ active: $route.path === '/fondos' }">Saldos</router-link>
           <router-link v-if="auth.esReportes" to="/reportes" :class="{ active: $route.path === '/reportes' }">Reportes</router-link>
+          <router-link v-if="auth.esArchivo" to="/archivo" :class="{ active: $route.path === '/archivo' || $route.path.startsWith('/factura') }">Archivo</router-link>
           <router-link v-if="auth.esAdmin" to="/admin/usuarios" :class="{ active: $route.path === '/admin/usuarios' }">Usuarios</router-link>
           <router-link v-if="auth.esAdmin" to="/admin/bancos" :class="{ active: $route.path === '/admin/bancos' }">Bancos</router-link>
           <router-link v-if="auth.esAdmin" to="/actualizador" :class="{ active: $route.path === '/actualizador' }">Actualizador</router-link>

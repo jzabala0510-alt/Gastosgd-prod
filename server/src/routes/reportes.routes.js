@@ -7,7 +7,7 @@ const router = Router();
 router.use(authenticate);
 
 // GET /api/reportes?desde=&hasta=&zona=&codTienda=&estado=&soloERP=&soloPendientes=
-router.get('/', requireRol('ANALISTA', 'TESORERIA', 'AUDITOR', 'REPORTES'), async (req, res, next) => {
+router.get('/', requireRol('ANALISTA', 'TESORERIA', 'AUDITOR', 'REPORTES', 'ARCHIVO'), async (req, res, next) => {
   try {
     const { desde, hasta, zona, estado, soloERP, soloPendientes } = req.query;
     const codTienda = req.query.codTienda ? Number(req.query.codTienda) : null;

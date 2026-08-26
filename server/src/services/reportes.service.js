@@ -68,6 +68,7 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPen
     seen.add(k);
     const info = infoCache[cod];
     rows.push({
+      codTienda: cod,
       zona: info && info.tienda ? info.tienda.Zona : null,
       tienda: info && info.tienda ? info.tienda.Tienda : null,
       marca: info && info.tienda ? info.tienda.Marca : null,

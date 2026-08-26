@@ -18,6 +18,7 @@ export const ROLES_INFO = [
   { tag: 'PAGADAS', label: 'Pagadas' },
   { tag: 'SALDOS', label: 'Saldos' },
   { tag: 'REPORTES', label: 'Reportes' },
+  { tag: 'ARCHIVO', label: 'Archivo' },
   { tag: 'ADMIN', label: 'Administrador' },
 ];
 
