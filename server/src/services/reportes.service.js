@@ -5,9 +5,15 @@ const bancosService = require('./bancos.service');
 
 const esc = (s) => String(s).replace(/'/g, "''");
 
+// Etapas "vivas" (no resueltas todavía) para el reporte "Pendientes por fecha de
+// solicitud". DEVUELTO cuenta como pendiente: necesita que el Analista la reenvíe,
+// no es un cierre. PAGADO y RECHAZADO quedan afuera a propósito (ya se resolvieron).
+const ESTADOS_PENDIENTES = ['PENDIENTE_ANALISTA', 'PENDIENTE_TESORERIA', 'PENDIENTE_AUDITORIA', 'PENDIENTE_PAGO', 'PAGO_EN_REVISION', 'DEVUELTO'];
+
 // GET /api/reportes — listado consolidado multi-marca (pendientes + faltantes del flujo).
 // zona vacía = todas las zonas. soloERP=1 → solo pendientes ERP (sin faltantes del flujo).
-async function listado({ desde, hasta, zona, codTienda, estado, soloERP }) {
+// soloPendientes=1 → cualquier etapa de ESTADOS_PENDIENTES (en vez de un solo `estado`).
+async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPendientes }) {
   const appPool = await getPool();
   const vacio = { rows: [], totales: { count: 0, totalVes: 0, porEstado: {} } };
 
@@ -58,6 +64,7 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP }) {
     if (desde && fechaIso < desde) return;
     if (hasta && fechaIso > hasta) return;
     if (estado && est !== estado) return;
+    if (soloPendientes && !ESTADOS_PENDIENTES.includes(est)) return;
     seen.add(k);
     const info = infoCache[cod];
     rows.push({

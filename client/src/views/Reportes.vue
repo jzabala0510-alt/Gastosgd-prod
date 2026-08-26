@@ -106,6 +106,7 @@ import { money, fecha, hoyVE } from '../utils/format';
 
 const TIPOS = {
   gastos: { label: 'Gastos (general)', estado: null, saldos: false },
+  pendientes_solicitud: { label: 'Pendientes por fecha de solicitud', estado: null, saldos: false, soloPendientes: true },
   pendiente_tesoreria: { label: 'Pendiente por aprobar Tesorería', estado: 'PENDIENTE_TESORERIA', saldos: false },
   pendiente_auditoria: { label: 'Pendiente por Auditoría', estado: 'PENDIENTE_AUDITORIA', saldos: false },
   pendiente_pago: { label: 'Pendientes por pagar', estado: 'PENDIENTE_PAGO', saldos: false },
@@ -155,6 +156,11 @@ async function generar() {
         // Gastos (general) = solo lo NO procesado (pendiente por el analista).
         params.soloERP = '1';
         params.estado = 'PENDIENTE_ANALISTA';
+      } else if (TIPOS[tipo.value].soloPendientes) {
+        // Cualquier etapa pendiente (Analista, Tesorería, Auditoría, Pago, Devuelto...),
+        // sin fijar una sola — ver ESTADOS_PENDIENTES en reportes.service.js.
+        params.soloERP = '1';
+        params.soloPendientes = '1';
       } else {
         const est = TIPOS[tipo.value].estado;
         if (est) params.estado = est;
