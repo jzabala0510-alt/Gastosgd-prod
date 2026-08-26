@@ -61,6 +61,9 @@ export const useTesoreriaStore = defineStore('vista-tesoreria', {
 
 // Archivo: mismo filtro que Gastos (fechas exactas, no rango) a propósito — José
 // pidió que la búsqueda/filtrado se vea igual que en Gastos, no como Reportería.
+// `facturas` (el resultado de la última búsqueda) vive acá, no en un ref local del
+// componente: al entrar a ver el detalle de un gasto y volver, la vista se remonta
+// desde cero — sin esto se perdía lo ya cargado y había que buscar de nuevo.
 export const useArchivoStore = defineStore('vista-archivo', {
   state: () => ({
     zona: '',
@@ -70,6 +73,7 @@ export const useArchivoStore = defineStore('vista-archivo', {
     autobuscar: false,
     filtros: { fecha: '', fechaSolicitud: '', proveedor: '', estado: '', tipoGasto: '' },
     seleccion: null,
+    facturas: [],
   }),
   actions: {
     limpiarFiltros() { this.filtros = { fecha: '', fechaSolicitud: '', proveedor: '', estado: '', tipoGasto: '' }; },

@@ -11,7 +11,7 @@
 
     <p v-if="loading" class="page__hint">Cargando facturas…</p>
     <div v-else-if="aviso" class="empty card">{{ aviso }}</div>
-    <template v-else-if="facturas.length">
+    <template v-else-if="store.facturas.length">
       <div class="card filtros">
         <div class="field" :class="{ 'field--active': store.filtros.fecha }"><label>Fecha</label><input type="date" v-model="store.filtros.fecha" /></div>
         <div class="field" :class="{ 'field--active': store.filtros.fechaSolicitud }"><label>F. Solicitud</label><input type="date" v-model="store.filtros.fechaSolicitud" /></div>
@@ -33,7 +33,7 @@
         <button class="btn btn--sm" @click="store.limpiarFiltros()">Limpiar</button>
       </div>
 
-      <p class="page__hint">{{ filtradas.length }} de {{ facturas.length }} facturas</p>
+      <p class="page__hint">{{ filtradas.length }} de {{ store.facturas.length }} facturas</p>
       <div class="table-wrap"><table class="grid">
         <thead><tr>
           <th v-if="!store.codTienda">Tienda</th>
@@ -70,7 +70,6 @@ import { money, fecha } from '../utils/format';
 
 const router = useRouter();
 const store = useArchivoStore();
-const facturas = ref([]);
 const loading = ref(false);
 const aviso = ref('');
 
@@ -79,13 +78,13 @@ const estClass = (e) => ESTADO_CLASS[e] || 'badge--gray';
 const key = (f) => `${f.numserie}-${f.numfactura}-${f.n}`;
 
 const tiposGasto = computed(() => {
-  const set = new Set(facturas.value.map((f) => f.tipoGasto || 'SIN ESPECIFICAR'));
+  const set = new Set(store.facturas.map((f) => f.tipoGasto || 'SIN ESPECIFICAR'));
   return [...set].sort();
 });
 
 const filtradas = computed(() => {
   const ff = store.filtros;
-  return facturas.value.filter((f) => {
+  return store.facturas.filter((f) => {
     if (ff.fecha && (f.fechaFactura || '').slice(0, 10) !== ff.fecha) return false;
     if (ff.fechaSolicitud && (f.fecha || '').slice(0, 10) !== ff.fechaSolicitud) return false;
     if (ff.proveedor && !(f.proveedor || '').toLowerCase().includes(ff.proveedor.toLowerCase())) return false;
@@ -99,13 +98,13 @@ const filtradas = computed(() => {
 // tienda), reportes.service.js::listado() ya resuelve zona completa del lado del
 // servidor y trae CUALQUIER estado (incl. ya pagado/rechazado) en una sola llamada.
 async function onTienda(cod) {
-  facturas.value = [];
+  store.facturas = [];
   aviso.value = '';
   if (!store.zona) return;
   loading.value = true;
   try {
     const out = await getReporte({ zona: store.zona, codTienda: cod || undefined });
-    facturas.value = out.rows;
+    store.facturas = out.rows;
   } finally { loading.value = false; }
 }
 
