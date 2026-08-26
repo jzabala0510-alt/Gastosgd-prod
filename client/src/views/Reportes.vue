@@ -32,6 +32,9 @@
       <template v-if="esSaldos">
         <div class="field" :class="{ 'field--active': fechaSaldos }"><label>Fecha</label><input type="date" v-model="fechaSaldos" /></div>
       </template>
+      <template v-else-if="esFechaUnica">
+        <div class="field" :class="{ 'field--active': fechaSolicitud }"><label>Fecha de solicitud</label><input type="date" v-model="fechaSolicitud" /></div>
+      </template>
       <template v-else>
         <div class="field" :class="{ 'field--active': desde }"><label>Desde</label><input type="date" v-model="desde" /></div>
         <div class="field" :class="{ 'field--active': hasta }"><label>Hasta</label><input type="date" v-model="hasta" /></div>
@@ -106,7 +109,7 @@ import { money, fecha, hoyVE } from '../utils/format';
 
 const TIPOS = {
   gastos: { label: 'Gastos (general)', estado: null, saldos: false },
-  pendientes_solicitud: { label: 'Pendientes por fecha de solicitud', estado: null, saldos: false, soloPendientes: true },
+  pendientes_solicitud: { label: 'Gastos (Fecha de solicitud)', estado: null, saldos: false, soloPendientes: true },
   pendiente_tesoreria: { label: 'Pendiente por aprobar Tesorería', estado: 'PENDIENTE_TESORERIA', saldos: false },
   pendiente_auditoria: { label: 'Pendiente por Auditoría', estado: 'PENDIENTE_AUDITORIA', saldos: false },
   pendiente_pago: { label: 'Pendientes por pagar', estado: 'PENDIENTE_PAGO', saldos: false },
@@ -124,11 +127,13 @@ const estado = ref('');
 const desde = ref('');
 const hasta = ref('');
 const fechaSaldos = ref(hoyVE());
+const fechaSolicitud = ref(hoyVE());
 const rep = ref(null);
 const repKind = ref('gastos');
 const loading = ref(false);
 
 const esSaldos = computed(() => TIPOS[tipo.value].saldos);
+const esFechaUnica = computed(() => !!TIPOS[tipo.value].soloPendientes);
 const estLabel = (e) => ESTADO_LABEL[e] || e;
 const estClass = (e) => ESTADO_CLASS[e] || 'badge--gray';
 
@@ -165,8 +170,13 @@ async function generar() {
         const est = TIPOS[tipo.value].estado;
         if (est) params.estado = est;
       }
-      if (desde.value) params.desde = desde.value;
-      if (hasta.value) params.hasta = hasta.value;
+      if (esFechaUnica.value) {
+        params.desde = fechaSolicitud.value;
+        params.hasta = fechaSolicitud.value;
+      } else {
+        if (desde.value) params.desde = desde.value;
+        if (hasta.value) params.hasta = hasta.value;
+      }
       rep.value = await getReporte(params);
       repKind.value = 'gastos';
     }
