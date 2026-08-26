@@ -18,7 +18,7 @@
     <p v-if="loading" class="page__hint">Cargando bancos…</p>
     <template v-else>
       <div class="table-wrap"><table class="grid">
-        <thead><tr><th>Banco</th><th>Estado</th><th></th></tr></thead>
+        <thead><tr><th>Banco</th><th>Estado</th><th>Negativo</th><th></th></tr></thead>
         <tbody>
           <tr v-for="b in bancos" :key="b.IdBanco">
             <td>
@@ -27,6 +27,7 @@
               <b v-else>{{ b.Nombre }}</b>
             </td>
             <td><span class="badge" :class="b.Activo ? 'badge--green' : 'badge--gray'">{{ b.Activo ? 'Activo' : 'Inactivo' }}</span></td>
+            <td><span class="badge" :class="b.PermiteNegativo ? 'badge--amber' : 'badge--gray'">{{ b.PermiteNegativo ? 'Sí' : 'No' }}</span></td>
             <td class="acciones-inline">
               <template v-if="editando === b.IdBanco">
                 <button class="btn btn--sm btn--primary" @click="guardarNombre(b)">Guardar</button>
@@ -36,6 +37,9 @@
                 <button class="btn btn--sm" @click="iniciarEdicion(b)">Renombrar</button>
                 <button class="btn btn--sm" :class="b.Activo ? 'btn--warn' : 'btn--primary'" @click="toggleActivo(b)">
                   {{ b.Activo ? 'Desactivar' : 'Activar' }}
+                </button>
+                <button class="btn btn--sm" @click="toggleNegativo(b)">
+                  {{ b.PermiteNegativo ? 'Quitar negativo' : 'Permitir negativo' }}
                 </button>
               </template>
             </td>
@@ -108,6 +112,15 @@ async function toggleActivo(b) {
   }
   try {
     await actualizarBanco(b.IdBanco, { activo: !b.Activo });
+    await cargar();
+  } catch (e) { error(e, 'No se pudo actualizar el banco.'); }
+}
+
+// A diferencia de desactivar, esto no esconde nada ni borra historial — no hace
+// falta modal de confirmación, es un simple metadato de cómo se valida el input.
+async function toggleNegativo(b) {
+  try {
+    await actualizarBanco(b.IdBanco, { permiteNegativo: !b.PermiteNegativo });
     await cargar();
   } catch (e) { error(e, 'No se pudo actualizar el banco.'); }
 }

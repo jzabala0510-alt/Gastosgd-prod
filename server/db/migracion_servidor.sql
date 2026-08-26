@@ -404,6 +404,21 @@ WHERE NOT EXISTS (SELECT 1 FROM dbo.GD_BancoAlias a WHERE a.ColumnaNorm = v.Colu
 GO
 
 -- ============================================================
+-- 6g2. GD_Banco.PermiteNegativo — columnas tipo "Abonos" que llevan montos
+--      negativos en Carga de Saldos (a diferencia de un banco real). Por
+--      defecto 0 en todos: hay que marcarlo explícito desde Admin -> Bancos
+--      para no arriesgar que un banco real termine aceptando negativos.
+-- ============================================================
+IF COL_LENGTH('dbo.GD_Banco', 'PermiteNegativo') IS NULL
+BEGIN
+    ALTER TABLE dbo.GD_Banco ADD PermiteNegativo BIT NOT NULL CONSTRAINT DF_GD_Banco_PermiteNeg DEFAULT (0);
+    PRINT '✅ Columna PermiteNegativo agregada a GD_Banco.';
+END
+ELSE
+    PRINT '⏭  Columna PermiteNegativo ya existe en GD_Banco.';
+GO
+
+-- ============================================================
 -- 6g. Actualizar CHECK constraints — PAGO_EN_REVISION (v11)
 --     Para instalaciones existentes donde las tablas ya existían:
 --     los bloques CREATE TABLE arriba ya tienen los valores correctos,

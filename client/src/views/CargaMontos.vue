@@ -51,7 +51,7 @@
             <td><b>{{ t.tienda }}</b></td>
             <td>{{ t.marca || '—' }}</td>
             <td v-for="b in bancos" :key="b.IdBanco" class="r">
-              <InputMonto class="monto-input" v-model="montos[t.codTienda][b.IdBanco]" />
+              <InputMonto class="monto-input" v-model="montos[t.codTienda][b.IdBanco]" :permitir-negativo="b.PermiteNegativo" />
             </td>
             <td class="r"><b>{{ money(totalTienda(t)) }}</b></td>
           </tr>

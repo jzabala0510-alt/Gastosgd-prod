@@ -76,7 +76,7 @@ router.post('/bancos', async (req, res, next) => {
   }
 });
 
-// PUT /api/admin/bancos/:id — { nombre?, activo? }
+// PUT /api/admin/bancos/:id — { nombre?, activo?, permiteNegativo? }
 router.put('/bancos/:id', async (req, res, next) => {
   try {
     const id = Number(req.params.id);
@@ -85,7 +85,7 @@ router.put('/bancos/:id', async (req, res, next) => {
       return res.status(400).json({ error: 'Nombre requerido' });
     }
     const nombre = req.body?.nombre != null ? String(req.body.nombre).trim().toUpperCase() : null;
-    await bancosService.actualizar(id, { nombre, activo: req.body?.activo });
+    await bancosService.actualizar(id, { nombre, activo: req.body?.activo, permiteNegativo: req.body?.permiteNegativo });
     res.json({ ok: true });
   } catch (e) { next(e); }
 });

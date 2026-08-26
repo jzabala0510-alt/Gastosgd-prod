@@ -7,7 +7,7 @@ const { sql, getPool } = require('../config/db');
 async function listarActivos() {
   const pool = await getPool();
   const r = await pool.request().query(
-    'SELECT IdBanco, Nombre FROM dbo.GD_Banco WHERE Activo = 1 ORDER BY Orden, Nombre');
+    'SELECT IdBanco, Nombre, PermiteNegativo FROM dbo.GD_Banco WHERE Activo = 1 ORDER BY Orden, Nombre');
   return r.recordset;
 }
 
@@ -15,7 +15,7 @@ async function listarActivos() {
 async function listarTodos() {
   const pool = await getPool();
   const r = await pool.request().query(
-    'SELECT IdBanco, Nombre, Orden, Activo FROM dbo.GD_Banco ORDER BY Orden, Nombre');
+    'SELECT IdBanco, Nombre, Orden, Activo, PermiteNegativo FROM dbo.GD_Banco ORDER BY Orden, Nombre');
   return r.recordset;
 }
 
@@ -31,7 +31,7 @@ async function crear(nombre) {
   return { idBanco: r.recordset[0].IdBanco, nombre, orden };
 }
 
-async function actualizar(id, { nombre, activo }) {
+async function actualizar(id, { nombre, activo, permiteNegativo }) {
   const pool = await getPool();
   if (nombre != null) {
     await pool.request().input('id', sql.Int, id).input('n', sql.NVarChar, nombre)
@@ -40,6 +40,10 @@ async function actualizar(id, { nombre, activo }) {
   if (activo != null) {
     await pool.request().input('id', sql.Int, id).input('a', sql.Bit, !!activo)
       .query('UPDATE dbo.GD_Banco SET Activo = @a WHERE IdBanco = @id');
+  }
+  if (permiteNegativo != null) {
+    await pool.request().input('id', sql.Int, id).input('p', sql.Bit, !!permiteNegativo)
+      .query('UPDATE dbo.GD_Banco SET PermiteNegativo = @p WHERE IdBanco = @id');
   }
 }
 
