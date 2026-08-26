@@ -5,6 +5,7 @@
         <h1 class="page__title">
           Factura {{ f.NUMSERIE }}-{{ f.NUMFACTURA }}
           <span class="badge" :class="estClass(f.Estado)">{{ estLabel(f.Estado) }}</span>
+          <span v-if="soloLectura" class="badge badge--gray">Solo lectura (Archivo)</span>
         </h1>
         <p class="page__hint">{{ f.tienda?.Tienda }} · {{ f.tienda?.Zona }} · {{ f.tienda?.Marca }}</p>
       </div>
@@ -162,7 +163,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { getFacturaDetalle, accionAnalista, accionTesoreria, accionAuditoria, uploadAdjuntos, deleteAdjunto, pagarFactura, confirmarPago, marcarVisto } from '../api/facturas';
 import { useAuthStore } from '../stores/auth';
 import { useNotifStore } from '../stores/notificaciones';
@@ -177,6 +178,10 @@ const auth = useAuthStore();
 const notif = useNotifStore();
 const { confirm } = useConfirm();
 const router = useRouter();
+const route = useRoute();
+// Llegó desde el módulo Archivo (?soloVista=1): ninguna acción debe estar disponible
+// acá, sin importar qué otros roles tenga el usuario — Archivo es solo para consultar.
+const soloLectura = computed(() => route.query.soloVista === '1');
 const f = ref(null);
 const busy = ref(false);
 const msg = ref('');
@@ -195,14 +200,14 @@ const payload = computed(() => ({
   numfactura: Number(props.numfactura), n: props.n, marca: f.value?.tienda?.Marca,
 }));
 
-const esAna = computed(() => ['PENDIENTE_ANALISTA', 'DEVUELTO', 'RECHAZADO'].includes(f.value?.Estado) && auth.esAnalista);
+const esAna = computed(() => !soloLectura.value && ['PENDIENTE_ANALISTA', 'DEVUELTO', 'RECHAZADO'].includes(f.value?.Estado) && auth.esAnalista);
 const sinSoportes = computed(() => esAna.value && !(f.value?.adjuntos || []).some((a) => a.Tipo !== 'COMPROBANTE'));
-const esTes = computed(() => f.value?.Estado === 'PENDIENTE_TESORERIA' && auth.esTesoreria);
-const esAud = computed(() => f.value?.Estado === 'PENDIENTE_AUDITORIA' && auth.esAuditor);
-const esPag = computed(() => f.value?.Estado === 'PENDIENTE_PAGO' && auth.esPagador);
-const esAudPago = computed(() => f.value?.Estado === 'PAGO_EN_REVISION' && auth.esAuditor);
+const esTes = computed(() => !soloLectura.value && f.value?.Estado === 'PENDIENTE_TESORERIA' && auth.esTesoreria);
+const esAud = computed(() => !soloLectura.value && f.value?.Estado === 'PENDIENTE_AUDITORIA' && auth.esAuditor);
+const esPag = computed(() => !soloLectura.value && f.value?.Estado === 'PENDIENTE_PAGO' && auth.esPagador);
+const esAudPago = computed(() => !soloLectura.value && f.value?.Estado === 'PAGO_EN_REVISION' && auth.esAuditor);
 const puedeDecidir = computed(() => esAna.value || esTes.value || esAud.value);
-const puedeAdjuntar = computed(() => f.value?.Estado !== 'PAGADO' && (auth.esAnalista || auth.esTesoreria || auth.esAuditor));
+const puedeAdjuntar = computed(() => !soloLectura.value && f.value?.Estado !== 'PAGADO' && (auth.esAnalista || auth.esTesoreria || auth.esAuditor));
 
 const tituloDecision = computed(() =>
   esAna.value ? 'Revisión del Analista' : esTes.value ? 'Decisión de Tesorería' : 'Decisión de Auditoría');
@@ -238,7 +243,7 @@ async function cargar() {
   f.value = await getFacturaDetalle(Number(props.codTienda), props.numserie, Number(props.numfactura), props.n);
   // Avisos informativos del analista (PAGADO/RECHAZADO): al abrirlos se marcan vistos.
   // Las DEVUELTO no: son tareas que solo salen del contador al reenviarlas.
-  if (['PAGADO', 'RECHAZADO'].includes(f.value?.Estado) && auth.esAnalista) {
+  if (!soloLectura.value && ['PAGADO', 'RECHAZADO'].includes(f.value?.Estado) && auth.esAnalista) {
     marcarVisto({ codTienda: Number(props.codTienda), numserie: props.numserie, numfactura: Number(props.numfactura), n: props.n })
       .then(() => notif.refrescar()).catch(() => {});
   }

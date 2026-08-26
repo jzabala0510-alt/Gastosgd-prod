@@ -111,6 +111,9 @@ async function onTienda(cod) {
 
 function abrir(f) {
   store.seleccion = key(f);
-  router.push(`/factura/${f.codTienda}/${encodeURIComponent(f.numserie)}/${f.numfactura}/${encodeURIComponent(f.n)}`);
+  router.push({
+    path: `/factura/${f.codTienda}/${encodeURIComponent(f.numserie)}/${f.numfactura}/${encodeURIComponent(f.n)}`,
+    query: { soloVista: '1' },
+  });
 }
 </script>
