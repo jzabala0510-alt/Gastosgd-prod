@@ -15,33 +15,6 @@
 
     <p v-if="msg" class="login__error">{{ msg }}</p>
 
-    <!-- Presupuesto: cargar la factura real, igual de dedicada que "Registrar Pago" -->
-    <div class="card" v-if="f.EsPresupuesto && !tieneFactura && puedeAdjuntar">
-      <h3 class="card__title">Cargar Factura del Presupuesto</h3>
-      <p class="page__hint">Este gasto es un presupuesto. Sube aquí la factura real cuando llegue — se necesita antes de poder confirmar el pago.</p>
-      <div class="uploader">
-        <label class="uploader__drop">
-          <input type="file" multiple @change="onFacturaPresupuesto" hidden />
-          <span class="uploader__icon">🧾</span>
-          <span class="uploader__droptext"><b>Haz clic para seleccionar la factura</b><small>Foto o PDF de la factura real</small></span>
-        </label>
-        <ul v-if="facturaPresupuesto.length" class="uploader__files">
-          <li v-for="(file, i) in facturaPresupuesto" :key="i" class="uploader__chip">
-            <span>{{ file.name }}</span>
-            <button type="button" @click="facturaPresupuesto.splice(i, 1)" aria-label="Quitar">✕</button>
-          </li>
-        </ul>
-      </div>
-      <div style="margin-top:14px">
-        <button class="btn btn--primary uploader__btn" :class="{ 'btn--pulse': facturaPresupuesto.length && !busy }"
-                :disabled="!facturaPresupuesto.length || busy" @click="subirFacturaPresupuesto">
-          {{ busy ? 'Subiendo…' : (facturaPresupuesto.length
-            ? `⬆ Subir factura (${facturaPresupuesto.length} archivo${facturaPresupuesto.length > 1 ? 's' : ''})`
-            : 'Selecciona la factura para continuar') }}
-        </button>
-      </div>
-    </div>
-
     <div class="cols">
       <div class="card">
         <h3 class="card__title">Datos de la factura</h3>
@@ -147,6 +120,36 @@
           {{ busy ? 'Registrando…' : (comprobantes.length
             ? `✓ Registrar pago (${comprobantes.length} comprobante${comprobantes.length > 1 ? 's' : ''})`
             : 'Selecciona el comprobante para continuar') }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Presupuesto: cargar la factura real, solo al Auditor en el momento de
+         confirmar el pago — es donde vive el bloqueo real; en cualquier otra
+         etapa (Analista, Tesorería, la 1ª aprobación del Auditor hacia Pagos)
+         el presupuesto avanza sin pedir la factura. -->
+    <div class="card" v-if="esAudPago && f.EsPresupuesto && !tieneFactura">
+      <h3 class="card__title">Cargar Factura del Presupuesto</h3>
+      <p class="page__hint">Este gasto es un presupuesto. Sube aquí la factura real — se necesita antes de poder confirmar el pago.</p>
+      <div class="uploader">
+        <label class="uploader__drop">
+          <input type="file" multiple @change="onFacturaPresupuesto" hidden />
+          <span class="uploader__icon">🧾</span>
+          <span class="uploader__droptext"><b>Haz clic para seleccionar la factura</b><small>Foto o PDF de la factura real</small></span>
+        </label>
+        <ul v-if="facturaPresupuesto.length" class="uploader__files">
+          <li v-for="(file, i) in facturaPresupuesto" :key="i" class="uploader__chip">
+            <span>{{ file.name }}</span>
+            <button type="button" @click="facturaPresupuesto.splice(i, 1)" aria-label="Quitar">✕</button>
+          </li>
+        </ul>
+      </div>
+      <div style="margin-top:14px">
+        <button class="btn btn--primary uploader__btn" :class="{ 'btn--pulse': facturaPresupuesto.length && !busy }"
+                :disabled="!facturaPresupuesto.length || busy" @click="subirFacturaPresupuesto">
+          {{ busy ? 'Subiendo…' : (facturaPresupuesto.length
+            ? `⬆ Subir factura (${facturaPresupuesto.length} archivo${facturaPresupuesto.length > 1 ? 's' : ''})`
+            : 'Selecciona la factura para continuar') }}
         </button>
       </div>
     </div>
