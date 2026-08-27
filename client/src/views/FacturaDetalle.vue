@@ -15,6 +15,33 @@
 
     <p v-if="msg" class="login__error">{{ msg }}</p>
 
+    <!-- Presupuesto: cargar la factura real, igual de dedicada que "Registrar Pago" -->
+    <div class="card" v-if="f.EsPresupuesto && !tieneFactura && puedeAdjuntar">
+      <h3 class="card__title">Cargar Factura del Presupuesto</h3>
+      <p class="page__hint">Este gasto es un presupuesto. Sube aquí la factura real cuando llegue — se necesita antes de poder confirmar el pago.</p>
+      <div class="uploader">
+        <label class="uploader__drop">
+          <input type="file" multiple @change="onFacturaPresupuesto" hidden />
+          <span class="uploader__icon">🧾</span>
+          <span class="uploader__droptext"><b>Haz clic para seleccionar la factura</b><small>Foto o PDF de la factura real</small></span>
+        </label>
+        <ul v-if="facturaPresupuesto.length" class="uploader__files">
+          <li v-for="(file, i) in facturaPresupuesto" :key="i" class="uploader__chip">
+            <span>{{ file.name }}</span>
+            <button type="button" @click="facturaPresupuesto.splice(i, 1)" aria-label="Quitar">✕</button>
+          </li>
+        </ul>
+      </div>
+      <div style="margin-top:14px">
+        <button class="btn btn--primary uploader__btn" :class="{ 'btn--pulse': facturaPresupuesto.length && !busy }"
+                :disabled="!facturaPresupuesto.length || busy" @click="subirFacturaPresupuesto">
+          {{ busy ? 'Subiendo…' : (facturaPresupuesto.length
+            ? `⬆ Subir factura (${facturaPresupuesto.length} archivo${facturaPresupuesto.length > 1 ? 's' : ''})`
+            : 'Selecciona la factura para continuar') }}
+        </button>
+      </div>
+    </div>
+
     <div class="cols">
       <div class="card">
         <h3 class="card__title">Datos de la factura</h3>
@@ -32,8 +59,9 @@
           <span>Total: <b>{{ money(f.TotalVes) }}</b> Bs</span>
           <span class="totals__total">Pendiente: <b>{{ money(f.PendienteVes) }}</b> Bs</span>
         </div>
-        <label v-if="esAna" class="presupuesto-check">
+        <label v-if="esAna" class="presupuesto-check" :class="{ 'presupuesto-check--on': f.EsPresupuesto }">
           <input type="checkbox" :checked="f.EsPresupuesto" :disabled="busy" @change="onTogglePresupuesto($event.target.checked)" />
+          <span class="presupuesto-check__icon">📋</span>
           Marcar como Presupuesto
         </label>
       </div>
@@ -65,10 +93,6 @@
               <button type="button" @click="nuevos.splice(i, 1)" aria-label="Quitar">✕</button>
             </li>
           </ul>
-          <label v-if="f.EsPresupuesto && !tieneFactura" class="presupuesto-check">
-            <input type="checkbox" v-model="esFacturaUpload" />
-            Esta es la factura del presupuesto
-          </label>
           <button class="btn btn--primary uploader__btn" :class="{ 'btn--pulse': nuevos.length && !busy }"
                   :disabled="!nuevos.length || busy" @click="subir">
             {{ busy ? 'Subiendo…' : (nuevos.length ? `⬆ Subir ${nuevos.length} archivo${nuevos.length > 1 ? 's' : ''}` : 'Selecciona archivos para subir') }}
@@ -196,7 +220,7 @@ const f = ref(null);
 const busy = ref(false);
 const msg = ref('');
 const nuevos = ref([]);
-const esFacturaUpload = ref(false);
+const facturaPresupuesto = ref([]);
 const comprobantes = ref([]);
 const modal = ref({ visible: false, titulo: '', mensaje: '', tipo: 'success' });
 
@@ -266,19 +290,32 @@ async function cargar() {
 }
 function onFiles(e) { nuevos.value.push(...Array.from(e.target.files)); e.target.value = ''; }
 function onComprobantes(e) { comprobantes.value.push(...Array.from(e.target.files)); e.target.value = ''; }
+function onFacturaPresupuesto(e) { facturaPresupuesto.value.push(...Array.from(e.target.files)); e.target.value = ''; }
 
 async function subir() {
   busy.value = true; msg.value = '';
   try {
     const fd = new FormData();
     Object.entries(payload.value).forEach(([k, v]) => { if (v != null) fd.append(k, v); });
-    if (esFacturaUpload.value) fd.append('tipo', 'FACTURA');
     nuevos.value.forEach((file) => fd.append('archivos', file));
     await uploadAdjuntos(fd);
     nuevos.value = [];
-    esFacturaUpload.value = false;
     await cargar();
   } catch (e) { msg.value = e.response?.data?.error || 'No se pudieron subir los soportes.'; }
+  finally { busy.value = false; }
+}
+
+async function subirFacturaPresupuesto() {
+  busy.value = true; msg.value = '';
+  try {
+    const fd = new FormData();
+    Object.entries(payload.value).forEach(([k, v]) => { if (v != null) fd.append(k, v); });
+    fd.append('tipo', 'FACTURA');
+    facturaPresupuesto.value.forEach((file) => fd.append('archivos', file));
+    await uploadAdjuntos(fd);
+    facturaPresupuesto.value = [];
+    await cargar();
+  } catch (e) { msg.value = e.response?.data?.error || 'No se pudo subir la factura.'; }
   finally { busy.value = false; }
 }
 
