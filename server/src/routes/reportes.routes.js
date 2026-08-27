@@ -6,12 +6,12 @@ const reportesService = require('../services/reportes.service');
 const router = Router();
 router.use(authenticate);
 
-// GET /api/reportes?desde=&hasta=&zona=&codTienda=&estado=&soloERP=&soloPendientes=
+// GET /api/reportes?desde=&hasta=&zona=&codTienda=&estado=&soloERP=&soloPendientes=&soloPresupuestos=
 router.get('/', requireRol('ANALISTA', 'TESORERIA', 'AUDITOR', 'REPORTES', 'ARCHIVO'), async (req, res, next) => {
   try {
-    const { desde, hasta, zona, estado, soloERP, soloPendientes } = req.query;
+    const { desde, hasta, zona, estado, soloERP, soloPendientes, soloPresupuestos } = req.query;
     const codTienda = req.query.codTienda ? Number(req.query.codTienda) : null;
-    const out = await reportesService.listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPendientes });
+    const out = await reportesService.listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPendientes, soloPresupuestos });
     res.json(out);
   } catch (e) { next(e); }
 });

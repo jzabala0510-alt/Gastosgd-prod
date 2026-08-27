@@ -10,13 +10,13 @@ async function getOrCreateFlujo(appPool, { codTienda, numserie, numfactura, n, m
   const r = await appPool.request()
     .input('c', sql.Int, codTienda).input('s', sql.NVarChar, numserie)
     .input('f', sql.Int, numfactura).input('n', sql.NVarChar, n)
-    .query('SELECT IdFlujo, Estado FROM dbo.GD_FacturaFlujo WHERE CodTienda=@c AND NumSerie=@s AND NumFactura=@f AND N=@n');
+    .query('SELECT IdFlujo, Estado, EsPresupuesto FROM dbo.GD_FacturaFlujo WHERE CodTienda=@c AND NumSerie=@s AND NumFactura=@f AND N=@n');
   if (r.recordset.length) return r.recordset[0];
   const ins = await appPool.request()
     .input('c', sql.Int, codTienda).input('s', sql.NVarChar, numserie)
     .input('f', sql.Int, numfactura).input('n', sql.NVarChar, n).input('m', sql.NVarChar, marca || null)
     .query(`INSERT INTO dbo.GD_FacturaFlujo (CodTienda, NumSerie, NumFactura, N, Marca, Estado)
-            OUTPUT INSERTED.IdFlujo, INSERTED.Estado VALUES (@c,@s,@f,@n,@m,'${ESTADO_DEFAULT}')`);
+            OUTPUT INSERTED.IdFlujo, INSERTED.Estado, INSERTED.EsPresupuesto VALUES (@c,@s,@f,@n,@m,'${ESTADO_DEFAULT}')`);
   return ins.recordset[0];
 }
 
@@ -64,6 +64,18 @@ async function marcarVisto({ codTienda, numserie, numfactura, n }) {
     .input('f', sql.Int, Number(numfactura)).input('n', sql.NVarChar, String(n))
     .query(`UPDATE dbo.GD_FacturaFlujo SET VistoPorAnalista = 1
             WHERE CodTienda=@c AND NumSerie=@s AND NumFactura=@f AND N=@n AND Estado IN ('PAGADO','RECHAZADO')`);
+}
+
+// Marca/desmarca un gasto como presupuesto (el Analista, al revisarlo). A
+// diferencia de marcarVisto, acá NO se puede asumir que ya existe una fila en
+// GD_FacturaFlujo (se puede marcar en un gasto recién entrado) — por eso pasa
+// por getOrCreateFlujo primero, igual que guardarAdjuntos/pagar/confirmarPago.
+async function marcarPresupuesto({ codTienda, numserie, numfactura, n, marca, esPresupuesto }) {
+  const appPool = await getPool();
+  const flujo = await getOrCreateFlujo(appPool, { codTienda, numserie, numfactura, n, marca });
+  await appPool.request().input('id', sql.Int, flujo.IdFlujo).input('p', sql.Bit, !!esPresupuesto)
+    .query('UPDATE dbo.GD_FacturaFlujo SET EsPresupuesto=@p WHERE IdFlujo=@id');
+  return { esPresupuesto: !!esPresupuesto };
 }
 
 // Últimas facturas en estado PAGADO para una tienda (ventana en horas).
@@ -226,7 +238,7 @@ async function detalle({ codTienda, numserie, numfactura, n }) {
   const appPool = await getPool();
   const flq = await appPool.request().input('c', sql.Int, codTienda).input('s', sql.NVarChar, numserie)
     .input('f', sql.Int, numfactura).input('n', sql.NVarChar, n)
-    .query('SELECT IdFlujo, Estado FROM dbo.GD_FacturaFlujo WHERE CodTienda=@c AND NumSerie=@s AND NumFactura=@f AND N=@n');
+    .query('SELECT IdFlujo, Estado, EsPresupuesto FROM dbo.GD_FacturaFlujo WHERE CodTienda=@c AND NumSerie=@s AND NumFactura=@f AND N=@n');
   const flujo = flq.recordset[0];
   let adjuntos = [], aprobaciones = [];
   if (flujo) {
@@ -239,7 +251,8 @@ async function detalle({ codTienda, numserie, numfactura, n }) {
   }
   return {
     ...factura, tienda: { codTienda: Number(codTienda), ...r.tienda },
-    Estado: flujo ? flujo.Estado : ESTADO_DEFAULT, lineas: lin.recordset, adjuntos, aprobaciones,
+    Estado: flujo ? flujo.Estado : ESTADO_DEFAULT, EsPresupuesto: flujo ? !!flujo.EsPresupuesto : false,
+    lineas: lin.recordset, adjuntos, aprobaciones,
   };
 }
 
@@ -332,6 +345,17 @@ async function confirmarPago({ codTienda, numserie, numfactura, n, marca, decisi
   if (flujo.Estado !== 'PAGO_EN_REVISION') {
     return { error: `La factura no está pendiente de confirmación (estado: ${flujo.Estado})`, status: 409 };
   }
+  // Presupuestos: pueden pasar por Auditoría→Pagos y ser pagados con normalidad (el
+  // Pagador sube su comprobante igual que cualquier gasto) — el bloqueo es solo acá,
+  // en la confirmación final del Auditor, que es donde no debe poder marcarse como
+  // PAGADO sin que se haya cargado la factura real como adjunto Tipo='FACTURA'.
+  if (decision === 'CONFIRMADO' && flujo.EsPresupuesto) {
+    const chk = await appPool.request().input('id', sql.Int, flujo.IdFlujo)
+      .query("SELECT TOP 1 1 AS x FROM dbo.GD_FacturaAdjunto WHERE IdFlujo=@id AND Tipo='FACTURA'");
+    if (!chk.recordset.length) {
+      return { error: 'Falta cargar la factura del presupuesto antes de confirmar el pago.', status: 409 };
+    }
+  }
   const nuevo = decision === 'CONFIRMADO' ? 'PAGADO' : 'PENDIENTE_PAGO';
   await appPool.request().input('id', sql.Int, flujo.IdFlujo).input('e', sql.NVarChar, nuevo)
     .query('UPDATE dbo.GD_FacturaFlujo SET Estado=@e, FechaActualizacion=GETDATE(), VistoPorAnalista=0 WHERE IdFlujo=@id');
@@ -346,9 +370,23 @@ async function confirmarPago({ codTienda, numserie, numfactura, n, marca, decisi
 async function bandeja(estado, alcance) {
   const appPool = await getPool();
   const fl = await appPool.request().input('e', sql.NVarChar, estado)
-    .query('SELECT TOP 200 IdFlujo, CodTienda, Marca, NumSerie, NumFactura, N, Estado FROM dbo.GD_FacturaFlujo WHERE Estado=@e ORDER BY FechaActualizacion DESC');
+    .query('SELECT TOP 200 IdFlujo, CodTienda, Marca, NumSerie, NumFactura, N, Estado, EsPresupuesto FROM dbo.GD_FacturaFlujo WHERE Estado=@e ORDER BY FechaActualizacion DESC');
 
   const filas = alcance.irrestricto ? fl.recordset : fl.recordset.filter((row) => alcance.codTiendas.has(row.CodTienda));
+
+  // Presupuestos sin la factura real cargada todavía: el botón "Confirmar pago" de
+  // la bandeja PAGO_EN_REVISION (que no pasa por FacturaDetalle.vue) necesita saber
+  // cuáles para deshabilitarse, en vez de que el clic choque en silencio contra el
+  // bloqueo de confirmarPago(). Se computa para cualquier estado de bandeja — para
+  // PENDIENTE_AUDITORIA da igual (ahí no aplica ningún bloqueo), es información de
+  // más pero inofensiva. Una sola consulta, no una por fila.
+  const idsPresupuesto = filas.filter((row) => row.EsPresupuesto).map((row) => row.IdFlujo);
+  let conFactura = new Set();
+  if (idsPresupuesto.length) {
+    const rf = await appPool.request()
+      .query(`SELECT DISTINCT IdFlujo FROM dbo.GD_FacturaAdjunto WHERE Tipo='FACTURA' AND IdFlujo IN (${idsPresupuesto.join(',')})`);
+    conFactura = new Set(rf.recordset.map((x) => x.IdFlujo));
+  }
 
   const cache = {};
   const out = [];
@@ -376,12 +414,13 @@ async function bandeja(estado, alcance) {
       marca: row.Marca, numserie: row.NumSerie, numfactura: row.NumFactura, n: row.N, estado: row.Estado,
       proveedor: fac ? fac.Proveedor : null, fecha: fac ? fac.FECHA : null, total: fac ? fac.TotalVes : null,
       tipoGasto: fac ? fac.TipoGasto : null,
+      necesitaFactura: !!row.EsPresupuesto && !conFactura.has(row.IdFlujo),
     });
   }
   return out;
 }
 
 module.exports = {
-  listarPendientes, marcarVisto, pagadasRecientes, cobertura, guardarAjusteDisponibilidad,
+  listarPendientes, marcarVisto, marcarPresupuesto, pagadasRecientes, cobertura, guardarAjusteDisponibilidad,
   detalle, guardarAdjuntos, eliminarAdjunto, accionFactura, pagar, confirmarPago, bandeja,
 };

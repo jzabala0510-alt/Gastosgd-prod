@@ -110,7 +110,9 @@
               <td class="r">{{ money(g.total) }} Bs</td>
               <td class="acciones-inline">
                 <router-link class="btn btn--sm" :to="`/factura/${g.codTienda}/${enc(g.numserie)}/${g.numfactura}/${enc(g.n)}`">Ver</router-link>
-                <button class="btn btn--primary btn--sm" :disabled="busy" @click="confirmar(g, 'CONFIRMADO')">Confirmar pago</button>
+                <button class="btn btn--primary btn--sm" :disabled="busy || g.necesitaFactura"
+                        :title="g.necesitaFactura ? 'Falta cargar la factura del presupuesto antes de confirmar el pago.' : ''"
+                        @click="confirmar(g, 'CONFIRMADO')">Confirmar pago</button>
                 <button class="btn btn--warn btn--sm" :disabled="busy" @click="confirmar(g, 'DEVUELTO')">Devolver al Pagador</button>
               </td>
             </tr>
@@ -215,6 +217,8 @@ async function dec(g, decision) {
     if (decision === 'APROBADO') modal.value = { visible: true, titulo: 'Aprobada', mensaje: 'Factura enviada al módulo de Pagos.', tipo: 'success' };
     else if (decision === 'DEVUELTO') modal.value = { visible: true, titulo: 'Devuelta', mensaje: 'Factura devuelta al Analista.', tipo: 'warn' };
     else modal.value = { visible: true, titulo: 'Rechazada', mensaje: 'Factura rechazada.', tipo: 'error' };
+  } catch (e) {
+    modal.value = { visible: true, titulo: 'No se pudo completar', mensaje: e.response?.data?.error || 'Ocurrió un error al registrar la decisión.', tipo: 'error' };
   } finally { busy.value = false; }
 }
 
@@ -228,6 +232,8 @@ async function confirmar(g, decision) {
     await confirmarPago({ codTienda: g.codTienda, numserie: g.numserie, numfactura: g.numfactura, n: g.n, marca: g.marca, decision, comentario: conf.comentario });
     if (decision === 'CONFIRMADO') modal.value = { visible: true, titulo: 'Pago confirmado', mensaje: 'La factura fue marcada como pagada.', tipo: 'success' };
     else modal.value = { visible: true, titulo: 'Devuelta al Pagador', mensaje: 'El Pagador deberá subir un nuevo comprobante.', tipo: 'warn' };
+  } catch (e) {
+    modal.value = { visible: true, titulo: 'No se pudo completar', mensaje: e.response?.data?.error || 'Ocurrió un error al procesar la decisión.', tipo: 'error' };
   } finally { busy.value = false; }
 }
 

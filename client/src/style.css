@@ -286,6 +286,9 @@ code { background: #f3f4f6; padding: 1px 6px; border-radius: 4px; font-size: 12p
 .totals__total { font-size: 16px; }
 .totals__total b { color: var(--accent-dark); }
 
+.presupuesto-check { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.presupuesto-check input { width: 16px; height: 16px; cursor: pointer; }
+
 /* ── Uploader ───────────────────────────────────────────── */
 .uploader { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
 .uploader__label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px; }

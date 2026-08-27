@@ -47,6 +47,19 @@ router.post('/marcar-visto', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// ── POST /api/facturas/presupuesto — el Analista marca/desmarca un gasto como
+// presupuesto. Requiere getOrCreateFlujo (a diferencia de marcar-visto, el
+// gasto puede no tener fila en GD_FacturaFlujo todavía). ──────────────────
+router.post('/presupuesto', requireRol('ANALISTA'), async (req, res, next) => {
+  try {
+    const { codTienda, numserie, numfactura, n, marca, esPresupuesto } = req.body || {};
+    if (!codTienda || !numserie || !numfactura || !n) return res.status(400).json({ error: 'Faltan datos de la factura' });
+    if (await bloqueadoPorAlcance(req.user, codTienda)) return res.status(403).json({ error: FUERA_ALCANCE });
+    const out = await facturasService.marcarPresupuesto({ codTienda, numserie, numfactura, n, marca, esPresupuesto });
+    res.json({ ok: true, ...out });
+  } catch (e) { next(e); }
+});
+
 // ── GET /api/facturas/pagadas-recientes?codTienda= ────────────────────
 // Devuelve las últimas 20 facturas en estado PAGADO para una tienda.
 router.get('/pagadas-recientes', async (req, res, next) => {

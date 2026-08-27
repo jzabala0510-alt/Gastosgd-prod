@@ -5,6 +5,7 @@
         <h1 class="page__title">
           Factura {{ f.NUMSERIE }}-{{ f.NUMFACTURA }}
           <span class="badge" :class="estClass(f.Estado)">{{ estLabel(f.Estado) }}</span>
+          <span v-if="f.EsPresupuesto" class="badge badge--blue">Presupuesto</span>
           <span v-if="soloLectura" class="badge badge--gray">Solo lectura (Archivo)</span>
         </h1>
         <p class="page__hint">{{ f.tienda?.Tienda }} · {{ f.tienda?.Zona }} · {{ f.tienda?.Marca }}</p>
@@ -31,6 +32,10 @@
           <span>Total: <b>{{ money(f.TotalVes) }}</b> Bs</span>
           <span class="totals__total">Pendiente: <b>{{ money(f.PendienteVes) }}</b> Bs</span>
         </div>
+        <label v-if="esAna" class="presupuesto-check">
+          <input type="checkbox" :checked="f.EsPresupuesto" :disabled="busy" @change="onTogglePresupuesto($event.target.checked)" />
+          Marcar como Presupuesto
+        </label>
       </div>
 
       <div class="card">
@@ -60,6 +65,10 @@
               <button type="button" @click="nuevos.splice(i, 1)" aria-label="Quitar">✕</button>
             </li>
           </ul>
+          <label v-if="f.EsPresupuesto && !tieneFactura" class="presupuesto-check">
+            <input type="checkbox" v-model="esFacturaUpload" />
+            Esta es la factura del presupuesto
+          </label>
           <button class="btn btn--primary uploader__btn" :class="{ 'btn--pulse': nuevos.length && !busy }"
                   :disabled="!nuevos.length || busy" @click="subir">
             {{ busy ? 'Subiendo…' : (nuevos.length ? `⬆ Subir ${nuevos.length} archivo${nuevos.length > 1 ? 's' : ''}` : 'Selecciona archivos para subir') }}
@@ -122,8 +131,9 @@
     <div class="card" v-if="esAudPago">
       <h3 class="card__title">Confirmar Pago</h3>
       <p class="page__hint">El Pagador ha subido el comprobante de pago. Revisa los adjuntos y confirma o devuelve.</p>
+      <p v-if="faltaFactura" class="soporte-aviso">⚠ Este presupuesto necesita la factura cargada antes de poder confirmar el pago.</p>
       <div class="acciones-inline" style="margin-top:12px">
-        <button class="btn btn--primary" :disabled="busy" @click="confirmarDesdeDetalle('CONFIRMADO')">
+        <button class="btn btn--primary" :disabled="busy || faltaFactura" @click="confirmarDesdeDetalle('CONFIRMADO')">
           {{ busy ? 'Procesando…' : '✓ Confirmar pago' }}
         </button>
         <button class="btn btn--warn" :disabled="busy" @click="confirmarDesdeDetalle('DEVUELTO')">
@@ -164,7 +174,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { getFacturaDetalle, accionAnalista, accionTesoreria, accionAuditoria, uploadAdjuntos, deleteAdjunto, pagarFactura, confirmarPago, marcarVisto } from '../api/facturas';
+import { getFacturaDetalle, accionAnalista, accionTesoreria, accionAuditoria, uploadAdjuntos, deleteAdjunto, pagarFactura, confirmarPago, marcarVisto, marcarPresupuesto } from '../api/facturas';
 import { useAuthStore } from '../stores/auth';
 import { useNotifStore } from '../stores/notificaciones';
 import { useConfirm } from '../composables/useConfirm';
@@ -186,6 +196,7 @@ const f = ref(null);
 const busy = ref(false);
 const msg = ref('');
 const nuevos = ref([]);
+const esFacturaUpload = ref(false);
 const comprobantes = ref([]);
 const modal = ref({ visible: false, titulo: '', mensaje: '', tipo: 'success' });
 
@@ -208,6 +219,11 @@ const esPag = computed(() => !soloLectura.value && f.value?.Estado === 'PENDIENT
 const esAudPago = computed(() => !soloLectura.value && f.value?.Estado === 'PAGO_EN_REVISION' && auth.esAuditor);
 const puedeDecidir = computed(() => esAna.value || esTes.value || esAud.value);
 const puedeAdjuntar = computed(() => !soloLectura.value && f.value?.Estado !== 'PAGADO' && (auth.esAnalista || auth.esTesoreria || auth.esAuditor));
+const tieneFactura = computed(() => (f.value?.adjuntos || []).some((a) => a.Tipo === 'FACTURA'));
+// El bloqueo de Presupuesto es solo en la confirmación final del pago (esAudPago) — un
+// presupuesto SÍ puede pasar por Auditoría→Pagos y ser pagado con normalidad; lo único
+// que no puede pasar sin la factura real es quedar marcado PAGADO en firme.
+const faltaFactura = computed(() => esAudPago.value && f.value?.EsPresupuesto && !tieneFactura.value);
 
 const tituloDecision = computed(() =>
   esAna.value ? 'Revisión del Analista' : esTes.value ? 'Decisión de Tesorería' : 'Decisión de Auditoría');
@@ -256,11 +272,22 @@ async function subir() {
   try {
     const fd = new FormData();
     Object.entries(payload.value).forEach(([k, v]) => { if (v != null) fd.append(k, v); });
+    if (esFacturaUpload.value) fd.append('tipo', 'FACTURA');
     nuevos.value.forEach((file) => fd.append('archivos', file));
     await uploadAdjuntos(fd);
     nuevos.value = [];
+    esFacturaUpload.value = false;
     await cargar();
   } catch (e) { msg.value = e.response?.data?.error || 'No se pudieron subir los soportes.'; }
+  finally { busy.value = false; }
+}
+
+async function onTogglePresupuesto(checked) {
+  busy.value = true; msg.value = '';
+  try {
+    await marcarPresupuesto({ ...payload.value, esPresupuesto: checked });
+    await cargar();
+  } catch (e) { msg.value = e.response?.data?.error || 'No se pudo actualizar el presupuesto.'; }
   finally { busy.value = false; }
 }
 

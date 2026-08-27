@@ -212,6 +212,22 @@ ELSE
 GO
 
 -- ============================================================
+-- 6b2. EsPresupuesto — el Analista marca un gasto como presupuesto. Puede
+--      avanzar por el flujo con normalidad (incl. pasar a Pagos), pero el
+--      Auditor no puede confirmarlo como PAGADO hasta que se cargue la
+--      factura real como adjunto Tipo='FACTURA' (ver confirmarPago()).
+-- ============================================================
+IF COL_LENGTH('dbo.GD_FacturaFlujo', 'EsPresupuesto') IS NULL
+BEGIN
+    ALTER TABLE dbo.GD_FacturaFlujo
+        ADD EsPresupuesto BIT NOT NULL CONSTRAINT DF_GD_FF_Presupuesto DEFAULT (0);
+    PRINT '✅ Columna EsPresupuesto agregada a GD_FacturaFlujo.';
+END
+ELSE
+    PRINT '⏭  Columna EsPresupuesto ya existe.';
+GO
+
+-- ============================================================
 -- 6c. GD_Banco — catálogo editable de bancos (Saldos por banco).
 --     Antes GD_DispTienda guardaba un solo saldo por tienda/fecha;
 --     ahora se desglosa por banco (Analista carga uno por cada banco).

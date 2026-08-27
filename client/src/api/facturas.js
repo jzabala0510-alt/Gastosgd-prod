@@ -41,4 +41,7 @@ export const getPagadasRecientes = (codTienda) =>
 // Marca una factura PAGADA como vista por el analista (desaparece del badge/notif)
 export const marcarVisto = (payload) => http.post('/facturas/marcar-visto', payload).then((r) => r.data);
 
+// Marca/desmarca un gasto como presupuesto (ANALISTA)
+export const marcarPresupuesto = (payload) => http.post('/facturas/presupuesto', payload).then((r) => r.data);
+
 export const MONEDA = { 1: 'Bs.S', 2: 'USD', 3: 'EUR', 4: 'Bs.D', 5: 'EUR' };

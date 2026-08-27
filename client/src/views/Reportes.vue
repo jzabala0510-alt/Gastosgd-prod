@@ -115,6 +115,7 @@ const TIPOS = {
   pendiente_pago: { label: 'Pendientes por pagar', estado: 'PENDIENTE_PAGO', saldos: false },
   aprobado: { label: 'Aprobado (pagado)', estado: 'PAGADO', saldos: false },
   devueltos: { label: 'Devueltos', estado: 'DEVUELTO', saldos: false },
+  presupuestos: { label: 'Presupuestos', estado: null, saldos: false, soloPresupuestos: true },
   saldos: { label: 'General de saldos', estado: null, saldos: true },
 };
 
@@ -166,6 +167,9 @@ async function generar() {
         // sin fijar una sola — ver ESTADOS_PENDIENTES en reportes.service.js.
         params.soloERP = '1';
         params.soloPendientes = '1';
+      } else if (TIPOS[tipo.value].soloPresupuestos) {
+        // Sin soloERP: un presupuesto ya pagado debe seguir apareciendo acá.
+        params.soloPresupuestos = '1';
       } else {
         const est = TIPOS[tipo.value].estado;
         if (est) params.estado = est;

@@ -13,7 +13,9 @@ const ESTADOS_PENDIENTES = ['PENDIENTE_ANALISTA', 'PENDIENTE_TESORERIA', 'PENDIE
 // GET /api/reportes — listado consolidado multi-marca (pendientes + faltantes del flujo).
 // zona vacía = todas las zonas. soloERP=1 → solo pendientes ERP (sin faltantes del flujo).
 // soloPendientes=1 → cualquier etapa de ESTADOS_PENDIENTES (en vez de un solo `estado`).
-async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPendientes }) {
+// soloPresupuestos=1 → solo gastos marcados EsPresupuesto (cualquier estado, incl. ya
+// pagados — por eso este flag NUNCA implica soloERP, que los escondería al pagarse).
+async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPendientes, soloPresupuestos }) {
   const appPool = await getPool();
   const vacio = { rows: [], totales: { count: 0, totalVes: 0, porEstado: {} } };
 
@@ -32,11 +34,11 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPen
   }
   if (!scope.length) return vacio;
 
-  // 2) Estados del flujo de esas tiendas (clave cod|serie|num|n → estado)
+  // 2) Estados del flujo de esas tiendas (clave cod|serie|num|n → {estado, esPresupuesto})
   const fl = await appPool.request()
-    .query(`SELECT CodTienda, NumSerie, NumFactura, N, Estado FROM dbo.GD_FacturaFlujo WHERE CodTienda IN (${scope.map(Number).join(',')})`);
+    .query(`SELECT CodTienda, NumSerie, NumFactura, N, Estado, EsPresupuesto FROM dbo.GD_FacturaFlujo WHERE CodTienda IN (${scope.map(Number).join(',')})`);
   const flujoMap = new Map();
-  for (const r of fl.recordset) flujoMap.set(`${r.CodTienda}|${(r.NumSerie || '').trim()}|${r.NumFactura}|${(r.N || '').trim()}`, r.Estado);
+  for (const r of fl.recordset) flujoMap.set(`${r.CodTienda}|${(r.NumSerie || '').trim()}|${r.NumFactura}|${(r.N || '').trim()}`, { estado: r.Estado, esPresupuesto: !!r.EsPresupuesto });
 
   // 3) Agrupar tiendas por marca (BD)
   const infoCache = {};
@@ -51,7 +53,7 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPen
 
   const rows = [];
   const seen = new Set();
-  const addRow = (cod, d, est) => {
+  const addRow = (cod, d, est, esPresupuesto) => {
     const k = `${cod}|${(d.NUMSERIE || '').trim()}|${d.NUMFACTURA}|${(d.N || '').trim()}`;
     if (seen.has(k)) return;
     // El rango Desde/Hasta filtra por Fecha de Solicitud (no la fecha de la factura),
@@ -65,6 +67,7 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPen
     if (hasta && fechaIso > hasta) return;
     if (estado && est !== estado) return;
     if (soloPendientes && !ESTADOS_PENDIENTES.includes(est)) return;
+    if (soloPresupuestos && !esPresupuesto) return;
     seen.add(k);
     const info = infoCache[cod];
     rows.push({
@@ -75,6 +78,7 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPen
       numserie: d.NUMSERIE, numfactura: d.NUMFACTURA, n: d.N,
       fecha: d.FechaSolicitud, fechaFactura: d.FECHA, proveedor: d.Proveedor, tipoGasto: d.TipoGasto,
       totalVes: Number(d.TotalVes) || 0, pendienteVes: Number(d.PendienteVes) || 0, estado: est,
+      esPresupuesto: !!esPresupuesto,
     });
   };
 
@@ -100,8 +104,8 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPen
          AND ec.EJERCICIO=CAST(SUBSTRING(s.CONTABILIDADB, 2, 4) AS INT)
       WHERE ec.CODIGO IN (${b.codigos.map(Number).join(',')}) AND f.TIPODOC IN (12, 20)`);
     for (const d of q.recordset) {
-      const est = flujoMap.get(`${d.codTienda}|${(d.NUMSERIE || '').trim()}|${d.NUMFACTURA}|${(d.N || '').trim()}`) || 'PENDIENTE_ANALISTA';
-      addRow(d.codTienda, d, est);
+      const flu = flujoMap.get(`${d.codTienda}|${(d.NUMSERIE || '').trim()}|${d.NUMFACTURA}|${(d.N || '').trim()}`);
+      addRow(d.codTienda, d, flu ? flu.estado : 'PENDIENTE_ANALISTA', flu ? flu.esPresupuesto : false);
     }
   }
 
@@ -148,7 +152,7 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPen
     for (const d of q.recordset) dmap[`${(d.NUMSERIE || '').trim()}|${d.NUMFACTURA}|${(d.N || '').trim()}`] = d;
     for (const r of b.rows) {
       const d = dmap[`${(r.NumSerie || '').trim()}|${r.NumFactura}|${(r.N || '').trim()}`];
-      if (d) addRow(r.CodTienda, d, r.Estado);
+      if (d) addRow(r.CodTienda, d, r.Estado, r.EsPresupuesto);
     }
   }
 
