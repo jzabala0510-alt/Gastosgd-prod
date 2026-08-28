@@ -13,7 +13,9 @@ Modelo de datos (mismo servidor SQL):
 ## Requisitos en el servidor
 - **Node.js 18+** instalado.
 - Acceso al **SQL Server** de producción (donde están GENERAL y las marcas).
-- (Recomendado) **PM2** para dejar el backend como servicio: `npm i -g pm2`.
+- **NSSM** para dejar el backend como servicio de Windows (así lo corre producción
+  hoy — el actualizador depende de que algo externo relance el proceso tras un
+  `process.exit`, y en este servidor ese "algo" es NSSM, no PM2).
 
 ---
 
@@ -58,14 +60,22 @@ UPLOAD_DIR=./uploads
 **Marca en un servidor SQL distinto (con su propia clave):** si alguna marca vive en
 un servidor físicamente distinto al de arriba, y con un usuario/clave propios, crea
 `server/servers-extra.json` (copia `servers-extra.example.json`) con ese host y sus
-credenciales. `port` e `instance` son opcionales (solo hacen falta si ese servidor
-usa un puerto distinto de 1433 o una instancia con nombre):
+credenciales. `port`, `instance` y `databases` son opcionales (solo hacen falta si
+ese servidor usa un puerto distinto de 1433, una instancia con nombre, o quieres
+dejar anotado qué aloja):
 ```json
 {
-  "10.0.0.11": { "user": "sa_esa_marca", "password": "clave_esa_marca" },
-  "172.30.1.5": { "user": "ICGAdmin", "password": "clave_esa_marca", "port": 62527, "instance": "LCW" }
+  "10.0.0.11": { "user": "sa_esa_marca", "password": "clave_esa_marca", "databases": "MARCA_2" },
+  "172.30.1.5": { "user": "ICGAdmin", "password": "clave_esa_marca", "port": 62527, "instance": "LCW", "databases": "LCWAIKIKIVE" }
 }
 ```
+**El nombre de la base de datos para conectar NO se define aquí** — sigue viniendo
+del `PATHBD` de esa marca en `GENERAL.EMPRESAS` (ej. `172.30.1.5:LCWAIKIKIVE`),
+exactamente igual que para cualquier otra marca. `databases` en este archivo es
+solo un recordatorio informativo (se imprime en consola al arrancar) para
+verificar de un vistazo que cada servidor tiene lo que esperas — el código nunca
+lo usa para decidir a qué host conectarse.
+
 Este archivo NO se sube al repo (va en `.gitignore`, igual que `.env`) — se crea a
 mano en cada servidor que lo necesite. Cualquier host que no aparezca ahí sigue
 usando `DB_USER`/`DB_PASSWORD` de arriba, sin ningún cambio.
@@ -95,12 +105,15 @@ Arranque simple (para una primera prueba):
 node src/index.js
 ```
 
-Arranque como servicio (recomendado en producción):
+Arranque como servicio de Windows con NSSM (recomendado en producción):
 ```
-pm2 start src/index.js --name gastosgd
-pm2 save
-pm2 startup            # para que reinicie al reiniciar el servidor
+nssm install gastosgd "C:\Program Files\nodejs\node.exe" "src\index.js"
+nssm set gastosgd AppDirectory "<ruta-completa-a-la-carpeta-server>"
+nssm start gastosgd
 ```
+> Ajusta `gastosgd` si el servicio ya está instalado con otro nombre en tu servidor
+> — confírmalo con `nssm status <nombre>` o desde `services.msc` antes de reutilizar
+> estos comandos.
 
 Al iniciar verás en consola:
 - `✅ ... Conectado` (BD)
@@ -122,7 +135,8 @@ Al iniciar verás en consola:
   el puerto 80 o un dominio, pon nginx/IIS como *reverse proxy* hacia `localhost:3101`.
 - **Adjuntos/comprobantes:** se guardan en `server/uploads/`. Asegura permisos de escritura
   y respáldala (no se borra al actualizar el código).
-- **Actualizar versión:** reemplaza el código, `npm install` si cambió algo, recompila el
-  front (`npm run build`) y `pm2 restart gastosgd`.
+- **Actualizar versión:** normalmente vía `/actualizador` (descarga el código de GitHub y
+  reinicia el servicio solo). Si actualizas a mano: reemplaza el código, `npm install`
+  si cambió algo, recompila el front (`npm run build`) y `nssm restart gastosgd`.
 - **Solo entran usuarios con rol** asignado en el panel; el resto de GENERAL queda fuera.
 - **Diagnóstico:** `GET http://<servidor>:3101/api/health` devuelve el estado de la API y la BD.

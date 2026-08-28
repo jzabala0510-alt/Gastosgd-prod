@@ -5,26 +5,36 @@ require('dotenv').config();
 
 // Credenciales por servidor para marcas en un host físicamente distinto al
 // principal (server/servers-extra.json, gitignored — no existe por defecto).
-// Formato: { "host": { "user": "...", "password": "...", "port": 1433, "instance": "NOMBRE" } }.
-// "port" e "instance" son opcionales (instancia con nombre, ej. SQL Server con
-// varias instancias en un mismo host). Un host ausente de este archivo usa
-// DB_USER/DB_PASSWORD/DB_PORT como siempre.
+// Formato: { "host": { "user": "...", "password": "...", "port": 1433, "instance": "NOMBRE", "databases": "BD1,BD2" } }.
+// "port", "instance" y "databases" son opcionales. El nombre real de la BD para
+// conectar NO sale de aquí -- sigue viniendo del PATHBD de esa marca en
+// GENERAL.EMPRESAS, igual que para el resto de las marcas; "databases" es solo
+// informativo (se imprime al cargar) para ver de un vistazo qué aloja cada
+// servidor. Un host ausente de este archivo usa DB_USER/DB_PASSWORD/DB_PORT
+// como siempre.
 let _extraServers = null;
+function _cargarExtraServers() {
+  if (_extraServers !== null) return _extraServers;
+  _extraServers = {};
+  try {
+    const p = path.resolve(__dirname, '..', '..', 'servers-extra.json');
+    if (fs.existsSync(p)) {
+      const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
+      for (const h of Object.keys(raw)) {
+        const s = raw[h];
+        _extraServers[h.toLowerCase()] = s;
+        const destino = `${h}${s.instance ? `\\${s.instance}` : ''}${s.port ? `:${s.port}` : ''}`;
+        console.log(`[db] servers-extra.json: ${destino}${s.databases ? ` -> ${s.databases}` : ''}`);
+      }
+    }
+  } catch (e) {
+    console.error('[db] Error leyendo servers-extra.json:', e.message);
+  }
+  return _extraServers;
+}
 function _credencialesExtra(host) {
   if (!host) return null;
-  if (_extraServers === null) {
-    _extraServers = {};
-    try {
-      const p = path.resolve(__dirname, '..', '..', 'servers-extra.json');
-      if (fs.existsSync(p)) {
-        const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
-        for (const h of Object.keys(raw)) _extraServers[h.toLowerCase()] = raw[h];
-      }
-    } catch (e) {
-      console.error('[db] Error leyendo servers-extra.json:', e.message);
-    }
-  }
-  return _extraServers[String(host).toLowerCase()] || null;
+  return _cargarExtraServers()[String(host).toLowerCase()] || null;
 }
 
 function buildConfig(database, host, maxPool) {
