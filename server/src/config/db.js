@@ -189,7 +189,17 @@ function parsePathBD(pathBD) {
   const s = String(pathBD).trim();
   const idx = s.lastIndexOf(':');
   if (idx < 0) return { host: '', database: s };
-  return { host: s.slice(0, idx).trim(), database: s.slice(idx + 1).trim() };
+  let host = s.slice(0, idx).trim();
+  const database = s.slice(idx + 1).trim();
+  // Algunas instalaciones ICG (instancia con nombre) guardan el PATHBD como
+  // "host\instancia,puerto:BD" (ej. "172.30.1.5\LCW,62527:LCWAIKIKIVE"). Se
+  // descarta la instancia/puerto de aca -- servers-extra.json ya guarda el
+  // host limpio como clave, y el puerto correcto va ahi (no en el PATHBD):
+  // combinarlo con el nombre de instancia rompe la conexión vía SQL Browser,
+  // ver buildConfig().
+  const idxInstancia = host.indexOf('\\');
+  if (idxInstancia >= 0) host = host.slice(0, idxInstancia);
+  return { host, database };
 }
 
 module.exports = { sql, getPool, getGeneralPool, getBrandPool, getExtraGeneralPool, fuentesGeneralExtra, parsePathBD };
