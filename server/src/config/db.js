@@ -37,6 +37,30 @@ function _credencialesExtra(host) {
   return _cargarExtraServers()[String(host).toLowerCase()] || null;
 }
 
+// Fuentes GENERAL extra: hosts de servers-extra.json que declaran un bloque
+// "general" (instalación ICG independiente, con su propia BD GENERAL). Cada
+// una reserva un rango de 10000 codTienda sintéticos (ver marca.js::ubicar()).
+// Formato: "host": { ..., "general": { "database": "GENERAL", "marca": "LC WAIKIKI VEN", "offset": 20000 } }.
+// "marca" es opcional (solo hace falta si esa GENERAL tiene más de una empresa
+// registrada y hay que descartar el resto) -- filtra EMPRESASCONTABLES.DIRECCION,
+// igual que EMPRESAS.TITULO ya filtra la marca en la GENERAL principal
+// (EMPRESASCONTABLES no tiene columna CODEMPRESA, solo EMPRESAS la tiene).
+function fuentesGeneralExtra() {
+  const raw = _cargarExtraServers();
+  const out = [];
+  for (const host of Object.keys(raw)) {
+    const g = raw[host].general;
+    if (!g || !g.database || g.offset == null) continue;
+    out.push({
+      host,
+      database: g.database,
+      marca: g.marca || null,
+      offset: Number(g.offset),
+    });
+  }
+  return out;
+}
+
 function buildConfig(database, host, maxPool) {
   const extra = _credencialesExtra(host);
   const cfg = {
@@ -130,6 +154,33 @@ function getBrandPool(database, host) {
   return brandPools.get(key);
 }
 
+// Pools de las BDs GENERAL de fuentes extra (una instalación ICG independiente
+// por host, ver fuentesGeneralExtra()) -- mismo patrón de cache + fallo-negativo
+// que brandPools/brandFallos arriba.
+const extraGeneralPools = new Map();
+const extraGeneralFallos = new Map();
+
+function getExtraGeneralPool(host) {
+  const extra = _credencialesExtra(host);
+  if (!extra || !extra.general || !extra.general.database) {
+    return Promise.reject(new Error(`Host ${host} no tiene bloque "general" en servers-extra.json`));
+  }
+  const key = String(host).toUpperCase();
+
+  const fallo = extraGeneralFallos.get(key);
+  if (fallo && Date.now() - fallo.ts < FALLO_TTL_MS) return Promise.reject(fallo.error);
+
+  if (!extraGeneralPools.has(key)) {
+    const p = makePool('extra-general', extra.general.database, host, 5, `GENERAL ${host}`).catch((e) => {
+      extraGeneralPools.delete(key);
+      extraGeneralFallos.set(key, { error: e, ts: Date.now() });
+      throw e;
+    });
+    extraGeneralPools.set(key, p);
+  }
+  return extraGeneralPools.get(key);
+}
+
 // Extrae { host, database } de un PATHBD con formato "servidor:NOMBRE_BD"
 // (p. ej. "172.16.20.30:BBW"). El nombre de la BD NO siempre coincide con la
 // marca (AEO->WYNWOOD, CALVIN KLEIN->CK), por eso siempre se resuelve por aqui.
@@ -141,4 +192,4 @@ function parsePathBD(pathBD) {
   return { host: s.slice(0, idx).trim(), database: s.slice(idx + 1).trim() };
 }
 
-module.exports = { sql, getPool, getGeneralPool, getBrandPool, parsePathBD };
+module.exports = { sql, getPool, getGeneralPool, getBrandPool, getExtraGeneralPool, fuentesGeneralExtra, parsePathBD };

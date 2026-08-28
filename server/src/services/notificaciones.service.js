@@ -1,4 +1,5 @@
 const { getPool } = require('../config/db');
+const { tiendaInfo } = require('./marca');
 
 // Conteos simples sobre GD_FacturaFlujo (etapas con bandeja explícita).
 async function contadores() {
@@ -48,6 +49,21 @@ async function detalle(roles) {
       FROM GENERAL.dbo.EMPRESASCONTABLES WHERE CODIGO = g.CodTienda
     ) ec
     ORDER BY ec.zona, ec.tienda`);
+
+  // El JOIN de arriba solo ve la GENERAL principal -- una notificación de una
+  // tienda de fuente extra llega con zona/tienda/marca en NULL. Se completa
+  // aparte, una consulta por CodTienda distinto (no por fila).
+  const faltantes = [...new Set(r.recordset.filter((x) => x.zona == null).map((x) => x.CodTienda))];
+  if (faltantes.length) {
+    const info = new Map();
+    for (const cod of faltantes) info.set(cod, await tiendaInfo(cod));
+    for (const row of r.recordset) {
+      if (row.zona != null) continue;
+      const t = info.get(row.CodTienda);
+      if (t) { row.zona = t.Zona; row.tienda = t.Tienda; row.marca = t.Marca; }
+    }
+    r.recordset.sort((a, b) => String(a.zona).localeCompare(String(b.zona)) || String(a.tienda).localeCompare(String(b.tienda)));
+  }
   return r.recordset;
 }
 

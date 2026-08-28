@@ -1,5 +1,6 @@
 const { sql, getPool, getGeneralPool } = require('../config/db');
 const { normalize } = require('./tiendaMatcher');
+const { tiendasExtra } = require('./marca');
 
 // Solo lectura: resuelve alias, mapea bancos y devuelve el preview enriquecido para que el
 // usuario confirme antes de escribir. La escritura real va por POST /api/fondos/bulk.
@@ -29,6 +30,9 @@ async function previewImportacion({ fecha, totalExcel, filas }) {
     "SELECT CODIGO, LTRIM(RTRIM(DESCRIPCION)) AS Nombre FROM EMPRESASCONTABLES"
   )).recordset;
   const erpPorCod = new Map(erpRows.map((e) => [e.CODIGO, e.Nombre]));
+  // Tiendas de fuentes GENERAL extra (offset ya aplicado) -- el query de arriba
+  // (server principal) nunca las trae.
+  for (const t of await tiendasExtra()) erpPorCod.set(t.CodTienda, t.Tienda);
 
   // 4. Registros Bs ya existentes para esa fecha (para marcar cuáles sobreescribirá)
   const existentes = (await pool.request().input('f', sql.Date, fecha).query(

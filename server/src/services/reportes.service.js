@@ -1,5 +1,5 @@
 const { sql, getPool } = require('../config/db');
-const { resolverTienda } = require('./marca');
+const { resolverTienda, tiendasExtra } = require('./marca');
 const { CTE_PENDIENTE, columnasLibres, expr } = require('./facturasCompra.service');
 const bancosService = require('./bancos.service');
 
@@ -27,10 +27,12 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPen
     const tr = await appPool.request().input('z', sql.NVarChar, zona)
       .query("SELECT DISTINCT CODIGO AS cod FROM GENERAL.dbo.EMPRESASCONTABLES WHERE LTRIM(RTRIM(PROVINCIA)) = @z");
     scope = tr.recordset.map((x) => x.cod);
+    for (const t of await tiendasExtra()) if (t.Zona === zona) scope.push(t.CodTienda);
   } else {
     const tr = await appPool.request()
       .query("SELECT DISTINCT CODIGO AS cod FROM GENERAL.dbo.EMPRESASCONTABLES WHERE CODIGO > 0");
     scope = tr.recordset.map((x) => x.cod);
+    scope.push(...(await tiendasExtra()).map((t) => t.CodTienda));
   }
   if (!scope.length) return vacio;
 
@@ -40,15 +42,17 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPen
   const flujoMap = new Map();
   for (const r of fl.recordset) flujoMap.set(`${r.CodTienda}|${(r.NumSerie || '').trim()}|${r.NumFactura}|${(r.N || '').trim()}`, { estado: r.Estado, esPresupuesto: !!r.EsPresupuesto });
 
-  // 3) Agrupar tiendas por marca (BD)
+  // 3) Agrupar tiendas por marca (BD). "codigos" guarda el código NATIVO (sin
+  // offset) -- lo que espera GENERAL.EMPRESASCONTABLES.CODIGO del lado de la
+  // marca (ver paso 4); el offset se reaplica ahí al leer los resultados.
   const infoCache = {};
   const porBrand = {};
   for (const cod of scope) {
     const info = await resolverTienda(cod); infoCache[cod] = info;
     if (info.error) continue;
     const bk = `${info.host}|${info.dbName}`;
-    if (!porBrand[bk]) porBrand[bk] = { pool: info.pool, codigos: [] };
-    porBrand[bk].codigos.push(cod);
+    if (!porBrand[bk]) porBrand[bk] = { pool: info.pool, offset: info.offset || 0, codigos: [] };
+    porBrand[bk].codigos.push(cod - (info.offset || 0));
   }
 
   const rows = [];
@@ -104,8 +108,9 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPen
          AND ec.EJERCICIO=CAST(SUBSTRING(s.CONTABILIDADB, 2, 4) AS INT)
       WHERE ec.CODIGO IN (${b.codigos.map(Number).join(',')}) AND f.TIPODOC IN (12, 20)`);
     for (const d of q.recordset) {
-      const flu = flujoMap.get(`${d.codTienda}|${(d.NUMSERIE || '').trim()}|${d.NUMFACTURA}|${(d.N || '').trim()}`);
-      addRow(d.codTienda, d, flu ? flu.estado : 'PENDIENTE_ANALISTA', flu ? flu.esPresupuesto : false);
+      const cod = d.codTienda + b.offset; // reaplica el offset -> codTienda de GastosGD
+      const flu = flujoMap.get(`${cod}|${(d.NUMSERIE || '').trim()}|${d.NUMFACTURA}|${(d.N || '').trim()}`);
+      addRow(cod, d, flu ? flu.estado : 'PENDIENTE_ANALISTA', flu ? flu.esPresupuesto : false);
     }
   }
 
@@ -177,7 +182,14 @@ async function saldos({ zona, codTienda, fecha }) {
   } else {
     filtro = 'ec.CODIGO > 0'; // Todas las zonas
   }
-  const [r, activos] = await Promise.all([
+
+  // Tiendas de fuentes GENERAL extra que apliquen al mismo filtro (codTienda >
+  // zona > todas) -- GENERAL.dbo.EMPRESASCONTABLES de arriba nunca las ve, vive
+  // en el server principal. Se traen aparte (ya con offset) y se unen abajo.
+  const extraTiendas = (await tiendasExtra()).filter((t) =>
+    codTienda ? t.CodTienda === Number(codTienda) : (zona ? t.Zona === zona : true));
+
+  const [r, activos, rExtra] = await Promise.all([
     rq.query(`
       SELECT t.codTienda, t.zona, t.tienda, t.marca, d.IdBanco, d.MontoDisponible AS monto, a.MontoAjuste AS ajuste
       FROM (
@@ -197,11 +209,17 @@ async function saldos({ zona, codTienda, fecha }) {
       ) a
       ORDER BY t.tienda`),
     bancosService.listarActivos(),
+    extraTiendas.length ? pool.request().input('f', sql.Date, fecha).query(`
+      SELECT t.codTienda, t.zona, t.tienda, t.marca, d.IdBanco, d.MontoDisponible AS monto, a.MontoAjuste AS ajuste
+      FROM (VALUES ${extraTiendas.map((t) => `(${Number(t.CodTienda)}, N'${esc(t.Zona || '')}', N'${esc(t.Tienda || '')}', N'${esc(t.Marca || '')}')`).join(',')}) t(codTienda, zona, tienda, marca)
+      OUTER APPLY (SELECT IdBanco, MontoDisponible FROM dbo.GD_DispTienda WHERE CodTienda = t.codTienda AND Fecha = @f) d
+      OUTER APPLY (SELECT MontoAjuste FROM dbo.GD_DispAjuste WHERE CodTienda = t.codTienda AND Fecha = @f) a`)
+      : Promise.resolve({ recordset: [] }),
   ]);
 
   const porTienda = new Map();
   const idsConDatos = new Set();
-  for (const row of r.recordset) {
+  for (const row of [...r.recordset, ...rExtra.recordset]) {
     if (!porTienda.has(row.codTienda)) {
       porTienda.set(row.codTienda, {
         codTienda: row.codTienda, zona: row.zona, tienda: row.tienda, marca: row.marca,

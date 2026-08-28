@@ -1,5 +1,6 @@
 const { sql, getPool, getGeneralPool } = require('../config/db');
 const { normalize, prepararCandidatos, mejorCandidato } = require('./tiendaMatcher');
+const { tiendasExtra, tiendaInfo } = require('./marca');
 
 const CLAVE_CONTADOR = { EXACTA: 'exacta', FUERTE: 'fuerte', DUDOSA: 'dudosa', SIN_MATCH: 'sinMatch' };
 
@@ -21,7 +22,10 @@ async function sugerir(filas) {
   const erpRaw = (await gen.request().query(
     "SELECT CODIGO, LTRIM(RTRIM(DESCRIPCION)) AS Tienda, LTRIM(RTRIM(PROVINCIA)) AS Zona, LTRIM(RTRIM(POBLACION)) AS Grupo, LTRIM(RTRIM(DIRECCION)) AS Marca FROM EMPRESASCONTABLES"
   )).recordset;
-  const candidatos = prepararCandidatos(erpRaw);
+  // Tiendas de fuentes GENERAL extra (offset ya aplicado) -- también son candidatas
+  // válidas para un alias, igual que cualquier tienda de la GENERAL principal.
+  const erpExtra = (await tiendasExtra()).map((t) => ({ CODIGO: t.CodTienda, Tienda: t.Tienda, Zona: t.Zona, Grupo: t.Empresa, Marca: t.Marca }));
+  const candidatos = prepararCandidatos([...erpRaw, ...erpExtra]);
   const porCodigo = new Map(candidatos.map((c) => [c.CODIGO, c]));
 
   const resumen = { total: 0, yaConfirmado: 0, yaIgnorado: 0, exacta: 0, fuerte: 0, dudosa: 0, sinMatch: 0 };
@@ -114,6 +118,18 @@ async function listar() {
     LEFT JOIN dbo.GD_Usuario u ON u.IdUsuario = a.IdUsuario
     LEFT JOIN GENERAL.dbo.EMPRESASCONTABLES ec ON ec.CODIGO = a.CodTienda
     ORDER BY a.FechaRegistro DESC`);
+
+  // El JOIN de arriba solo ve la GENERAL principal -- para un alias de una
+  // tienda de fuente extra llega con TiendaErp/ZonaErp/etc en NULL. Se completa
+  // aparte, una consulta por CodTienda distinto (no por fila).
+  const faltantes = [...new Set(r.recordset.filter((x) => x.CodTienda != null && x.TiendaErp == null).map((x) => x.CodTienda))];
+  for (const cod of faltantes) {
+    const t = await tiendaInfo(cod);
+    if (!t) continue;
+    for (const row of r.recordset) {
+      if (row.CodTienda === cod) { row.TiendaErp = t.Tienda; row.ZonaErp = t.Zona; row.GrupoErp = t.Empresa; row.MarcaErp = t.Marca; }
+    }
+  }
   return r.recordset;
 }
 
@@ -125,7 +141,8 @@ async function tiendasErp() {
   const gen = await getGeneralPool();
   const r = await gen.request().query(
     "SELECT CODIGO AS CodTienda, LTRIM(RTRIM(DESCRIPCION)) AS Tienda, LTRIM(RTRIM(PROVINCIA)) AS Zona, LTRIM(RTRIM(POBLACION)) AS Grupo, LTRIM(RTRIM(DIRECCION)) AS Marca FROM EMPRESASCONTABLES ORDER BY Tienda");
-  return r.recordset;
+  const extra = (await tiendasExtra()).map((t) => ({ CodTienda: t.CodTienda, Tienda: t.Tienda, Zona: t.Zona, Grupo: t.Empresa, Marca: t.Marca }));
+  return [...r.recordset, ...extra].sort((a, b) => String(a.Tienda).localeCompare(String(b.Tienda)));
 }
 
 // Corrige un alias existente. { codTienda? , estado? }.

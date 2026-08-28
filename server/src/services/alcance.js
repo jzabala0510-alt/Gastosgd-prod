@@ -1,4 +1,5 @@
 const { sql, getGeneralPool } = require('../config/db');
+const { tiendasExtra } = require('./marca');
 
 // Alcance por zona: un usuario puede quedar limitado a una o varias zonas
 // (EMPRESASCONTABLES.PROVINCIA). Sin zonas asignadas = ve todo (irrestricto).
@@ -31,6 +32,10 @@ async function codTiendasDeZonas(zonas) {
   });
   const r = await rq.query(`SELECT DISTINCT CODIGO FROM EMPRESASCONTABLES WHERE ${conds.join(' OR ')}`);
   const set = new Set(r.recordset.map((x) => x.CODIGO));
+
+  const zonasSet = new Set(zonas);
+  for (const t of await tiendasExtra()) if (zonasSet.has(t.Zona)) set.add(t.CodTienda);
+
   cache.set(key, { set, ts: Date.now() });
   return set;
 }

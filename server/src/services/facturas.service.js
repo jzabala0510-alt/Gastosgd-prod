@@ -27,7 +27,10 @@ async function listarPendientes(codTienda, estadoFiltro) {
   if (r.error) return { ...base, disponibleLocal: false, aviso: r.mensaje, facturas: [] };
 
   const cols = await columnasLibres(r.pool, `${r.host}|${r.dbName}`);
-  const fac = await r.pool.request().input('e', sql.Int, codTienda).query(`
+  // ENLACE_EMPRESA es el código ICG nativo de la tienda dentro de SU propia BD -- para
+  // fuentes GENERAL extra, distinto del codTienda con offset que usa GastosGD (ver
+  // marca.js::resolverTienda). Para las marcas de siempre, codNativo === codTienda.
+  const fac = await r.pool.request().input('e', sql.Int, r.codNativo).query(`
     ${CTE_PENDIENTE_TIENDA}
     SELECT f.NUMSERIE, f.NUMFACTURA, f.N, f.SUFACTURA, f.FECHA, f.FECHASUFACTURA, f.CODPROVEEDOR,
       f.TIPODOC,
@@ -151,7 +154,9 @@ async function cobertura(codTienda, fecha) {
   const estados = new Map(fl.recordset.map((x) => [claveFactura(x), x.Estado]));
 
   const cols = await columnasLibres(r.pool, `${r.host}|${r.dbName}`);
-  const fac = await r.pool.request().input('e', sql.Int, codTienda).query(`
+  // ENLACE_EMPRESA es el código nativo dentro de la BD de la marca (ver nota igual en
+  // listarPendientes) -- r.codNativo, no el codTienda con offset.
+  const fac = await r.pool.request().input('e', sql.Int, r.codNativo).query(`
     ${CTE_PENDIENTE_TIENDA}
     SELECT f.NUMSERIE, f.NUMFACTURA, f.N, f.SUFACTURA, f.FECHA,
       LTRIM(RTRIM(p.NOMPROVEEDOR)) AS Proveedor, T.PENDIENTE AS PendienteVes,
