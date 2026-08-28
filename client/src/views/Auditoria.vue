@@ -92,7 +92,24 @@
     <template v-else>
       <p v-if="loadingPagos" class="page__hint">Cargando…</p>
       <template v-else-if="pagoItems.length">
-        <p class="page__hint">{{ pagoItems.length }} factura{{ pagoItems.length > 1 ? 's' : '' }} con comprobante pendiente de confirmación</p>
+        <div class="card filtros">
+          <div class="field" :class="{ 'field--active': filtroZonaPagos }">
+            <label>Zona</label>
+            <select v-model="filtroZonaPagos">
+              <option value="">Todas</option>
+              <option v-for="z in zonasPagos" :key="z" :value="z">{{ z }}</option>
+            </select>
+          </div>
+          <div class="field" :class="{ 'field--active': filtroMarcaPagos }">
+            <label>Marca</label>
+            <select v-model="filtroMarcaPagos">
+              <option value="">Todas</option>
+              <option v-for="m in marcasPagos" :key="m" :value="m">{{ m }}</option>
+            </select>
+          </div>
+          <button class="btn btn--sm" @click="filtroZonaPagos = ''; filtroMarcaPagos = ''">Limpiar</button>
+        </div>
+        <p class="page__hint">{{ pagoItemsFiltrados.length }} de {{ pagoItems.length }} factura{{ pagoItems.length > 1 ? 's' : '' }} con comprobante pendiente de confirmación</p>
         <div class="table-wrap"><table class="grid">
           <thead>
             <tr>
@@ -101,7 +118,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="g in pagoItems" :key="g.codTienda + '-' + g.numserie + '-' + g.numfactura">
+            <tr v-for="g in pagoItemsFiltrados" :key="g.codTienda + '-' + g.numserie + '-' + g.numfactura">
               <td style="white-space:nowrap">{{ g.marca }} · {{ g.tienda }}</td>
               <td><code>{{ g.numserie }}-{{ g.numfactura }}</code></td>
               <td>{{ fecha(g.fecha) }}</td>
@@ -118,6 +135,7 @@
             </tr>
           </tbody>
         </table></div>
+        <p v-if="!pagoItemsFiltrados.length" class="page__hint">Sin resultados para los filtros aplicados.</p>
       </template>
       <div v-else class="empty card">No hay comprobantes pendientes de confirmación. 🎉</div>
     </template>
@@ -146,6 +164,8 @@ const busy = ref(false);
 const enc = encodeURIComponent;
 const modal = ref({ visible: false, titulo: '', mensaje: '', tipo: 'success' });
 const filtros = ref({ desde: '', hasta: '', proveedor: '', tipoGasto: '' });
+const filtroZonaPagos = ref('');
+const filtroMarcaPagos = ref('');
 const tabActivo = ref('auditoria');
 
 const pendientes = computed(() => notif.detalle.auditoria);
@@ -177,6 +197,14 @@ const filtradas = computed(() => {
 });
 
 function limpiar() { filtros.value = { desde: '', hasta: '', proveedor: '', tipoGasto: '' }; }
+
+const zonasPagos = computed(() => [...new Set(pagoItems.value.map((g) => g.zona || 'SIN ZONA'))].sort());
+const marcasPagos = computed(() => [...new Set(pagoItems.value.map((g) => g.marca || 'SIN MARCA'))].sort());
+const pagoItemsFiltrados = computed(() => pagoItems.value.filter((g) => {
+  if (filtroZonaPagos.value && (g.zona || 'SIN ZONA') !== filtroZonaPagos.value) return false;
+  if (filtroMarcaPagos.value && (g.marca || 'SIN MARCA') !== filtroMarcaPagos.value) return false;
+  return true;
+}));
 
 async function loadAuditoria() {
   loading.value = true;
