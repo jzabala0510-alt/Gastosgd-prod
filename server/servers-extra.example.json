@@ -1,0 +1,4 @@
+{
+  "10.0.0.11": { "user": "usuario_servidor_2", "password": "clave_servidor_2" },
+  "10.0.0.22": { "user": "usuario_servidor_3", "password": "clave_servidor_3" }
+}

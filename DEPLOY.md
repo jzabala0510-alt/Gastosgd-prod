@@ -55,6 +55,17 @@ JWT_EXPIRES=8h
 UPLOAD_DIR=./uploads
 ```
 
+**Marca en un servidor SQL distinto (con su propia clave):** si alguna marca vive en
+un servidor físicamente distinto al de arriba, y con un usuario/clave propios, crea
+`server/servers-extra.json` (copia `servers-extra.example.json`) con ese host y sus
+credenciales:
+```json
+{ "10.0.0.11": { "user": "sa_esa_marca", "password": "clave_esa_marca" } }
+```
+Este archivo NO se sube al repo (va en `.gitignore`, igual que `.env`) — se crea a
+mano en cada servidor que lo necesite. Cualquier host que no aparezca ahí sigue
+usando `DB_USER`/`DB_PASSWORD` de arriba, sin ningún cambio.
+
 ---
 
 ## 4. Compilar el frontend

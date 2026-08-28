@@ -1,12 +1,37 @@
 const sql = require('mssql');
+const fs = require('fs');
+const path = require('path');
 require('dotenv').config();
 
+// Credenciales por servidor para marcas en un host físicamente distinto al
+// principal (server/servers-extra.json, gitignored — no existe por defecto).
+// Formato: { "host": { "user": "...", "password": "..." } }. Un host ausente
+// de este archivo usa DB_USER/DB_PASSWORD como siempre.
+let _extraServers = null;
+function _credencialesExtra(host) {
+  if (!host) return null;
+  if (_extraServers === null) {
+    _extraServers = {};
+    try {
+      const p = path.resolve(__dirname, '..', '..', 'servers-extra.json');
+      if (fs.existsSync(p)) {
+        const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
+        for (const h of Object.keys(raw)) _extraServers[h.toLowerCase()] = raw[h];
+      }
+    } catch (e) {
+      console.error('[db] Error leyendo servers-extra.json:', e.message);
+    }
+  }
+  return _extraServers[String(host).toLowerCase()] || null;
+}
+
 function buildConfig(database, host, maxPool) {
+  const extra = _credencialesExtra(host);
   return {
     server: host || process.env.DB_SERVER || 'localhost',
     port: Number(process.env.DB_PORT || 1433),
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
+    user: extra ? extra.user : process.env.DB_USER,
+    password: extra ? extra.password : process.env.DB_PASSWORD,
     database,
     options: {
       trustServerCertificate: String(process.env.DB_TRUST_CERT || 'true') === 'true',
@@ -61,7 +86,11 @@ const FALLO_TTL_MS = 60 * 1000;
 function getBrandPool(database, host) {
   const db = String(database || '').trim();
   if (!db) throw new Error('database de marca vacío');
-  const override = (process.env.DB_FORCE_HOST || '').trim();
+  // Un host con credenciales propias en servers-extra.json es un servidor de
+  // verdad distinto (no una copia del mismo server histórico) — DB_FORCE_HOST
+  // no debe redirigirlo, o quedaría inalcanzable. Cualquier otro host se
+  // comporta exactamente igual que siempre.
+  const override = _credencialesExtra(host) ? '' : (process.env.DB_FORCE_HOST || '').trim();
   const realHost = override || host || process.env.DB_SERVER || 'localhost';
   const key = `${realHost}|${db}`.toUpperCase();
 

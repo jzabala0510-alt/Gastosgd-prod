@@ -1,5 +1,6 @@
 node_modules/
 .env
+servers-extra.json
 *.local
 server/uploads/*
 !server/uploads/.gitkeep
