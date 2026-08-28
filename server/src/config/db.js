@@ -5,8 +5,10 @@ require('dotenv').config();
 
 // Credenciales por servidor para marcas en un host físicamente distinto al
 // principal (server/servers-extra.json, gitignored — no existe por defecto).
-// Formato: { "host": { "user": "...", "password": "..." } }. Un host ausente
-// de este archivo usa DB_USER/DB_PASSWORD como siempre.
+// Formato: { "host": { "user": "...", "password": "...", "port": 1433, "instance": "NOMBRE" } }.
+// "port" e "instance" son opcionales (instancia con nombre, ej. SQL Server con
+// varias instancias en un mismo host). Un host ausente de este archivo usa
+// DB_USER/DB_PASSWORD/DB_PORT como siempre.
 let _extraServers = null;
 function _credencialesExtra(host) {
   if (!host) return null;
@@ -27,20 +29,30 @@ function _credencialesExtra(host) {
 
 function buildConfig(database, host, maxPool) {
   const extra = _credencialesExtra(host);
-  return {
+  const cfg = {
     server: host || process.env.DB_SERVER || 'localhost',
-    port: Number(process.env.DB_PORT || 1433),
     user: extra ? extra.user : process.env.DB_USER,
     password: extra ? extra.password : process.env.DB_PASSWORD,
     database,
     options: {
       trustServerCertificate: String(process.env.DB_TRUST_CERT || 'true') === 'true',
       encrypt: String(process.env.DB_ENCRYPT || 'false') === 'true',
+      ...(extra && extra.instance ? { instanceName: extra.instance } : {}),
     },
     pool: { max: maxPool || 10, min: 0, idleTimeoutMillis: 30000 },
     connectionTimeout: 15000,
     requestTimeout: 30000,
   };
+  // Puerto: si el host extra trae uno, se usa ese. Si el host extra usa una
+  // instancia con nombre SIN puerto explícito, se omite a propósito -- fijarlo
+  // rompería la resolución por SQL Browser. En cualquier otro caso (sin extra,
+  // o extra simple sin instancia) se usa el puerto global de siempre.
+  if (extra && extra.port) {
+    cfg.port = Number(extra.port);
+  } else if (!extra || !extra.instance) {
+    cfg.port = Number(process.env.DB_PORT || 1433);
+  }
+  return cfg;
 }
 
 let appPool = null;      // BD de la app/marca (Ardene): tablas GD_* + jerarquia

@@ -1,4 +1,5 @@
 {
   "10.0.0.11": { "user": "usuario_servidor_2", "password": "clave_servidor_2" },
-  "10.0.0.22": { "user": "usuario_servidor_3", "password": "clave_servidor_3" }
+  "10.0.0.22": { "user": "usuario_servidor_3", "password": "clave_servidor_3", "port": 1433 },
+  "172.30.1.5": { "user": "ICGAdmin", "password": "clave_real", "port": 62527, "instance": "LCW" }
 }

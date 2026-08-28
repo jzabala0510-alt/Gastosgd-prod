@@ -56,6 +56,7 @@ function crearFiltro(targetDir) {
     if (segmentos.includes('node_modules')) return false;
     if (segmentos.includes('.git')) return false;
     if (segmentos[segmentos.length - 1] === '.env') return false; // .env a cualquier profundidad
+    if (segmentos[segmentos.length - 1] === 'servers-extra.json') return false; // credenciales de marcas en otro servidor
     if (rel === 'server/uploads' || rel.startsWith('server/uploads/')) return false;
     return true;
   };
