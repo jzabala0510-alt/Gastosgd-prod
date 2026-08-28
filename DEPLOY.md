@@ -66,9 +66,15 @@ dejar anotado qué aloja):
 ```json
 {
   "10.0.0.11": { "user": "sa_esa_marca", "password": "clave_esa_marca", "databases": "MARCA_2" },
-  "172.30.1.5": { "user": "ICGAdmin", "password": "clave_esa_marca", "port": 62527, "instance": "LCW", "databases": "LCWAIKIKIVE" }
+  "172.30.1.5": { "user": "ICGAdmin", "password": "clave_esa_marca", "port": 62527, "databases": "LCWAIKIKIVE" }
 }
 ```
+> ⚠ **No pongas `instance` junto con `port`.** Si el servidor usa una instancia con
+> nombre, la librería `mssql`/tedious IGNORA el `port` que le des y en su lugar
+> resuelve el puerto vía "SQL Browser" (UDP 1434) — si ese servicio está bloqueado
+> (lo más común), la conexión da timeout. Si ya tienes el puerto exacto (como en el
+> ejemplo de arriba), no pongas `instance`: conecta directo, sin pasar por SQL Browser.
+
 **El nombre de la base de datos para conectar NO se define aquí** — sigue viniendo
 del `PATHBD` de esa marca en `GENERAL.EMPRESAS` (ej. `172.30.1.5:LCWAIKIKIVE`),
 exactamente igual que para cualquier otra marca. `databases` en este archivo es
@@ -79,6 +85,36 @@ lo usa para decidir a qué host conectarse.
 Este archivo NO se sube al repo (va en `.gitignore`, igual que `.env`) — se crea a
 mano en cada servidor que lo necesite. Cualquier host que no aparezca ahí sigue
 usando `DB_USER`/`DB_PASSWORD` de arriba, sin ningún cambio.
+
+**Marca cuya GENERAL es una instalación ICG separada (no la GENERAL compartida de
+arriba):** pasa esto además — algunos servidores nuevos no son solo "otra BD de
+datos", son una instalación ICG completa e independiente, con su propia BD
+`EMPRESAS`/`EMPRESASCONTABLES` (típicamente también llamada `GENERAL`, pero en ESE
+servidor). Ahí `EMPRESASCONTABLES.CODIGO` (el `codTienda`) empieza de nuevo desde 1
+y choca con el de la GENERAL principal. Para esos casos, agrega un bloque `general`
+a la entrada de ese host:
+```json
+{
+  "172.30.1.5": {
+    "user": "ICGAdmin", "password": "clave_real", "port": 62527, "databases": "LCWAIKIKIVE",
+    "general": { "database": "GENERAL", "marca": "LC WAIKIKI VEN", "offset": 20000 }
+  }
+}
+```
+- `database`: nombre de la BD tipo-GENERAL en ese servidor.
+- `marca`: opcional — solo hace falta si esa GENERAL tiene MÁS de una empresa
+  registrada (instalaciones de prueba, marcas ajenas, etc.) y hay que quedarse
+  con una sola. Debe coincidir EXACTO (sin espacios de más) con el `TITULO` de
+  esa empresa en la tabla `EMPRESAS` de esa misma GENERAL — así se filtran sus
+  tiendas en `EMPRESASCONTABLES.DIRECCION`, igual que ya hace GastosGD para
+  matchear marca en la GENERAL principal (`EMPRESASCONTABLES` no tiene columna
+  `CODEMPRESA`, solo `EMPRESAS` la tiene). Si esa GENERAL solo tiene una
+  empresa, se puede omitir.
+- `offset`: un múltiplo de 10000, **distinto para cada servidor nuevo** (10000,
+  20000, 30000...) — GastosGD lo suma al `CODIGO` nativo de esa GENERAL para que
+  el `codTienda` resultante no choque con el 1-391 de la principal ni con el de
+  otro servidor. No cambies el offset de un servidor una vez usado en producción
+  (rompería todo lo que ya se guardó con ese codTienda).
 
 ---
 

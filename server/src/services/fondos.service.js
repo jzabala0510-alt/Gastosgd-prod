@@ -1,4 +1,7 @@
 const { sql, getPool } = require('../config/db');
+const { tiendasExtra } = require('./marca');
+
+const esc = (s) => String(s).replace(/'/g, "''");
 
 // Tiendas de la zona + saldo cargado en esa fecha (agrupado por tienda + banco).
 async function zonaConSaldos({ zona, fecha }) {
@@ -20,9 +23,21 @@ async function zonaConSaldos({ zona, fecha }) {
       ) d
       ORDER BY t.tienda`);
 
+  // Tiendas de fuentes GENERAL extra en esta zona -- GENERAL.dbo.EMPRESASCONTABLES
+  // de arriba (server principal) nunca las ve. Se traen aparte y se unen abajo.
+  const extraTiendas = (await tiendasExtra()).filter((t) => t.Zona === zona);
+  let rExtra = { recordset: [] };
+  if (extraTiendas.length) {
+    const valores = extraTiendas.map((t) => `(${Number(t.CodTienda)}, N'${esc(t.Tienda || '')}', N'${esc(t.Marca || '')}')`).join(',');
+    rExtra = await pool.request().input('f', sql.Date, fecha).query(`
+      SELECT t.codTienda, t.tienda, t.marca, d.IdBanco, d.MontoDisponible AS monto
+      FROM (VALUES ${valores}) t(codTienda, tienda, marca)
+      OUTER APPLY (SELECT IdBanco, MontoDisponible FROM dbo.GD_DispTienda WHERE CodTienda = t.codTienda AND Fecha = @f) d`);
+  }
+
   // Agrupa filas planas (una por tienda+banco) en { codTienda, tienda, marca, bancos: { idBanco: monto } }
   const porTienda = new Map();
-  for (const row of r.recordset) {
+  for (const row of [...r.recordset, ...rExtra.recordset]) {
     if (!porTienda.has(row.codTienda)) {
       porTienda.set(row.codTienda, { codTienda: row.codTienda, tienda: row.tienda, marca: row.marca, bancos: {} });
     }
