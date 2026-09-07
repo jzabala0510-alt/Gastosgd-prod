@@ -34,6 +34,13 @@
       </template>
       <template v-else-if="esFechaUnica">
         <div class="field" :class="{ 'field--active': fechaSolicitud }"><label>Fecha de solicitud</label><input type="date" v-model="fechaSolicitud" /></div>
+        <div class="field" :class="{ 'field--active': estado }">
+          <label>Estado (opcional)</label>
+          <select v-model="estado">
+            <option value="">Todos</option>
+            <option v-for="e in ESTADOS_PENDIENTES_FRONT" :key="e" :value="e">{{ estLabel(e) }}</option>
+          </select>
+        </div>
       </template>
       <template v-else>
         <div class="field" :class="{ 'field--active': desde }"><label>Desde</label><input type="date" v-model="desde" /></div>
@@ -107,6 +114,10 @@ import { getReporte, getSaldos } from '../api/reportes';
 import { ESTADO_LABEL, ESTADO_CLASS } from '../utils/estados';
 import { money, fecha, hoyVE } from '../utils/format';
 
+// Mismo orden/valores que ESTADOS_PENDIENTES en reportes.service.js — opciones
+// del filtro opcional de Estado en "Gastos (Fecha de solicitud)".
+const ESTADOS_PENDIENTES_FRONT = ['PENDIENTE_ANALISTA', 'PENDIENTE_TESORERIA', 'PENDIENTE_AUDITORIA', 'PENDIENTE_PAGO', 'PAGO_EN_REVISION', 'DEVUELTO'];
+
 const TIPOS = {
   gastos: { label: 'Gastos (general)', estado: null, saldos: false },
   pendientes_solicitud: { label: 'Gastos (Fecha de solicitud)', estado: null, saldos: false, soloPendientes: true },
@@ -165,8 +176,11 @@ async function generar() {
       } else if (TIPOS[tipo.value].soloPendientes) {
         // Cualquier etapa pendiente (Analista, Tesorería, Auditoría, Pago, Devuelto...),
         // sin fijar una sola — ver ESTADOS_PENDIENTES en reportes.service.js.
+        // El Estado es opcional: si se elige uno, acota a esa sola etapa (sigue
+        // combinándose con soloPendientes/soloERP, son filtros independientes).
         params.soloERP = '1';
         params.soloPendientes = '1';
+        if (estado.value) params.estado = estado.value;
       } else if (TIPOS[tipo.value].soloPresupuestos) {
         // Sin soloERP: un presupuesto ya pagado debe seguir apareciendo acá.
         params.soloPresupuestos = '1';
