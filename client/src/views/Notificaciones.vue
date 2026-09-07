@@ -14,7 +14,7 @@
           {{ s.titulo }}
           <span class="badge" :class="s.clase" style="margin-left:8px">{{ s.n }}</span>
           <small class="notif-sub">{{ s.items.length }} tienda{{ s.items.length > 1 ? 's' : '' }}</small>
-          <button v-if="['analista', 'rechazadas'].includes(s.tipo)" class="btn btn--sm" style="margin-left:auto" @click="limpiarNotifAnalista()">Marcar todo como leído</button>
+          <button v-if="['analista', 'rechazadas', 'devueltas'].includes(s.tipo)" class="btn btn--sm" style="margin-left:auto" @click="limpiarNotifAnalista()">Marcar todo como leído</button>
         </h3>
         <ul class="pend-lista">
           <li v-for="it in s.items" :key="it.codTienda" class="pend-row" @click="irA(s, it)">

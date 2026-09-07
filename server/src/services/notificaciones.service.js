@@ -15,7 +15,7 @@ async function contadores() {
 // Pendientes desglosados por tienda (zona/marca/tienda + conteo), según los
 // roles del usuario:
 //   TESORERIA→tesoreria · AUDITOR→auditoria+pagosRevision · PAGADOR→pago
-//   ANALISTA→analista (PAGADO sin ver) + devueltas (DEVUELTO, tarea) + rechazadas (RECHAZADO sin ver).
+//   ANALISTA→analista (PAGADO sin ver) + devueltas (DEVUELTO sin ver) + rechazadas (RECHAZADO sin ver).
 async function detalle(roles) {
   const esAdmin = roles.includes('ADMIN');
   const pend = [];
@@ -31,11 +31,15 @@ async function detalle(roles) {
       WHERE Estado IN (${pend.map((s) => `'${s}'`).join(',')}) GROUP BY Estado, CodTienda`);
   }
   if (verAnalista) {
-    // PAGADO sin ver (informativo) + DEVUELTO (tarea por corregir) + RECHAZADO sin ver (informativo).
+    // PAGADO/DEVUELTO/RECHAZADO sin ver -- las 3 se pueden "marcar como leídas"
+    // igual (limpiarAnalista()), a pedido explícito del cliente: aunque DEVUELTO
+    // sea una tarea real por corregir, decidieron que descartar el aviso sin
+    // resolverla es responsabilidad de quien lo hace, no algo que la app deba
+    // impedir.
     partes.push(`SELECT Estado, CodTienda, COUNT(*) AS n FROM dbo.GD_FacturaFlujo
       WHERE Estado = 'PAGADO' AND VistoPorAnalista = 0 GROUP BY Estado, CodTienda`);
     partes.push(`SELECT Estado, CodTienda, COUNT(*) AS n FROM dbo.GD_FacturaFlujo
-      WHERE Estado = 'DEVUELTO' GROUP BY Estado, CodTienda`);
+      WHERE Estado = 'DEVUELTO' AND VistoPorAnalista = 0 GROUP BY Estado, CodTienda`);
     partes.push(`SELECT Estado, CodTienda, COUNT(*) AS n FROM dbo.GD_FacturaFlujo
       WHERE Estado = 'RECHAZADO' AND VistoPorAnalista = 0 GROUP BY Estado, CodTienda`);
   }
@@ -67,12 +71,15 @@ async function detalle(roles) {
   return r.recordset;
 }
 
-// Marca como vistas las PAGADO y RECHAZADO (los avisos informativos del analista).
-// Las DEVUELTO no se limpian: son tareas que desaparecen solas cuando el analista las reenvía.
+// Marca como vistas las PAGADO, DEVUELTO y RECHAZADO (avisos del analista).
+// Ojo: para DEVUELTO esto solo oculta el aviso -- el gasto sigue en estado
+// DEVUELTO hasta que el analista lo corrija y reenvíe de verdad (accionFactura
+// resetea VistoPorAnalista=0 en cualquier transición, así que si nunca lo
+// reenvía, el gasto queda "visto" pero sin resolver).
 async function limpiarAnalista() {
   const pool = await getPool();
   await pool.request()
-    .query(`UPDATE dbo.GD_FacturaFlujo SET VistoPorAnalista = 1 WHERE Estado IN ('PAGADO','RECHAZADO') AND VistoPorAnalista = 0`);
+    .query(`UPDATE dbo.GD_FacturaFlujo SET VistoPorAnalista = 1 WHERE Estado IN ('PAGADO','DEVUELTO','RECHAZADO') AND VistoPorAnalista = 0`);
 }
 
 module.exports = { contadores, detalle, limpiarAnalista };
