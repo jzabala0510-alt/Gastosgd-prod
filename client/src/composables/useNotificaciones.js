@@ -34,10 +34,21 @@ export function useNotificaciones() {
   });
   const total = computed(() => secciones.value.reduce((a, s) => a + s.n, 0));
 
+  // Gastos.vue mezcla varias etapas en una sola bandeja (a diferencia de
+  // Tesorería/Auditoría/Pagos, donde la bandeja ya es de un solo estado por
+  // diseño) -- sin esto, saltar desde "Devueltas para corregir" mostraba TODAS
+  // las facturas de la tienda, no solo las devueltas.
+  const ESTADO_POR_TIPO = { devueltas: 'DEVUELTO', rechazadas: 'RECHAZADO', analista: 'PAGADO' };
+
   function irA(s, it) {
     // autobuscar=true → el SelectorZMT de la vista destino ejecuta la búsqueda
     // (sirve igual si ya estás en la vista o si navegas a ella).
     s.store.$patch({ zona: it.zona, marca: it.marca, codTienda: it.codTienda, autobuscar: true });
+    const estado = ESTADO_POR_TIPO[s.tipo];
+    if (estado && s.store.filtros) {
+      s.store.limpiarFiltros();
+      s.store.filtros.estado = estado;
+    }
     if (router.currentRoute.value.path !== s.ruta) router.push(s.ruta);
   }
 
