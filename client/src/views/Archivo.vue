@@ -36,11 +36,18 @@
       <p class="page__hint">{{ filtradas.length }} de {{ store.facturas.length }} facturas</p>
       <div class="table-wrap"><table class="grid">
         <thead><tr>
-          <th v-if="!store.codTienda">Tienda</th>
-          <th>Factura</th><th>Fecha</th><th>F. Solicitud</th><th>Proveedor</th><th>Tipo de gasto</th><th class="r">Total (Bs)</th><th class="r">Pendiente (Bs)</th><th>Estado</th>
+          <th v-if="!store.codTienda" class="th-sort" @click="ordenarPor('marca')">Tienda{{ flecha('marca') }}</th>
+          <th class="th-sort" @click="ordenarPor('numfactura')">Factura{{ flecha('numfactura') }}</th>
+          <th class="th-sort" @click="ordenarPor('fechaFactura')">Fecha{{ flecha('fechaFactura') }}</th>
+          <th class="th-sort" @click="ordenarPor('fecha')">F. Solicitud{{ flecha('fecha') }}</th>
+          <th class="th-sort" @click="ordenarPor('proveedor')">Proveedor{{ flecha('proveedor') }}</th>
+          <th class="th-sort" @click="ordenarPor('tipoGasto')">Tipo de gasto{{ flecha('tipoGasto') }}</th>
+          <th class="r th-sort" @click="ordenarPor('totalVes')">Total (Bs){{ flecha('totalVes') }}</th>
+          <th class="r th-sort" @click="ordenarPor('pendienteVes')">Pendiente (Bs){{ flecha('pendienteVes') }}</th>
+          <th class="th-sort" @click="ordenarPor('estado')">Estado{{ flecha('estado') }}</th>
         </tr></thead>
         <tbody>
-          <tr v-for="f in filtradas" :key="key(f)" class="row-link" :class="{ sel: store.seleccion === key(f) }" @click="abrir(f)">
+          <tr v-for="f in ordenadas" :key="key(f)" class="row-link" :class="{ sel: store.seleccion === key(f) }" @click="abrir(f)">
             <td v-if="!store.codTienda" style="white-space:nowrap">{{ f.marca }} · {{ f.tienda }}</td>
             <td><code>{{ f.numserie }}-{{ f.numfactura }}</code></td>
             <td>{{ fecha(f.fechaFactura) }}</td>
@@ -94,11 +101,33 @@ const filtradas = computed(() => {
   });
 });
 
+// Ordenar por columna (clic en el encabezado, alterna asc/desc).
+const sortBy = ref('');
+const sortDir = ref('asc');
+function ordenarPor(campo) {
+  if (sortBy.value === campo) sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc';
+  else { sortBy.value = campo; sortDir.value = 'asc'; }
+}
+function flecha(campo) { return sortBy.value === campo ? (sortDir.value === 'asc' ? ' ▲' : ' ▼') : ''; }
+const ordenadas = computed(() => {
+  if (!sortBy.value) return filtradas.value;
+  const dir = sortDir.value === 'asc' ? 1 : -1;
+  return [...filtradas.value].sort((a, b) => {
+    const va = a[sortBy.value]; const vb = b[sortBy.value];
+    if (va == null && vb == null) return 0;
+    if (va == null) return 1;
+    if (vb == null) return -1;
+    if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * dir;
+    return String(va).localeCompare(String(vb)) * dir;
+  });
+});
+
 // A diferencia de Gastos.vue (limitado a lo pendiente en el ERP, una llamada por
 // tienda), reportes.service.js::listado() ya resuelve zona completa del lado del
 // servidor y trae CUALQUIER estado (incl. ya pagado/rechazado) en una sola llamada.
 async function onTienda(cod) {
   store.facturas = [];
+  store.limpiarFiltros();
   aviso.value = '';
   if (!store.zona) return;
   loading.value = true;
