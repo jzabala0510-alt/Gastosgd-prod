@@ -1,5 +1,6 @@
 <template>
   <section class="page">
+    <div v-if="popTipoGasto" class="zona-overlay" @click="popTipoGasto = false"></div>
     <div class="page__head">
       <div>
         <h1 class="page__title">Reportería</h1>
@@ -39,13 +40,6 @@
           <select v-model="estado">
             <option value="">Todos</option>
             <option v-for="e in ESTADOS_PENDIENTES_FRONT" :key="e" :value="e">{{ estLabel(e) }}</option>
-          </select>
-        </div>
-        <div class="field" :class="{ 'field--active': filtroTipoGasto }">
-          <label>Tipo de gasto (opcional)</label>
-          <select v-model="filtroTipoGasto">
-            <option value="">Todos</option>
-            <option v-for="t in tiposGastoDisponibles" :key="t" :value="t">{{ t }}</option>
           </select>
         </div>
       </template>
@@ -88,6 +82,29 @@
         <div v-else class="empty card">Sin saldos para los filtros.</div>
       </template>
       <template v-else>
+        <div class="card filtros" v-if="tiposGastoDisponibles.length > 1">
+          <div class="field">
+            <label>Tipo de gasto</label>
+            <div class="zona-cell">
+              <button type="button" class="zona-cell__btn" :class="{ on: filtrosTipoGasto.length }"
+                @click="popTipoGasto = !popTipoGasto">
+                <span>{{ filtrosTipoGasto.length ? filtrosTipoGasto.join(', ') : 'Todos' }}</span>
+                <span class="zona-cell__caret">▾</span>
+              </button>
+              <div v-if="popTipoGasto" class="zona-pop">
+                <label class="zona-opt">
+                  <input type="checkbox" :checked="!filtrosTipoGasto.length" @change="onTodosTiposGasto" />
+                  <b>Todos</b>
+                </label>
+                <div class="zona-pop__sep"></div>
+                <label v-for="t in tiposGastoDisponibles" :key="t" class="zona-opt">
+                  <input type="checkbox" :checked="filtrosTipoGasto.includes(t)" @change="toggleTipoGasto(t, $event.target.checked)" />
+                  {{ t }}
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="fondos__resumen">
           <span>Facturas: <b>{{ resumenVisible.count }}</b></span>
           <span>Total: <b>{{ money(resumenVisible.totalVes) }} Bs</b></span>
@@ -143,7 +160,8 @@ const tipo = ref('gastos');
 const zona = ref('');
 const codTienda = ref('');
 const estado = ref('');
-const filtroTipoGasto = ref('');
+const filtrosTipoGasto = ref([]); // [] = todos; selección múltiple vía checkbox-popover (ver popTipoGasto)
+const popTipoGasto = ref(false);
 const desde = ref('');
 const hasta = ref('');
 const fechaSaldos = ref(hoyVE());
@@ -160,16 +178,23 @@ const estClass = (e) => ESTADO_CLASS[e] || 'badge--gray';
 // Tipo de gasto: a diferencia de Estado (enum fijo, se manda al servidor), no
 // tiene catálogo fijo -- sale del propio ERP y varía por marca. Se filtra al
 // instante sobre lo ya traído (sin volver a golpear el servidor), con las
-// opciones tomadas del reporte actual, mismo patrón que Archivo.vue.
+// opciones tomadas del reporte actual. Selección múltiple (checkbox-popover,
+// "Todos" = limpiar), mismo patrón que Marca/Tienda en Tesorería (SelectorZMT.vue).
 const tiposGastoDisponibles = computed(() => {
   if (repKind.value !== 'gastos' || !rep.value) return [];
   return [...new Set(rep.value.rows.map((r) => r.tipoGasto || 'SIN ESPECIFICAR'))].sort();
 });
 const filasVisibles = computed(() => {
   if (repKind.value !== 'gastos' || !rep.value) return rep.value ? rep.value.rows : [];
-  if (!filtroTipoGasto.value) return rep.value.rows;
-  return rep.value.rows.filter((f) => (f.tipoGasto || 'SIN ESPECIFICAR') === filtroTipoGasto.value);
+  if (!filtrosTipoGasto.value.length) return rep.value.rows;
+  return rep.value.rows.filter((f) => filtrosTipoGasto.value.includes(f.tipoGasto || 'SIN ESPECIFICAR'));
 });
+function toggleTipoGasto(t, checked) {
+  const set = new Set(filtrosTipoGasto.value);
+  if (checked) set.add(t); else set.delete(t);
+  filtrosTipoGasto.value = [...set];
+}
+function onTodosTiposGasto() { filtrosTipoGasto.value = []; }
 const resumenVisible = computed(() => {
   const rows = filasVisibles.value;
   const porEstado = {};
@@ -185,7 +210,8 @@ async function onZona() {
 
 async function generar() {
   if (!zona.value) return;
-  filtroTipoGasto.value = '';
+  filtrosTipoGasto.value = [];
+  popTipoGasto.value = false;
   loading.value = true;
   try {
     if (esSaldos.value) {
@@ -256,3 +282,28 @@ function exportar() {
 
 onMounted(async () => { zonas.value = await getZonas(); });
 </script>
+
+<style scoped>
+/* Selector múltiple de Tipo de gasto — mismo patrón que el selector de zonas por
+   usuario (AdminUsuarios.vue) y el de Marca/Tienda en Tesorería (SelectorZMT.vue),
+   duplicado aquí a propósito: son estilos scoped, sin colisión entre componentes. */
+.zona-cell { position: relative; display: inline-block; width: 100%; }
+.zona-cell__btn {
+  display: inline-flex; align-items: center; gap: 8px; width: 100%;
+  padding: 10px 12px; border: 1px solid var(--border); border-radius: 7px;
+  background: #fff; font: inherit; font-size: 14px; cursor: pointer; color: #6b7280;
+}
+.zona-cell__btn.on { border-color: var(--accent); color: #4f6f17; font-weight: 600; }
+.zona-cell__btn span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.zona-cell__caret { flex-shrink: 0; font-size: 10px; }
+.zona-pop {
+  position: absolute; z-index: 40; top: calc(100% + 4px); left: 0; min-width: 220px; max-height: 280px;
+  overflow-y: auto; background: #fff; border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.14); padding: 6px;
+}
+.zona-opt { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; font-size: 13px; cursor: pointer; white-space: nowrap; }
+.zona-opt:hover { background: #f9fafb; }
+.zona-opt input { margin: 0; cursor: pointer; }
+.zona-pop__sep { height: 1px; background: #eef0f2; margin: 4px 2px; }
+.zona-overlay { position: fixed; inset: 0; z-index: 30; }
+</style>
