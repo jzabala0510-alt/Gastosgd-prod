@@ -41,6 +41,13 @@
             <option v-for="e in ESTADOS_PENDIENTES_FRONT" :key="e" :value="e">{{ estLabel(e) }}</option>
           </select>
         </div>
+        <div class="field" :class="{ 'field--active': filtroTipoGasto }">
+          <label>Tipo de gasto (opcional)</label>
+          <select v-model="filtroTipoGasto">
+            <option value="">Todos</option>
+            <option v-for="t in tiposGastoDisponibles" :key="t" :value="t">{{ t }}</option>
+          </select>
+        </div>
       </template>
       <template v-else>
         <div class="field" :class="{ 'field--active': desde }"><label>Desde</label><input type="date" v-model="desde" /></div>
@@ -82,15 +89,15 @@
       </template>
       <template v-else>
         <div class="fondos__resumen">
-          <span>Facturas: <b>{{ rep.totales.count }}</b></span>
-          <span>Total: <b>{{ money(rep.totales.totalVes) }} Bs</b></span>
-          <span v-for="(n, e) in rep.totales.porEstado" :key="e" class="badge" :class="estClass(e)">{{ estLabel(e) }}: {{ n }}</span>
-          <button class="btn btn--sm" :disabled="!rep.rows.length" @click="exportar" style="margin-left:auto">⬇ Exportar a Excel</button>
+          <span>Facturas: <b>{{ resumenVisible.count }}</b></span>
+          <span>Total: <b>{{ money(resumenVisible.totalVes) }} Bs</b></span>
+          <span v-for="(n, e) in resumenVisible.porEstado" :key="e" class="badge" :class="estClass(e)">{{ estLabel(e) }}: {{ n }}</span>
+          <button class="btn btn--sm" :disabled="!filasVisibles.length" @click="exportar" style="margin-left:auto">⬇ Exportar a Excel</button>
         </div>
-        <div class="table-wrap" v-if="rep.rows.length"><table class="grid">
+        <div class="table-wrap" v-if="filasVisibles.length"><table class="grid">
           <thead><tr><th>Zona</th><th>Tienda</th><th>Marca</th><th>Factura</th><th>Fecha</th><th>Proveedor</th><th>Tipo de gasto</th><th class="r">Total (Bs)</th><th class="r">Pendiente (Bs)</th><th>Estado</th></tr></thead>
           <tbody>
-            <tr v-for="(f, i) in rep.rows" :key="i">
+            <tr v-for="(f, i) in filasVisibles" :key="i">
               <td>{{ f.zona || '—' }}</td><td>{{ f.tienda || '—' }}</td><td>{{ f.marca || '—' }}</td>
               <td><code>{{ f.numserie }}-{{ f.numfactura }}</code></td>
               <td>{{ fecha(f.fecha) }}</td><td>{{ f.proveedor || '—' }}</td><td>{{ f.tipoGasto || '—' }}</td>
@@ -136,6 +143,7 @@ const tipo = ref('gastos');
 const zona = ref('');
 const codTienda = ref('');
 const estado = ref('');
+const filtroTipoGasto = ref('');
 const desde = ref('');
 const hasta = ref('');
 const fechaSaldos = ref(hoyVE());
@@ -149,6 +157,27 @@ const esFechaUnica = computed(() => !!TIPOS[tipo.value].soloPendientes);
 const estLabel = (e) => ESTADO_LABEL[e] || e;
 const estClass = (e) => ESTADO_CLASS[e] || 'badge--gray';
 
+// Tipo de gasto: a diferencia de Estado (enum fijo, se manda al servidor), no
+// tiene catálogo fijo -- sale del propio ERP y varía por marca. Se filtra al
+// instante sobre lo ya traído (sin volver a golpear el servidor), con las
+// opciones tomadas del reporte actual, mismo patrón que Archivo.vue.
+const tiposGastoDisponibles = computed(() => {
+  if (repKind.value !== 'gastos' || !rep.value) return [];
+  return [...new Set(rep.value.rows.map((r) => r.tipoGasto || 'SIN ESPECIFICAR'))].sort();
+});
+const filasVisibles = computed(() => {
+  if (repKind.value !== 'gastos' || !rep.value) return rep.value ? rep.value.rows : [];
+  if (!filtroTipoGasto.value) return rep.value.rows;
+  return rep.value.rows.filter((f) => (f.tipoGasto || 'SIN ESPECIFICAR') === filtroTipoGasto.value);
+});
+const resumenVisible = computed(() => {
+  const rows = filasVisibles.value;
+  const porEstado = {};
+  let totalVes = 0;
+  for (const r of rows) { totalVes += Number(r.totalVes) || 0; porEstado[r.estado] = (porEstado[r.estado] || 0) + 1; }
+  return { count: rows.length, totalVes, porEstado };
+});
+
 async function onZona() {
   codTienda.value = '';
   tiendas.value = (zona.value && zona.value !== 'TODAS') ? await getTiendas(zona.value) : [];
@@ -156,6 +185,7 @@ async function onZona() {
 
 async function generar() {
   if (!zona.value) return;
+  filtroTipoGasto.value = '';
   loading.value = true;
   try {
     if (esSaldos.value) {
@@ -213,7 +243,7 @@ function exportar() {
       return fila;
     });
   } else {
-    data = rep.value.rows.map((f) => ({
+    data = filasVisibles.value.map((f) => ({
       Zona: f.zona, Tienda: f.tienda, Marca: f.marca, Factura: `${f.numserie}-${f.numfactura}`, Fecha: fecha(f.fecha),
       Proveedor: f.proveedor, 'Tipo de gasto': f.tipoGasto, 'Total (Bs)': Number(f.totalVes) || 0, 'Pendiente (Bs)': Number(f.pendienteVes) || 0, Estado: estLabel(f.estado),
     }));
