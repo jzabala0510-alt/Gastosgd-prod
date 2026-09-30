@@ -57,7 +57,14 @@
         <span>Por favor espere, esto puede tardar unos segundos.</span>
       </div>
     </div>
+    <p v-else-if="error" class="soporte-aviso">⚠ No se pudo generar el reporte: {{ error }}</p>
     <template v-else-if="rep">
+      <div v-if="rep.advertencias && rep.advertencias.length" class="soporte-aviso">
+        ⚠ Algunas marcas no se pudieron consultar y sus gastos no aparecen en este reporte:
+        <ul class="advertencias">
+          <li v-for="(a, i) in rep.advertencias" :key="i"><b>{{ a.bd }}</b>: {{ a.mensaje }}</li>
+        </ul>
+      </div>
       <template v-if="repKind === 'saldos'">
         <div class="fondos__resumen">
           <span>Tiendas: <b>{{ rep.totales.count }}</b></span>
@@ -169,6 +176,7 @@ const fechaSolicitud = ref(hoyVE());
 const rep = ref(null);
 const repKind = ref('gastos');
 const loading = ref(false);
+const error = ref('');
 
 const esSaldos = computed(() => TIPOS[tipo.value].saldos);
 const esFechaUnica = computed(() => !!TIPOS[tipo.value].soloPendientes);
@@ -212,6 +220,9 @@ async function generar() {
   if (!zona.value) return;
   filtrosTipoGasto.value = [];
   popTipoGasto.value = false;
+  // Sin esto, un fallo dejaba en pantalla el reporte anterior (de otra zona) como si fuera el nuevo.
+  rep.value = null;
+  error.value = '';
   loading.value = true;
   try {
     if (esSaldos.value) {
@@ -254,6 +265,8 @@ async function generar() {
       rep.value = await getReporte(params);
       repKind.value = 'gastos';
     }
+  } catch (e) {
+    error.value = e.response?.data?.error || e.message || 'Error desconocido.';
   } finally { loading.value = false; }
 }
 
@@ -306,4 +319,6 @@ onMounted(async () => { zonas.value = await getZonas(); });
 .zona-opt input { margin: 0; cursor: pointer; }
 .zona-pop__sep { height: 1px; background: #eef0f2; margin: 4px 2px; }
 .zona-overlay { position: fixed; inset: 0; z-index: 30; }
+.advertencias { margin: 6px 0 0; padding-left: 20px; }
+.advertencias li { overflow-wrap: anywhere; }
 </style>

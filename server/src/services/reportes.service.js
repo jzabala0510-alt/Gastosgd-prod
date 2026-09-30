@@ -5,6 +5,21 @@ const bancosService = require('./bancos.service');
 
 const esc = (s) => String(s).replace(/'/g, "''");
 
+// Aplica fn a cada item con a lo sumo `limite` en curso a la vez; devuelve los
+// resultados en el mismo orden que items. fn no debe lanzar (atrapar adentro).
+async function mapLimitado(items, limite, fn) {
+  const out = new Array(items.length);
+  let siguiente = 0;
+  const trabajar = async () => {
+    while (siguiente < items.length) {
+      const i = siguiente++;
+      out[i] = await fn(items[i], i);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limite, items.length) }, trabajar));
+  return out;
+}
+
 // Etapas "vivas" (no resueltas todavía) para el reporte "Pendientes por fecha de
 // solicitud". DEVUELTO cuenta como pendiente: necesita que el Analista la reenvíe,
 // no es un cierre. PAGADO y RECHAZADO quedan afuera a propósito (ya se resolvieron).
@@ -17,7 +32,7 @@ const ESTADOS_PENDIENTES = ['PENDIENTE_ANALISTA', 'PENDIENTE_TESORERIA', 'PENDIE
 // pagados — por eso este flag NUNCA implica soloERP, que los escondería al pagarse).
 async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPendientes, soloPresupuestos }) {
   const appPool = await getPool();
-  const vacio = { rows: [], totales: { count: 0, totalVes: 0, porEstado: {} } };
+  const vacio = { rows: [], totales: { count: 0, totalVes: 0, porEstado: {} }, advertencias: [] };
 
   // 1) Tiendas en alcance (codTienda > zona específica > todas las zonas)
   let scope = [];
@@ -42,18 +57,33 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPen
   const flujoMap = new Map();
   for (const r of fl.recordset) flujoMap.set(`${r.CodTienda}|${(r.NumSerie || '').trim()}|${r.NumFactura}|${(r.N || '').trim()}`, { estado: r.Estado, esPresupuesto: !!r.EsPresupuesto });
 
+  // Marcas/fuentes que fallaron: se omiten y se informan, en vez de tumbar el
+  // reporte entero (con "todas las zonas" entran todas las marcas, y bastaba
+  // una con problemas para que no saliera nada).
+  const advertencias = [];
+  const avisar = (bd, mensaje) => {
+    console.error(`[reportes] ${bd} omitida:`, mensaje);
+    if (!advertencias.some((a) => a.bd === bd && a.mensaje === mensaje)) advertencias.push({ bd, mensaje });
+  };
+
   // 3) Agrupar tiendas por marca (BD). "codigos" guarda el código NATIVO (sin
   // offset) -- lo que espera GENERAL.EMPRESASCONTABLES.CODIGO del lado de la
   // marca (ver paso 4); el offset se reaplica ahí al leer los resultados.
+  // En paralelo acotado a 5 (el tamaño del pool de GENERAL): son 2 consultas por
+  // tienda, y en serie era la fase más lenta con "todas las zonas".
+  const infos = await mapLimitado(scope, 5, async (cod) => {
+    try { return await resolverTienda(cod); } catch (e) { return { error: 'excepcion', mensaje: e.message }; }
+  });
   const infoCache = {};
   const porBrand = {};
-  for (const cod of scope) {
-    const info = await resolverTienda(cod); infoCache[cod] = info;
-    if (info.error) continue;
+  scope.forEach((cod, i) => {
+    const info = infos[i]; infoCache[cod] = info;
+    if (info.error === 'excepcion') avisar('Resolución de tiendas', info.mensaje);
+    if (info.error) return;
     const bk = `${info.host}|${info.dbName}`;
-    if (!porBrand[bk]) porBrand[bk] = { pool: info.pool, offset: info.offset || 0, codigos: [] };
+    if (!porBrand[bk]) porBrand[bk] = { pool: info.pool, dbName: info.dbName, offset: info.offset || 0, codigos: [] };
     porBrand[bk].codigos.push(cod - (info.offset || 0));
-  }
+  });
 
   const rows = [];
   const seen = new Set();
@@ -87,10 +117,14 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPen
   };
 
   // 4) Por marca: facturas pendientes de pago (cualquier etapa viva). Estado = flujo o PENDIENTE_ANALISTA.
+  // En serie a propósito: en producción todas las BD de marca viven en el mismo
+  // SQL Server del ERP, y estas consultas son pesadas (escalar RIP por fila).
   for (const bk of Object.keys(porBrand)) {
     const b = porBrand[bk];
-    const cols = await columnasLibres(b.pool, bk);
-    const q = await b.pool.request().query(`
+    let q;
+    try {
+      const cols = await columnasLibres(b.pool, bk);
+      q = await b.pool.request().query(`
       ${CTE_PENDIENTE}
       SELECT ec.CODIGO AS codTienda, f.NUMSERIE, f.NUMFACTURA, f.N, f.FECHA,
         ${expr(cols, 'FECHASOLICITUD', 'DATE')} AS FechaSolicitud,
@@ -107,6 +141,10 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPen
           ON ec.CODIGO=CAST(SUBSTRING(s.CONTABILIDADB, 6, 3) AS INT)
          AND ec.EJERCICIO=CAST(SUBSTRING(s.CONTABILIDADB, 2, 4) AS INT)
       WHERE ec.CODIGO IN (${b.codigos.map(Number).join(',')}) AND f.TIPODOC IN (12, 20)`);
+    } catch (e) {
+      avisar(b.dbName, e.message);
+      continue;
+    }
     for (const d of q.recordset) {
       const cod = d.codTienda + b.offset; // reaplica el offset -> codTienda de GastosGD
       const flu = flujoMap.get(`${cod}|${(d.NUMSERIE || '').trim()}|${d.NUMFACTURA}|${(d.N || '').trim()}`);
@@ -121,7 +159,7 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPen
     const porEstado = {};
     let totalVes = 0;
     for (const r of rows) { porEstado[r.estado] = (porEstado[r.estado] || 0) + 1; totalVes += r.totalVes; }
-    return { rows, totales: { count: rows.length, totalVes: Math.round(totalVes * 100) / 100, porEstado } };
+    return { rows, totales: { count: rows.length, totalVes: Math.round(totalVes * 100) / 100, porEstado }, advertencias };
   }
   const faltantes = {};
   for (const r of fl.recordset) {
@@ -130,14 +168,16 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPen
     const info = infoCache[r.CodTienda];
     if (!info || info.error) continue;
     const bk = `${info.host}|${info.dbName}`;
-    if (!faltantes[bk]) faltantes[bk] = { pool: info.pool, rows: [] };
+    if (!faltantes[bk]) faltantes[bk] = { pool: info.pool, dbName: info.dbName, rows: [] };
     faltantes[bk].rows.push(r);
   }
   for (const bk of Object.keys(faltantes)) {
     const b = faltantes[bk];
-    const cols = await columnasLibres(b.pool, bk);
-    const valores = b.rows.map((r) => `(N'${esc(r.NumSerie)}',${Number(r.NumFactura)},N'${esc(r.N)}')`).join(',');
-    const q = await b.pool.request().query(`
+    let q;
+    try {
+      const cols = await columnasLibres(b.pool, bk);
+      const valores = b.rows.map((r) => `(N'${esc(r.NumSerie)}',${Number(r.NumFactura)},N'${esc(r.N)}')`).join(',');
+      q = await b.pool.request().query(`
       ;WITH K(NUMSERIE, NUMFACTURA, N) AS (SELECT * FROM (VALUES ${valores}) v(a, b, c))
       SELECT f.NUMSERIE, f.NUMFACTURA, f.N, f.FECHA,
         ${expr(cols, 'FECHASOLICITUD', 'DATE')} AS FechaSolicitud,
@@ -153,6 +193,10 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPen
                     AND K.N COLLATE DATABASE_DEFAULT=f.N COLLATE DATABASE_DEFAULT
         LEFT JOIN PROVEEDORES p ON p.CODPROVEEDOR=f.CODPROVEEDOR
         LEFT JOIN FACTURASCOMPRACAMPOSLIBRES cl ON cl.NUMSERIE=f.NUMSERIE AND cl.NUMFACTURA=f.NUMFACTURA AND cl.N=f.N`);
+    } catch (e) {
+      avisar(b.dbName, e.message);
+      continue;
+    }
     const dmap = {};
     for (const d of q.recordset) dmap[`${(d.NUMSERIE || '').trim()}|${d.NUMFACTURA}|${(d.N || '').trim()}`] = d;
     for (const r of b.rows) {
@@ -165,7 +209,7 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPen
   const porEstado = {};
   let totalVes = 0;
   for (const r of rows) { porEstado[r.estado] = (porEstado[r.estado] || 0) + 1; totalVes += r.totalVes; }
-  return { rows, totales: { count: rows.length, totalVes: Math.round(totalVes * 100) / 100, porEstado } };
+  return { rows, totales: { count: rows.length, totalVes: Math.round(totalVes * 100) / 100, porEstado }, advertencias };
 }
 
 // GET /api/reportes/saldos?zona=&codTienda=&fecha= — saldos por tienda, desglosados por
