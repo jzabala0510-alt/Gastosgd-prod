@@ -47,4 +47,15 @@ async function actualizar(id, { nombre, activo, permiteNegativo }) {
   }
 }
 
-module.exports = { listarActivos, listarTodos, crear, actualizar };
+// Nuevo orden del catálogo (arrastrar en Admin → Bancos): ids en el orden deseado.
+// Un solo UPDATE, así el orden queda completo o no cambia nada. Los ids ya vienen
+// validados como enteros desde la ruta.
+async function reordenar(ids) {
+  const pool = await getPool();
+  const valores = ids.map((id, i) => `(${Number(id)}, ${i + 1})`).join(',');
+  await pool.request().query(`
+    UPDATE b SET Orden = v.Orden
+    FROM dbo.GD_Banco b JOIN (VALUES ${valores}) v(IdBanco, Orden) ON v.IdBanco = b.IdBanco`);
+}
+
+module.exports = { listarActivos, listarTodos, crear, actualizar, reordenar };

@@ -76,6 +76,20 @@ router.post('/bancos', async (req, res, next) => {
   }
 });
 
+// PUT /api/admin/bancos/orden — { ids: [IdBanco...] } en el orden deseado. Va antes
+// de /bancos/:id para que "orden" no se tome como un id.
+router.put('/bancos/orden', async (req, res, next) => {
+  try {
+    const ids = req.body?.ids;
+    if (!Array.isArray(ids) || !ids.length || !ids.every((x) => Number.isInteger(x) && x > 0)) {
+      return res.status(400).json({ error: 'ids requeridos (lista de IdBanco)' });
+    }
+    if (new Set(ids).size !== ids.length) return res.status(400).json({ error: 'ids repetidos' });
+    await bancosService.reordenar(ids);
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
 // PUT /api/admin/bancos/:id — { nombre?, activo?, permiteNegativo? }
 router.put('/bancos/:id', async (req, res, next) => {
   try {

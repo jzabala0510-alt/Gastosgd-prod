@@ -7,3 +7,4 @@ export const getBancos = () => http.get('/catalogos/bancos').then((r) => r.data)
 export const getBancosAdmin = () => http.get('/admin/bancos').then((r) => r.data);
 export const crearBanco = (nombre) => http.post('/admin/bancos', { nombre }).then((r) => r.data);
 export const actualizarBanco = (id, payload) => http.put(`/admin/bancos/${id}`, payload).then((r) => r.data);
+export const reordenarBancos = (ids) => http.put('/admin/bancos/orden', { ids }).then((r) => r.data);

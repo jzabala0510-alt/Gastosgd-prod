@@ -3,7 +3,7 @@
     <div class="page__head">
       <div>
         <h1 class="page__title">Bancos</h1>
-        <p class="page__hint">Bancos disponibles para cargar saldos por tienda en el módulo de Saldos. Desactivar un banco no borra su historial.</p>
+        <p class="page__hint">Bancos disponibles para cargar saldos por tienda en el módulo de Saldos. Arrastra ⠿ para cambiar el orden en que aparecen. Desactivar un banco no borra su historial.</p>
       </div>
     </div>
 
@@ -18,9 +18,17 @@
     <p v-if="loading" class="page__hint">Cargando bancos…</p>
     <template v-else>
       <div class="table-wrap"><table class="grid">
-        <thead><tr><th>Banco</th><th>Estado</th><th>Negativo</th><th></th></tr></thead>
+        <thead><tr><th></th><th>Banco</th><th>Estado</th><th>Negativo</th><th></th></tr></thead>
         <tbody>
-          <tr v-for="b in bancos" :key="b.IdBanco">
+          <tr v-for="(b, i) in bancos" :key="b.IdBanco"
+              :class="{
+                arrastrando: arrastrando === i,
+                'drop-arriba': arrastrando !== null && sobre === i && i < arrastrando,
+                'drop-abajo': arrastrando !== null && sobre === i && i > arrastrando,
+              }"
+              @dragover.prevent="sobre = i" @drop.prevent="soltar(i)">
+            <td class="drag-handle" :draggable="editando === null && !guardandoOrden"
+                title="Arrastra para cambiar el orden" @dragstart="iniciarArrastre(i, $event)" @dragend="terminarArrastre">⠿</td>
             <td>
               <input v-if="editando === b.IdBanco" v-model="edicion" class="banco-input"
                      @keyup.enter="guardarNombre(b)" @keyup.esc="editando = null" />
@@ -57,7 +65,7 @@
 import { ref, onMounted } from 'vue';
 import ModalFeedback from '../components/ModalFeedback.vue';
 import { useConfirm } from '../composables/useConfirm';
-import { getBancosAdmin, crearBanco, actualizarBanco } from '../api/bancos';
+import { getBancosAdmin, crearBanco, actualizarBanco, reordenarBancos } from '../api/bancos';
 
 const { confirm } = useConfirm();
 const bancos = ref([]);
@@ -67,6 +75,36 @@ const creando = ref(false);
 const editando = ref(null);
 const edicion = ref('');
 const modal = ref({ visible: false, titulo: '', mensaje: '', tipo: 'success' });
+const arrastrando = ref(null); // índice de la fila que se está arrastrando
+const sobre = ref(null);       // índice de la fila sobre la que va el arrastre
+const guardandoOrden = ref(false);
+
+function iniciarArrastre(i, e) {
+  arrastrando.value = i;
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', String(i)); // Firefox no inicia el arrastre sin datos
+  const fila = e.target.closest('tr');
+  if (fila) e.dataTransfer.setDragImage(fila, 20, fila.offsetHeight / 2);
+}
+function terminarArrastre() { arrastrando.value = null; sobre.value = null; }
+
+// Mueve el banco en pantalla y guarda el orden completo; si falla, vuelve al del servidor.
+async function soltar(destino) {
+  const origen = arrastrando.value;
+  terminarArrastre();
+  if (origen === null || origen === destino) return;
+  const lista = [...bancos.value];
+  const [movido] = lista.splice(origen, 1);
+  lista.splice(destino, 0, movido);
+  bancos.value = lista;
+  guardandoOrden.value = true;
+  try {
+    await reordenarBancos(lista.map((b) => b.IdBanco));
+  } catch (e) {
+    error(e, 'No se pudo guardar el orden.');
+    await cargar();
+  } finally { guardandoOrden.value = false; }
+}
 
 function error(e, fallback) {
   modal.value = { visible: true, titulo: 'Error', mensaje: e.response?.data?.error || fallback, tipo: 'error' };
@@ -131,4 +169,9 @@ onMounted(cargar);
 <style scoped>
 .banco-input { width: 100%; max-width: 280px; padding: 7px 10px; border: 1px solid var(--border); border-radius: 7px; font-size: 14px; outline: none; }
 .banco-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.drag-handle { width: 28px; text-align: center; font-size: 16px; color: var(--muted); cursor: grab; user-select: none; }
+.drag-handle:active { cursor: grabbing; }
+tr.arrastrando td { opacity: .45; }
+tr.drop-arriba td { box-shadow: inset 0 2px 0 var(--accent); }
+tr.drop-abajo td { box-shadow: inset 0 -2px 0 var(--accent); }
 </style>
