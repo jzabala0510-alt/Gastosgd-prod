@@ -242,10 +242,9 @@ async function generar() {
         params.estado = 'PENDIENTE_ANALISTA';
       } else if (TIPOS[tipo.value].soloPendientes) {
         // Cualquier etapa pendiente (Analista, Tesorería, Auditoría, Pago, Devuelto...),
-        // sin fijar una sola — ver ESTADOS_PENDIENTES en reportes.service.js.
-        // El Estado es opcional: si se elige uno, acota a esa sola etapa (sigue
-        // combinándose con soloPendientes/soloERP, son filtros independientes).
-        params.soloERP = '1';
+        // sin fijar una sola — ver ESTADOS_PENDIENTES en reportes.service.js. Sin soloERP:
+        // un gasto que ICG saldó a mitad del flujo sigue pendiente en la app y debe salir.
+        // El Estado es opcional: si se elige uno, acota a esa sola etapa.
         params.soloPendientes = '1';
         if (estado.value) params.estado = estado.value;
       } else if (TIPOS[tipo.value].soloPresupuestos) {

@@ -6,6 +6,41 @@ const ESTADO_DEFAULT = 'PENDIENTE_ANALISTA';
 
 const claveFactura = (x) => `${(x.NUMSERIE ?? x.NumSerie).trim()}|${x.NUMFACTURA ?? x.NumFactura}|${(x.N).trim()}`;
 
+// Gastos que siguen en el flujo de la app pero que ICG ya saldó (no están en el
+// pendiente de TESORERIA): se traen por clave para que su bandeja los siga mostrando
+// y el flujo pueda terminar. Mismas columnas que listarPendientes, sin PendienteVes.
+// En tandas de 500 claves (1500 parámetros): SQL Server acepta hasta 2100 por consulta.
+async function facturasPorClave(pool, cols, claves) {
+  const out = [];
+  for (let i = 0; i < claves.length; i += 500) out.push(...await facturasPorClaveTanda(pool, cols, claves.slice(i, i + 500)));
+  return out;
+}
+
+async function facturasPorClaveTanda(pool, cols, claves) {
+  if (!claves.length) return [];
+  const rq = pool.request();
+  const valores = claves.map((k, i) => {
+    rq.input(`s${i}`, sql.NVarChar, k.NumSerie).input(`f${i}`, sql.Int, k.NumFactura).input(`n${i}`, sql.NVarChar, k.N);
+    return `(@s${i}, @f${i}, @n${i})`;
+  }).join(',');
+  const q = await rq.query(`
+    WITH K(NUMSERIE, NUMFACTURA, N) AS (SELECT * FROM (VALUES ${valores}) v(a, b, c))
+    SELECT f.NUMSERIE, f.NUMFACTURA, f.N, f.SUFACTURA, f.FECHA, f.FECHASUFACTURA, f.CODPROVEEDOR, f.TIPODOC,
+      LTRIM(RTRIM(p.NOMPROVEEDOR)) AS Proveedor,
+      RIP.F_GET_COTIZACION_RIP(f.TOTALNETO, f.FECHASUFACTURA, f.FACTORMONEDA, f.CODMONEDA, 4) AS TotalVes,
+      ${expr(cols, 'NUMCONTROL')} AS NUMCONTROL,
+      ISNULL(LTRIM(RTRIM(${expr(cols, 'TIPOGASTOS')})), 'SIN ESPECIFICAR') AS TipoGasto,
+      ${expr(cols, 'FECHASOLICITUD', 'DATE')} AS FechaSolicitud,
+      ${expr(cols, 'ANULADO', 'INT')} AS ANULADO
+    FROM FACTURASCOMPRA f
+      INNER JOIN K ON K.NUMSERIE COLLATE DATABASE_DEFAULT = f.NUMSERIE COLLATE DATABASE_DEFAULT
+                  AND K.NUMFACTURA = f.NUMFACTURA
+                  AND K.N COLLATE DATABASE_DEFAULT = f.N COLLATE DATABASE_DEFAULT
+      LEFT JOIN PROVEEDORES p ON p.CODPROVEEDOR = f.CODPROVEEDOR
+      LEFT JOIN FACTURASCOMPRACAMPOSLIBRES cl ON cl.NUMSERIE = f.NUMSERIE AND cl.NUMFACTURA = f.NUMFACTURA AND cl.N = f.N`);
+  return q.recordset;
+}
+
 async function getOrCreateFlujo(appPool, { codTienda, numserie, numfactura, n, marca }) {
   const r = await appPool.request()
     .input('c', sql.Int, codTienda).input('s', sql.NVarChar, numserie)
@@ -53,7 +88,21 @@ async function listarPendientes(codTienda, estadoFiltro) {
     .query('SELECT NumSerie, NumFactura, N, Estado FROM dbo.GD_FacturaFlujo WHERE CodTienda=@e');
   const estados = new Map(fl.recordset.map((x) => [claveFactura(x), x.Estado]));
 
-  let facturas = fac.recordset.map((f) => ({ ...f, Estado: estados.get(claveFactura(f)) || ESTADO_DEFAULT }));
+  // Devueltos que ICG ya saldó: salen del pendiente, pero siguen siendo tarea del Analista
+  // (corregir y reenviar). Sin esto quedarían trabados fuera de toda bandeja. Los que nunca
+  // entraron al flujo sí salen de Gastos al saldarse.
+  // Si esta búsqueda falla, la bandeja se muestra igual que antes (sin los saldados).
+  const enIcg = new Set(fac.recordset.map(claveFactura));
+  const trabados = fl.recordset.filter((x) => x.Estado === 'DEVUELTO' && !enIcg.has(claveFactura(x)));
+  let saldados = [];
+  try {
+    saldados = (await facturasPorClave(r.pool, cols, trabados)).map((f) => ({ ...f, PendienteVes: 0, SaldadoIcg: true }));
+  } catch (e) {
+    console.error(`[facturas] Gastos tienda ${codTienda}: no se pudieron traer los devueltos saldados en ICG:`, e.message);
+  }
+
+  let facturas = [...fac.recordset, ...saldados].map((f) => ({ ...f, Estado: estados.get(claveFactura(f)) || ESTADO_DEFAULT }));
+  if (saldados.length) facturas.sort((a, b) => new Date(b.FECHA) - new Date(a.FECHA));
   if (estadoFiltro) facturas = facturas.filter((f) => f.Estado === estadoFiltro);
 
   return { ...base, disponibleLocal: true, total: facturas.length, facturas };
@@ -180,6 +229,22 @@ async function cobertura(codTienda, fecha) {
         Monto: Math.round(v * 100) / 100, Acumulado: Math.round(acum * 100) / 100, Cubierto: acum <= disponible,
       };
     });
+
+  // Pendientes de Tesorería que ICG ya saldó: siguen apareciendo para que Tesorería los
+  // apruebe o devuelva y el flujo no quede trabado. Monto 0: no consumen el disponible.
+  // Si esta búsqueda falla, la bandeja se muestra igual que antes (sin los saldados).
+  const enIcg = new Set(fac.recordset.map(claveFactura));
+  const trabados = fl.recordset.filter((x) => x.Estado === 'PENDIENTE_TESORERIA' && !enIcg.has(claveFactura(x)));
+  try {
+    for (const f of await facturasPorClave(r.pool, cols, trabados)) {
+      gastos.push({
+        NumSerie: f.NUMSERIE, NumFactura: f.NUMFACTURA, N: f.N, Proveedor: f.Proveedor, FechaGasto: f.FECHA,
+        TipoGasto: f.TipoGasto, Monto: 0, Acumulado: Math.round(acum * 100) / 100, Cubierto: true, SaldadoIcg: true,
+      });
+    }
+  } catch (e) {
+    console.error(`[facturas] Tesorería tienda ${codTienda}: no se pudieron traer los saldados en ICG:`, e.message);
+  }
 
   return {
     tienda: r.tienda, disponibleLocal: true, disponible,

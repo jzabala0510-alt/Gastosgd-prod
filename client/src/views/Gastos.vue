@@ -73,7 +73,10 @@
             <td>{{ tipoDoc(f.TIPODOC) }}</td>
             <td class="r">{{ money(f.TotalVes) }}</td>
             <td class="r">{{ money(f.PendienteVes) }}</td>
-            <td><span class="badge" :class="estClass(f.Estado)">{{ estLabel(f.Estado) }}</span></td>
+            <td style="white-space:nowrap">
+              <span class="badge" :class="estClass(f.Estado)">{{ estLabel(f.Estado) }}</span>
+              <span v-if="f.SaldadoIcg" class="badge badge--blue" style="margin-left:4px" title="ICG ya lo saldó; sigue aquí porque está devuelto y hay que reenviarlo.">Saldado en ICG</span>
+            </td>
           </tr>
         </tbody>
       </table></div>

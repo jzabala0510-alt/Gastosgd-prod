@@ -87,6 +87,7 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPen
 
   const rows = [];
   const seen = new Set();
+  const enIcg = new Set(); // claves que vinieron en el pendiente de ICG (paso 4), pasen o no los filtros
   const addRow = (cod, d, est, esPresupuesto) => {
     const k = `${cod}|${(d.NUMSERIE || '').trim()}|${d.NUMFACTURA}|${(d.N || '').trim()}`;
     if (seen.has(k)) return;
@@ -147,13 +148,16 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPen
     }
     for (const d of q.recordset) {
       const cod = d.codTienda + b.offset; // reaplica el offset -> codTienda de GastosGD
-      const flu = flujoMap.get(`${cod}|${(d.NUMSERIE || '').trim()}|${d.NUMFACTURA}|${(d.N || '').trim()}`);
+      const k = `${cod}|${(d.NUMSERIE || '').trim()}|${d.NUMFACTURA}|${(d.N || '').trim()}`;
+      enIcg.add(k);
+      const flu = flujoMap.get(k);
       addRow(cod, d, flu ? flu.estado : 'PENDIENTE_ANALISTA', flu ? flu.esPresupuesto : false);
     }
   }
 
-  // 5) Facturas con flujo (p. ej. PAGADO) que ya NO están en el pendiente del ERP → traer por clave.
-  // Se omite en modo soloERP (Gastos general): solo interesan pendientes del ERP.
+  // 5) Facturas con flujo (p. ej. PAGADO, o saldadas en ICG a mitad del flujo) que ya NO están
+  // en el pendiente del ERP → traer por clave. Se omite en modo soloERP (Gastos general:
+  // solo lo no procesado, y si ICG lo saldó antes de procesarlo no queda nada que hacer).
   if (soloERP) {
     rows.sort((a, b) => String(b.fecha || '').localeCompare(String(a.fecha || '')));
     const porEstado = {};
@@ -164,7 +168,13 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPen
   const faltantes = {};
   for (const r of fl.recordset) {
     const k = `${r.CodTienda}|${(r.NumSerie || '').trim()}|${r.NumFactura}|${(r.N || '').trim()}`;
-    if (seen.has(k)) continue;
+    if (seen.has(k) || enIcg.has(k)) continue;
+    // No traer de ICG lo que addRow igual descartaría por estado.
+    if (estado && r.Estado !== estado) continue;
+    if (soloPendientes && !ESTADOS_PENDIENTES.includes(r.Estado)) continue;
+    // Pendientes: un gasto que nunca se envió (Pendiente Analista) y que ICG ya saldó no es
+    // tarea de nadie — misma regla que la bandeja de Gastos.
+    if (soloPendientes && r.Estado === 'PENDIENTE_ANALISTA') continue;
     const info = infoCache[r.CodTienda];
     if (!info || info.error) continue;
     const bk = `${info.host}|${info.dbName}`;

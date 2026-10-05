@@ -91,7 +91,10 @@
             <td>{{ g.TipoGasto || '—' }}</td>
             <td class="r">{{ money(g.Monto) }}</td>
             <td class="r">{{ money(g.Acumulado) }}</td>
-            <td><span class="badge" :class="g.Cubierto ? 'badge--green' : 'badge--red'">{{ g.Cubierto ? 'Cubierto' : 'Excede' }}</span></td>
+            <td>
+              <span v-if="g.SaldadoIcg" class="badge badge--blue" title="ICG ya lo saldó; sigue aquí para que el flujo continúe. No consume el disponible.">Saldado en ICG</span>
+              <span v-else class="badge" :class="g.Cubierto ? 'badge--green' : 'badge--red'">{{ g.Cubierto ? 'Cubierto' : 'Excede' }}</span>
+            </td>
             <td class="acciones-inline">
               <router-link class="btn btn--sm" :to="`/factura/${g.CodTienda || store.codTienda}/${enc(g.NumSerie)}/${g.NumFactura}/${enc(g.N)}`">Detalle</router-link>
               <button class="btn btn--warn btn--sm" :disabled="busy" @click="dec(g, 'DEVUELTO')">Devolver</button>
@@ -202,7 +205,8 @@ async function load() {
         cob.value = { ...r, gastos: r.gastos.map((g) => ({ ...g, CodTienda: cod, Marca: r.tienda?.Marca || '' })) };
         monto.value = r.disponible ?? 0;
         Object.keys(sel).forEach((k) => delete sel[k]);
-        r.gastos.forEach((g) => { sel[keyOf({ ...g, CodTienda: cod })] = !!g.Cubierto; });
+        // Los saldados en ICG no se preseleccionan: que Tesorería los apruebe a conciencia.
+        r.gastos.forEach((g) => { sel[keyOf({ ...g, CodTienda: cod })] = !!g.Cubierto && !g.SaldadoIcg; });
       }
     } else {
       // Varias tiendas elegidas en el selector múltiple, o ninguna (toda la zona/marca) —
@@ -243,7 +247,7 @@ async function load() {
       cob.value = { disponible: totalDisp, totalPendiente: totalPend, gastos: allGastos, tienda: null };
       monto.value = totalDisp;
       Object.keys(sel).forEach((k) => delete sel[k]);
-      allGastos.forEach((g) => { sel[keyOf(g)] = !!g.Cubierto; });
+      allGastos.forEach((g) => { sel[keyOf(g)] = !!g.Cubierto && !g.SaldadoIcg; });
     }
   } finally { loading.value = false; }
 }
