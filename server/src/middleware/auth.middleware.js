@@ -41,16 +41,21 @@ function authenticate(req, res, next) {
   }
 }
 
+// True si el usuario tiene alguno de los roles (ADMIN siempre pasa).
+// Soporta multi-rol: user.roles es un arreglo; cae a user.rol por compatibilidad.
+function tieneRol(user, ...roles) {
+  const userRoles = (user && Array.isArray(user.roles) && user.roles.length)
+    ? user.roles
+    : (user && user.rol ? [user.rol] : []);
+  return userRoles.includes('ADMIN') || roles.some((r) => userRoles.includes(r));
+}
+
 // Requiere uno de los roles indicados (ADMIN siempre pasa).
-// Soporta multi-rol: req.user.roles es un arreglo; cae a req.user.rol por compatibilidad.
 function requireRol(...roles) {
   return (req, res, next) => {
-    const userRoles = (req.user && Array.isArray(req.user.roles) && req.user.roles.length)
-      ? req.user.roles
-      : (req.user && req.user.rol ? [req.user.rol] : []);
-    if (userRoles.includes('ADMIN') || roles.some((r) => userRoles.includes(r))) return next();
+    if (tieneRol(req.user, ...roles)) return next();
     res.status(403).json({ error: 'Acceso denegado para tu rol' });
   };
 }
 
-module.exports = { generarToken, authenticate, requireRol, generarTokenUpdater, requireUpdaterAuth };
+module.exports = { generarToken, authenticate, requireRol, tieneRol, generarTokenUpdater, requireUpdaterAuth };

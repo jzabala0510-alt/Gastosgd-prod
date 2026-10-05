@@ -124,11 +124,9 @@
       </div>
     </div>
 
-    <!-- Presupuesto: cargar la factura real. La puede subir el Analista desde su
-         propia etapa (ideal: la sube de una vez) o el Auditor al confirmar el
-         pago (última oportunidad, ahí vive el bloqueo real). En cualquier otra
-         etapa (Tesorería, la 1ª aprobación del Auditor hacia Pagos) el
-         presupuesto avanza sin pedir la factura. -->
+    <!-- Presupuesto: cargar la factura real (ver puedeCargarFactura). Es la única
+         acción disponible también desde Archivo: la factura suele llegar después
+         de pagar, cuando el gasto ya salió de las bandejas operativas. -->
     <div class="card" v-if="puedeCargarFactura">
       <h3 class="card__title">Cargar Factura del Presupuesto</h3>
       <p class="page__hint">Este gasto es un presupuesto. Sube aquí la factura real — se necesita antes de poder confirmar el pago.</p>
@@ -248,11 +246,11 @@ const esAudPago = computed(() => !soloLectura.value && f.value?.Estado === 'PAGO
 const puedeDecidir = computed(() => esAna.value || esTes.value || esAud.value);
 const puedeAdjuntar = computed(() => !soloLectura.value && f.value?.Estado !== 'PAGADO' && (auth.esAnalista || auth.esTesoreria || auth.esAuditor));
 const tieneFactura = computed(() => (f.value?.adjuntos || []).some((a) => a.Tipo === 'FACTURA'));
-// Quién puede cargar la factura real del presupuesto: el Analista desde su propia
-// etapa (lo ideal — la sube de una vez y el resto del flujo avanza sin fricción) o,
-// si no la subió antes, el Auditor al momento de confirmar el pago (mismo lugar de
-// siempre, es la última oportunidad antes del bloqueo real).
-const puedeCargarFactura = computed(() => f.value?.EsPresupuesto && !tieneFactura.value && (esAna.value || esAudPago.value));
+// Factura real del presupuesto: la cargan Analista, Pagador o Auditor en cualquier etapa
+// antes de PAGADO, incluso en modo solo lectura (Archivo) — llega después de pagar,
+// cuando el gasto ya salió de sus bandejas. Confirmar el pago sigue siendo del Auditor.
+const puedeCargarFactura = computed(() => f.value?.EsPresupuesto && !tieneFactura.value && f.value?.Estado !== 'PAGADO'
+  && (auth.esAnalista || auth.esPagador || auth.esAuditor));
 // El bloqueo de Presupuesto es solo en la confirmación final del pago (esAudPago) — un
 // presupuesto SÍ puede pasar por Auditoría→Pagos y ser pagado con normalidad; lo único
 // que no puede pasar sin la factura real es quedar marcado PAGADO en firme.

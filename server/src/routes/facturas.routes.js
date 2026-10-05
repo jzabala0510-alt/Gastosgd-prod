@@ -2,7 +2,7 @@ const { Router } = require('express');
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
-const { authenticate, requireRol } = require('../middleware/auth.middleware');
+const { authenticate, requireRol, tieneRol } = require('../middleware/auth.middleware');
 const { alcanceDe, bloqueadoPorAlcance } = require('../services/alcance');
 const { hoyVE } = require('../utils/fecha');
 const facturasService = require('../services/facturas.service');
@@ -116,6 +116,11 @@ router.post('/adjuntos', upload.array('archivos', 10), async (req, res, next) =>
     if (!codTienda || !numserie || !numfactura || !n) return res.status(400).json({ error: 'Faltan datos de la factura' });
     if (!req.files || !req.files.length) return res.status(400).json({ error: 'No se recibieron archivos' });
     if (await bloqueadoPorAlcance(req.user, codTienda)) return res.status(403).json({ error: FUERA_ALCANCE });
+    // La factura real de un presupuesto la cargan Analista, Pagador o Auditor (también desde
+    // Archivo); confirmar el pago sigue siendo solo del Auditor, en /confirmar-pago.
+    if (String(tipo || '').toUpperCase() === 'FACTURA' && !tieneRol(req.user, 'ANALISTA', 'PAGADOR', 'AUDITOR')) {
+      return res.status(403).json({ error: 'Solo Analista, Pagador o Auditor pueden cargar la factura del presupuesto.' });
+    }
     const out = await facturasService.guardarAdjuntos({
       codTienda: Number(codTienda), numserie, numfactura: Number(numfactura), n, marca, tipo, files: req.files,
     });
