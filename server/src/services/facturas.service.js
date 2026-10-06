@@ -437,10 +437,13 @@ async function confirmarPago({ codTienda, numserie, numfactura, n, marca, decisi
 }
 
 // Bandeja cross-tienda por estado (overlay), filtrada por el alcance de zona del usuario.
+// Sin tope de filas: antes era TOP 200 y, al crecer el volumen, zonas enteras quedaban
+// fuera (las vistas filtran por zona en el navegador sobre lo que llega). Los datos de
+// ICG se traen con una consulta por BD de marca, no una por factura.
 async function bandeja(estado, alcance) {
   const appPool = await getPool();
   const fl = await appPool.request().input('e', sql.NVarChar, estado)
-    .query('SELECT TOP 200 IdFlujo, CodTienda, Marca, NumSerie, NumFactura, N, Estado, EsPresupuesto FROM dbo.GD_FacturaFlujo WHERE Estado=@e ORDER BY FechaActualizacion DESC');
+    .query('SELECT IdFlujo, CodTienda, Marca, NumSerie, NumFactura, N, Estado, EsPresupuesto FROM dbo.GD_FacturaFlujo WHERE Estado=@e ORDER BY FechaActualizacion DESC');
 
   const filas = alcance.irrestricto ? fl.recordset : fl.recordset.filter((row) => alcance.codTiendas.has(row.CodTienda));
 
@@ -458,27 +461,33 @@ async function bandeja(estado, alcance) {
     conFactura = new Set(rf.recordset.map((x) => x.IdFlujo));
   }
 
-  const cache = {};
+  const infoPorTienda = new Map();
+  for (const cod of new Set(filas.map((row) => row.CodTienda))) infoPorTienda.set(cod, await resolverTienda(cod));
+
+  // Datos de ICG agrupados por BD de marca. Si una marca falla, sus filas salen sin esos
+  // datos (igual que antes), no se cae la bandeja.
+  const porBd = new Map();
+  for (const row of filas) {
+    const info = infoPorTienda.get(row.CodTienda);
+    if (info.error) continue;
+    const bk = `${info.host}|${info.dbName}`;
+    if (!porBd.has(bk)) porBd.set(bk, { info, filas: [] });
+    porBd.get(bk).filas.push(row);
+  }
+  const datosIcg = new Map();
+  for (const [bk, g] of porBd) {
+    try {
+      const cols = await columnasLibres(g.info.pool, bk);
+      for (const f of await facturasPorClave(g.info.pool, cols, g.filas)) datosIcg.set(`${bk}|${claveFactura(f)}`, f);
+    } catch (e) {
+      console.error(`[facturas] Bandeja ${estado}: no se pudieron traer los datos de ${g.info.dbName}:`, e.message);
+    }
+  }
+
   const out = [];
   for (const row of filas) {
-    let info = cache[row.CodTienda];
-    if (!info) { info = await resolverTienda(row.CodTienda); cache[row.CodTienda] = info; }
-    let fac = null;
-    if (!info.error) {
-      try {
-        const cols = await columnasLibres(info.pool, `${info.host}|${info.dbName}`);
-        const q = await info.pool.request()
-          .input('s', sql.NVarChar, row.NumSerie).input('f', sql.Int, row.NumFactura).input('n', sql.NVarChar, row.N)
-          .query(`SELECT TOP 1 f.FECHA, LTRIM(RTRIM(p.NOMPROVEEDOR)) AS Proveedor,
-                    RIP.F_GET_COTIZACION_RIP(f.TOTALNETO, f.FECHASUFACTURA, f.FACTORMONEDA, f.CODMONEDA, 4) AS TotalVes,
-                    ISNULL(LTRIM(RTRIM(${expr(cols, 'TIPOGASTOS')})), 'SIN ESPECIFICAR') AS TipoGasto
-                  FROM FACTURASCOMPRA f
-                  LEFT JOIN PROVEEDORES p ON p.CODPROVEEDOR=f.CODPROVEEDOR
-                  LEFT JOIN FACTURASCOMPRACAMPOSLIBRES cl ON cl.NUMSERIE=f.NUMSERIE AND cl.NUMFACTURA=f.NUMFACTURA AND cl.N=f.N
-                  WHERE f.NUMSERIE=@s AND f.NUMFACTURA=@f AND f.N=@n`);
-        fac = q.recordset[0];
-      } catch { /* ignore */ }
-    }
+    const info = infoPorTienda.get(row.CodTienda);
+    const fac = info.error ? null : datosIcg.get(`${info.host}|${info.dbName}|${claveFactura(row)}`) || null;
     out.push({
       codTienda: row.CodTienda, tienda: info.tienda ? info.tienda.Tienda : null, zona: info.tienda ? info.tienda.Zona : null,
       marca: row.Marca, numserie: row.NumSerie, numfactura: row.NumFactura, n: row.N, estado: row.Estado,
