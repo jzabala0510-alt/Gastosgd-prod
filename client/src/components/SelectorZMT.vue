@@ -168,9 +168,9 @@ defineExpose({ restaurar });
 </script>
 
 <style scoped>
-/* Selector múltiple de Marca/Tienda (multiple=true) — mismo patrón que el selector de
-   zonas por usuario en AdminUsuarios.vue (duplicado aquí a propósito: son estilos
-   scoped, no hay colisión, y así este componente no depende de otro para renderizarse). */
+/* Selector múltiple de Marca/Tienda (multiple=true) — mismo patrón que el de Tipo de
+   gasto en Reportes.vue (duplicado aquí a propósito: son estilos scoped, no hay
+   colisión, y así este componente no depende de otro para renderizarse). */
 .zona-cell { position: relative; display: inline-block; width: 100%; }
 .zona-cell__btn {
   /* Mismo tamaño que .field select/input (style.css) para que se vea igual que Zona. */

@@ -312,4 +312,4 @@ async function saldos({ zona, codTienda, fecha }) {
   };
 }
 
-module.exports = { listado, saldos };
+module.exports = { listado, saldos, ESTADOS_PENDIENTES };

@@ -41,12 +41,15 @@ function authenticate(req, res, next) {
   }
 }
 
+// Roles del usuario. Soporta multi-rol: user.roles es un arreglo; cae a user.rol por compatibilidad.
+function rolesDe(user) {
+  if (user && Array.isArray(user.roles) && user.roles.length) return user.roles;
+  return user && user.rol ? [user.rol] : [];
+}
+
 // True si el usuario tiene alguno de los roles (ADMIN siempre pasa).
-// Soporta multi-rol: user.roles es un arreglo; cae a user.rol por compatibilidad.
 function tieneRol(user, ...roles) {
-  const userRoles = (user && Array.isArray(user.roles) && user.roles.length)
-    ? user.roles
-    : (user && user.rol ? [user.rol] : []);
+  const userRoles = rolesDe(user);
   return userRoles.includes('ADMIN') || roles.some((r) => userRoles.includes(r));
 }
 
@@ -58,4 +61,4 @@ function requireRol(...roles) {
   };
 }
 
-module.exports = { generarToken, authenticate, requireRol, tieneRol, generarTokenUpdater, requireUpdaterAuth };
+module.exports = { generarToken, authenticate, requireRol, tieneRol, rolesDe, generarTokenUpdater, requireUpdaterAuth };

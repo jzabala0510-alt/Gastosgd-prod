@@ -8,11 +8,15 @@
       </div>
     </div>
 
+    <div v-if="!tiposPermitidos.length" class="empty card">
+      No tienes reportes asignados. Pídele a un administrador que te los habilite en Admin → Usuarios.
+    </div>
+    <template v-else>
     <div class="card filtros">
-      <div class="field" :class="{ 'field--active': tipo !== 'gastos' }">
+      <div class="field" :class="{ 'field--active': tipo !== tiposPermitidos[0] }">
         <label>Tipo de reporte</label>
         <select v-model="tipo">
-          <option v-for="(t, k) in TIPOS" :key="k" :value="k">{{ t.label }}</option>
+          <option v-for="k in tiposPermitidos" :key="k" :value="k">{{ TIPOS[k].label }}</option>
         </select>
       </div>
       <div class="field" :class="{ 'field--active': zona }">
@@ -134,6 +138,7 @@
       </template>
     </template>
     <p v-else class="page__hint">Selecciona el tipo de reporte y la zona, y presiona Generar.</p>
+    </template>
   </section>
 </template>
 
@@ -144,26 +149,27 @@ import { getZonas, getTiendas } from '../api/facturas';
 import { getReporte, getSaldos } from '../api/reportes';
 import { ESTADO_LABEL, ESTADO_CLASS } from '../utils/estados';
 import { money, fecha, hoyVE } from '../utils/format';
+import { useAuthStore } from '../stores/auth';
+import { REPORTES_INFO } from '../utils/roles';
 
 // Mismo orden/valores que ESTADOS_PENDIENTES en reportes.service.js — opciones
 // del filtro opcional de Estado en "Gastos (Fecha de solicitud)".
 const ESTADOS_PENDIENTES_FRONT = ['PENDIENTE_ANALISTA', 'PENDIENTE_TESORERIA', 'PENDIENTE_AUDITORIA', 'PENDIENTE_PAGO', 'PAGO_EN_REVISION', 'DEVUELTO'];
 
-const TIPOS = {
-  gastos: { label: 'Gastos (general)', estado: null, saldos: false },
-  pendientes_solicitud: { label: 'Gastos (Fecha de solicitud)', estado: null, saldos: false, soloPendientes: true },
-  pendiente_tesoreria: { label: 'Pendiente por aprobar Tesorería', estado: 'PENDIENTE_TESORERIA', saldos: false },
-  pendiente_auditoria: { label: 'Pendiente por Auditoría', estado: 'PENDIENTE_AUDITORIA', saldos: false },
-  pendiente_pago: { label: 'Pendientes por pagar', estado: 'PENDIENTE_PAGO', saldos: false },
-  aprobado: { label: 'Aprobado (pagado)', estado: 'PAGADO', saldos: false },
-  devueltos: { label: 'Devueltos', estado: 'DEVUELTO', saldos: false },
-  presupuestos: { label: 'Presupuestos', estado: null, saldos: false, soloPresupuestos: true },
-  saldos: { label: 'General de saldos', estado: null, saldos: true },
-};
+// Solo lo que cambia en pantalla por tipo; el nombre de cada reporte sale de
+// REPORTES_INFO y los filtros que lo definen los arma el servidor (catalogoReportes.js).
+const UI_TIPO = { pendientes_solicitud: { fechaUnica: true }, saldos: { saldos: true } };
+const TIPOS = Object.fromEntries(REPORTES_INFO.map((r) => [r.tipo, { label: r.label, ...UI_TIPO[r.tipo] }]));
+
+const auth = useAuthStore();
+const tiposPermitidos = computed(() => {
+  const permitidos = auth.reportesPermitidos;
+  return REPORTES_INFO.map((r) => r.tipo).filter((k) => !permitidos || permitidos.includes(k));
+});
 
 const zonas = ref([]);
 const tiendas = ref([]);
-const tipo = ref('gastos');
+const tipo = ref(tiposPermitidos.value[0] || 'gastos');
 const zona = ref('');
 const codTienda = ref('');
 const estado = ref('');
@@ -178,8 +184,8 @@ const repKind = ref('gastos');
 const loading = ref(false);
 const error = ref('');
 
-const esSaldos = computed(() => TIPOS[tipo.value].saldos);
-const esFechaUnica = computed(() => !!TIPOS[tipo.value].soloPendientes);
+const esSaldos = computed(() => !!TIPOS[tipo.value].saldos);
+const esFechaUnica = computed(() => !!TIPOS[tipo.value].fechaUnica);
 const estLabel = (e) => ESTADO_LABEL[e] || e;
 const estClass = (e) => ESTADO_CLASS[e] || 'badge--gray';
 
@@ -233,30 +239,15 @@ async function generar() {
       rep.value = await getSaldos(params);
       repKind.value = 'saldos';
     } else {
-      const params = {};
+      // El servidor arma los filtros de cada reporte a partir del tipo y valida el permiso.
+      const params = { tipo: tipo.value };
       if (zona.value !== 'TODAS') params.zona = zona.value;
       if (codTienda.value) params.codTienda = codTienda.value;
-      if (tipo.value === 'gastos') {
-        // Gastos (general) = solo lo NO procesado (pendiente por el analista).
-        params.soloERP = '1';
-        params.estado = 'PENDIENTE_ANALISTA';
-      } else if (TIPOS[tipo.value].soloPendientes) {
-        // Cualquier etapa pendiente (Analista, Tesorería, Auditoría, Pago, Devuelto...),
-        // sin fijar una sola — ver ESTADOS_PENDIENTES en reportes.service.js. Sin soloERP:
-        // un gasto que ICG saldó a mitad del flujo sigue pendiente en la app y debe salir.
-        // El Estado es opcional: si se elige uno, acota a esa sola etapa.
-        params.soloPendientes = '1';
-        if (estado.value) params.estado = estado.value;
-      } else if (TIPOS[tipo.value].soloPresupuestos) {
-        // Sin soloERP: un presupuesto ya pagado debe seguir apareciendo acá.
-        params.soloPresupuestos = '1';
-      } else {
-        const est = TIPOS[tipo.value].estado;
-        if (est) params.estado = est;
-      }
       if (esFechaUnica.value) {
         params.desde = fechaSolicitud.value;
         params.hasta = fechaSolicitud.value;
+        // Etapa opcional: el servidor solo la acepta en este reporte y entre las pendientes.
+        if (estado.value) params.estado = estado.value;
       } else {
         if (desde.value) params.desde = desde.value;
         if (hasta.value) params.hasta = hasta.value;
@@ -296,9 +287,9 @@ onMounted(async () => { zonas.value = await getZonas(); });
 </script>
 
 <style scoped>
-/* Selector múltiple de Tipo de gasto — mismo patrón que el selector de zonas por
-   usuario (AdminUsuarios.vue) y el de Marca/Tienda en Tesorería (SelectorZMT.vue),
-   duplicado aquí a propósito: son estilos scoped, sin colisión entre componentes. */
+/* Selector múltiple de Tipo de gasto — mismo patrón que el de Marca/Tienda en
+   Tesorería (SelectorZMT.vue), duplicado aquí a propósito: son estilos scoped,
+   sin colisión entre componentes. */
 .zona-cell { position: relative; display: inline-block; width: 100%; }
 .zona-cell__btn {
   display: inline-flex; align-items: center; gap: 8px; width: 100%;

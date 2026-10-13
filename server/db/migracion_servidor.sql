@@ -40,7 +40,7 @@ BEGIN
         CodUsuarioIcg  INT           NULL,
         Usuario        NVARCHAR(50)  NULL,
         Nombre         NVARCHAR(100) NULL,
-        Rol            NVARCHAR(120) NOT NULL,   -- CSV: uno o varios roles separados por coma
+        Rol            NVARCHAR(500) NOT NULL,   -- CSV: uno o varios roles separados por coma
         Activo         BIT           NOT NULL CONSTRAINT DF_GD_Usuario_Activo DEFAULT (1),
         FechaCreacion  DATETIME      NOT NULL CONSTRAINT DF_GD_Usuario_Fecha DEFAULT (GETDATE()),
         CONSTRAINT UQ_GD_Usuario_Icg UNIQUE (CodUsuarioIcg)
@@ -63,6 +63,13 @@ IF (SELECT max_length FROM sys.columns WHERE object_id = OBJECT_ID('dbo.GD_Usuar
 BEGIN
     ALTER TABLE dbo.GD_Usuario ALTER COLUMN Rol NVARCHAR(120) NOT NULL;
     PRINT '✅ Columna Rol ampliada a NVARCHAR(120).';
+END
+GO
+-- Sub-permisos por reporte (REP_*): con varios roles más reportes, 120 se queda corto.
+IF (SELECT max_length FROM sys.columns WHERE object_id = OBJECT_ID('dbo.GD_Usuario') AND name = 'Rol') < 1000
+BEGIN
+    ALTER TABLE dbo.GD_Usuario ALTER COLUMN Rol NVARCHAR(500) NOT NULL;
+    PRINT '✅ Columna Rol ampliada a NVARCHAR(500) (sub-permisos de reportes).';
 END
 GO
 

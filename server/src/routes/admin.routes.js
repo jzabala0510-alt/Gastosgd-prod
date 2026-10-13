@@ -2,11 +2,16 @@ const { Router } = require('express');
 const { authenticate, requireRol } = require('../middleware/auth.middleware');
 const usuariosService = require('../services/usuarios.service');
 const bancosService = require('../services/bancos.service');
+const { TAGS_REPORTE } = require('../services/catalogoReportes');
 
 const router = Router();
 router.use(authenticate, requireRol('ADMIN')); // todo el módulo es solo para ADMIN
 
-const ROLES = ['ANALISTA', 'TESORERIA', 'AUDITOR', 'PAGADOR', 'PAGADAS', 'SALDOS', 'REPORTES', 'PAGOS_DEVOLVER', 'ARCHIVO', 'ADMIN'];
+const MODULOS = ['ANALISTA', 'TESORERIA', 'AUDITOR', 'PAGADOR', 'PAGADAS', 'SALDOS', 'REPORTES', 'ARCHIVO', 'ADMIN'];
+// Sub-permisos: solo afinan un módulo (Devolver dentro de Pagos, qué reportes ve en
+// Reportes). Sin ningún módulo no dan acceso a nada, así que se guarda como revocado.
+const SUBPERMISOS = ['PAGOS_DEVOLVER', ...TAGS_REPORTE];
+const ROLES = [...MODULOS, ...SUBPERMISOS];
 
 // GET /api/admin/usuarios — todos los usuarios ICG (no bloqueados) + sus roles en GastosGD.
 router.get('/usuarios', async (req, res, next) => {
@@ -16,7 +21,7 @@ router.get('/usuarios', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-// PUT /api/admin/usuarios/:cod — asigna roles (Activo=1) o revoca (sin roles → Activo=0).
+// PUT /api/admin/usuarios/:cod — asigna roles (Activo=1) o revoca (sin ningún módulo → Activo=0).
 // body: { roles: ['ANALISTA','PAGADOR', ...] }
 router.put('/usuarios/:cod', async (req, res, next) => {
   try {
@@ -25,6 +30,7 @@ router.put('/usuarios/:cod', async (req, res, next) => {
     roles = [...new Set(roles.map((r) => String(r).trim().toUpperCase()).filter(Boolean))];
     if (!Number.isInteger(cod) || cod < 0) return res.status(400).json({ error: 'codUsuarioIcg inválido' });
     if (roles.some((r) => !ROLES.includes(r))) return res.status(400).json({ error: 'Rol inválido' });
+    if (!roles.some((r) => MODULOS.includes(r))) roles = [];
 
     // Anti-lockout: el admin no puede quitarse a sí mismo el rol ADMIN.
     if (cod === req.user.codUsuarioIcg && !roles.includes('ADMIN')) {

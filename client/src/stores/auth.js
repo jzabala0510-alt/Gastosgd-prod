@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import http from '../api/http';
-import { ROL_LABEL } from '../utils/roles';
+import { ROL_LABEL, REPORTES_INFO, TAGS_REPORTE } from '../utils/roles';
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -15,7 +15,11 @@ export const useAuthStore = defineStore('auth', {
   getters: {
     isAuth: (s) => !!s.token,
     rol: (s) => s.roles[0] || '',                                  // compat: primer rol
-    rolLabel: (s) => (s.roles.length ? s.roles.map((r) => ROL_LABEL[r] || r).join(' · ') : '—'),
+    // Sin los sub-permisos de reportes: son muchos y llenarían el encabezado.
+    rolLabel: (s) => {
+      const visibles = s.roles.filter((r) => !TAGS_REPORTE.includes(r));
+      return visibles.length ? visibles.map((r) => ROL_LABEL[r] || r).join(' · ') : '—';
+    },
     esAdmin: (s) => s.roles.includes('ADMIN'),
     esAnalista: (s) => s.roles.includes('ANALISTA') || s.roles.includes('ADMIN'),
     esTesoreria: (s) => s.roles.includes('TESORERIA') || s.roles.includes('ADMIN'),
@@ -26,6 +30,14 @@ export const useAuthStore = defineStore('auth', {
     esReportes: (s) => s.roles.includes('REPORTES') || s.roles.includes('ADMIN'),
     esPagosDevolver: (s) => s.roles.includes('PAGOS_DEVOLVER') || s.roles.includes('ADMIN'),
     esArchivo: (s) => s.roles.includes('ARCHIVO') || s.roles.includes('ADMIN'),
+    // Tipos de reporte que puede ver (el servidor valida lo mismo en catalogoReportes.js):
+    // null = todos (ADMIN, o Reportes sin ningún reporte marcado); si no, solo esos.
+    reportesPermitidos: (s) => {
+      if (s.roles.includes('ADMIN')) return null;
+      if (!s.roles.includes('REPORTES')) return [];
+      const marcados = REPORTES_INFO.filter((r) => s.roles.includes(r.tag)).map((r) => r.tipo);
+      return marcados.length ? marcados : null;
+    },
   },
   actions: {
     async login(password) {
