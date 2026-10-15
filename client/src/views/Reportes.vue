@@ -37,8 +37,9 @@
       <template v-if="esSaldos">
         <div class="field" :class="{ 'field--active': fechaSaldos }"><label>Fecha</label><input type="date" v-model="fechaSaldos" /></div>
       </template>
-      <template v-else-if="esFechaUnica">
-        <div class="field" :class="{ 'field--active': fechaSolicitud }"><label>Fecha de solicitud</label><input type="date" v-model="fechaSolicitud" /></div>
+      <template v-else-if="esSolicitud">
+        <div class="field" :class="{ 'field--active': solDesde }"><label>Desde</label><input type="date" v-model="solDesde" :max="solHasta || undefined" /></div>
+        <div class="field" :class="{ 'field--active': solHasta }"><label>Hasta</label><input type="date" v-model="solHasta" :min="solDesde || undefined" /></div>
         <div class="field" :class="{ 'field--active': estado }">
           <label>Estado (opcional)</label>
           <select v-model="estado">
@@ -63,6 +64,7 @@
     </div>
     <p v-else-if="error" class="soporte-aviso">⚠ No se pudo generar el reporte: {{ error }}</p>
     <template v-else-if="rep">
+      <p v-if="desactualizado" class="soporte-aviso">Cambiaste los filtros de arriba: presiona <b>Generar</b> para actualizar el reporte.</p>
       <div v-if="rep.advertencias && rep.advertencias.length" class="soporte-aviso">
         ⚠ Algunas marcas no se pudieron consultar y sus gastos no aparecen en este reporte:
         <ul class="advertencias">
@@ -158,7 +160,7 @@ const ESTADOS_PENDIENTES_FRONT = ['PENDIENTE_ANALISTA', 'PENDIENTE_TESORERIA', '
 
 // Solo lo que cambia en pantalla por tipo; el nombre de cada reporte sale de
 // REPORTES_INFO y los filtros que lo definen los arma el servidor (catalogoReportes.js).
-const UI_TIPO = { pendientes_solicitud: { fechaUnica: true }, saldos: { saldos: true } };
+const UI_TIPO = { pendientes_solicitud: { solicitud: true }, saldos: { saldos: true } };
 const TIPOS = Object.fromEntries(REPORTES_INFO.map((r) => [r.tipo, { label: r.label, ...UI_TIPO[r.tipo] }]));
 
 const auth = useAuthStore();
@@ -178,21 +180,29 @@ const popTipoGasto = ref(false);
 const desde = ref('');
 const hasta = ref('');
 const fechaSaldos = ref(hoyVE());
-const fechaSolicitud = ref(hoyVE());
+const solDesde = ref(hoyVE()); // "Gastos (Fecha de solicitud)": por defecto, lo solicitado hoy
+const solHasta = ref(hoyVE());
 const rep = ref(null);
 const repKind = ref('gastos');
+const repTipo = ref(''); // tipo del reporte en pantalla (el selector puede haber cambiado después)
+const generadoCon = ref(''); // filtros de arriba con los que se generó lo que está en pantalla
 const loading = ref(false);
 const error = ref('');
 
 const esSaldos = computed(() => !!TIPOS[tipo.value].saldos);
-const esFechaUnica = computed(() => !!TIPOS[tipo.value].fechaUnica);
+const esSolicitud = computed(() => !!TIPOS[tipo.value].solicitud);
+// Los filtros de arriba se aplican al presionar Generar; si se cambian después, se avisa
+// en vez de dejar en pantalla un reporte que ya no corresponde a lo que se ve elegido.
+const filtrosArriba = computed(() => JSON.stringify([tipo.value, zona.value, codTienda.value, desde.value, hasta.value, solDesde.value, solHasta.value, fechaSaldos.value]));
+const desactualizado = computed(() => !!rep.value && generadoCon.value !== filtrosArriba.value);
 const estLabel = (e) => ESTADO_LABEL[e] || e;
 const estClass = (e) => ESTADO_CLASS[e] || 'badge--gray';
 
-// Tipo de gasto: a diferencia de Estado (enum fijo, se manda al servidor), no
-// tiene catálogo fijo -- sale del propio ERP y varía por marca. Se filtra al
-// instante sobre lo ya traído (sin volver a golpear el servidor), con las
-// opciones tomadas del reporte actual. Selección múltiple (checkbox-popover,
+// Estado (en "Fecha de solicitud") y Tipo de gasto se filtran al instante sobre lo ya
+// traído, sin volver a golpear el servidor: antes Estado se mandaba al servidor y, si se
+// cambiaba después de generar, la tabla seguía mostrando todos los estados.
+// Tipo de gasto no tiene catálogo fijo -- sale del propio ERP y varía por marca --, así
+// que sus opciones se toman del reporte actual. Selección múltiple (checkbox-popover,
 // "Todos" = limpiar), mismo patrón que Marca/Tienda en Tesorería (SelectorZMT.vue).
 const tiposGastoDisponibles = computed(() => {
   if (repKind.value !== 'gastos' || !rep.value) return [];
@@ -200,8 +210,10 @@ const tiposGastoDisponibles = computed(() => {
 });
 const filasVisibles = computed(() => {
   if (repKind.value !== 'gastos' || !rep.value) return rep.value ? rep.value.rows : [];
-  if (!filtrosTipoGasto.value.length) return rep.value.rows;
-  return rep.value.rows.filter((f) => filtrosTipoGasto.value.includes(f.tipoGasto || 'SIN ESPECIFICAR'));
+  let rows = rep.value.rows;
+  if (repTipo.value === 'pendientes_solicitud' && estado.value) rows = rows.filter((f) => f.estado === estado.value);
+  if (filtrosTipoGasto.value.length) rows = rows.filter((f) => filtrosTipoGasto.value.includes(f.tipoGasto || 'SIN ESPECIFICAR'));
+  return rows;
 });
 function toggleTipoGasto(t, checked) {
   const set = new Set(filtrosTipoGasto.value);
@@ -224,12 +236,19 @@ async function onZona() {
 
 async function generar() {
   if (!zona.value) return;
+  if (esSolicitud.value && solDesde.value && solHasta.value && solDesde.value > solHasta.value) {
+    rep.value = null;
+    error.value = 'La fecha Desde no puede ser posterior a Hasta.';
+    return;
+  }
   filtrosTipoGasto.value = [];
   popTipoGasto.value = false;
   // Sin esto, un fallo dejaba en pantalla el reporte anterior (de otra zona) como si fuera el nuevo.
   rep.value = null;
   error.value = '';
   loading.value = true;
+  generadoCon.value = filtrosArriba.value;
+  repTipo.value = tipo.value;
   try {
     if (esSaldos.value) {
       const params = {};
@@ -243,11 +262,10 @@ async function generar() {
       const params = { tipo: tipo.value };
       if (zona.value !== 'TODAS') params.zona = zona.value;
       if (codTienda.value) params.codTienda = codTienda.value;
-      if (esFechaUnica.value) {
-        params.desde = fechaSolicitud.value;
-        params.hasta = fechaSolicitud.value;
-        // Etapa opcional: el servidor solo la acepta en este reporte y entre las pendientes.
-        if (estado.value) params.estado = estado.value;
+      if (esSolicitud.value) {
+        // Sin Estado: se trae todo lo pendiente del rango y el Estado se filtra en pantalla.
+        if (solDesde.value) params.desde = solDesde.value;
+        if (solHasta.value) params.hasta = solHasta.value;
       } else {
         if (desde.value) params.desde = desde.value;
         if (hasta.value) params.hasta = hasta.value;
@@ -280,7 +298,7 @@ function exportar() {
   const ws = XLSX.utils.json_to_sheet(data);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Reporte');
-  XLSX.writeFile(wb, `reporte_${tipo.value}_${hoyVE()}.xlsx`);
+  XLSX.writeFile(wb, `reporte_${repTipo.value || tipo.value}_${hoyVE()}.xlsx`);
 }
 
 onMounted(async () => { zonas.value = await getZonas(); });
