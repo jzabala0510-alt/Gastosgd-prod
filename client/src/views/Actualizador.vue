@@ -1,7 +1,7 @@
 <template>
   <div class="upd">
     <div class="upd__card">
-      <h1 class="upd__title">Actualizador <span class="upd__version">v1</span></h1>
+      <h1 class="upd__title">Actualizador <span class="upd__version">v2</span></h1>
       <p class="upd__hint">Sección de administración interna, con clave propia (no las credenciales ICG).</p>
 
       <template v-if="!autenticado">
@@ -21,20 +21,30 @@
         <div class="upd__info card">
           <p><b>Repositorio:</b> {{ info.owner }}/{{ info.repo }}</p>
           <p><b>Branch:</b> {{ info.branch }}</p>
-          <p v-if="ultimoResultado"><b>Última actualización aplicada:</b> {{ fecha(ultimoResultado.aplicadoEn) }}</p>
+          <p v-if="info.ultima"><b>Versión instalada:</b> <code>{{ corto(info.ultima.commit) }}</code> · {{ fecha(info.ultima.fecha) }}</p>
+          <p v-else><b>Versión instalada:</b> sin registro (aún no se actualizó con esta versión del actualizador)</p>
         </div>
+        <p v-if="info.pendiente" class="upd__error">Hay una actualización sin terminar de aplicar: reinicia el servicio para que se complete.</p>
 
         <p v-if="error" class="upd__error">{{ error }}</p>
 
         <template v-if="estadoAccion === 'reiniciando'">
           <p class="upd__reiniciando">
             <span class="upd__spinner"></span>
-            Actualización aplicada. Esperando a que el servicio vuelva…
+            Aplicando {{ ultimoResultado.archivos.length }} archivo(s){{ ultimoResultado.reinicia ? " y reiniciando el servicio" : "" }}…
           </p>
         </template>
         <template v-else-if="estadoAccion === 'listo'">
-          <p class="upd__ok">✓ El servicio volvió a responder. Actualización completa.</p>
+          <p class="upd__ok">✓ Actualización completa: versión <code>{{ corto(ultimoResultado.commit) }}</code>, {{ ultimoResultado.archivos.length }} archivo(s).</p>
+          <p v-if="!ultimoResultado.reinicia" class="upd__hint upd__hint--sin-margen">Solo cambió el frontend: recarga la página (F5) para verlo.</p>
         </template>
+        <template v-else-if="estadoAccion === 'sinCambios'">
+          <p class="upd__ok">✓ Ya tienes la última versión (<code>{{ corto(ultimoResultado.commit) }}</code>); no había nada que actualizar.</p>
+        </template>
+        <details v-if="ultimoResultado && ultimoResultado.archivos.length" class="upd__archivos">
+          <summary>Archivos actualizados ({{ ultimoResultado.archivos.length }})</summary>
+          <ul><li v-for="a in ultimoResultado.archivos" :key="a"><code>{{ a }}</code></li></ul>
+        </details>
 
         <div class="upd__acciones">
           <button class="btn btn--primary" :disabled="busy" @click="confirmarActualizar">
@@ -51,7 +61,6 @@
 import { ref, onMounted } from 'vue';
 import { loginUpdater, estadoUpdater, actualizar as actualizarApi } from '../api/updater';
 import { useConfirm } from '../composables/useConfirm';
-import http from '../api/http';
 
 const { confirm } = useConfirm();
 
@@ -62,12 +71,13 @@ const error = ref('');
 const autenticado = ref(false);
 const info = ref({ owner: null, repo: null, branch: null });
 const ultimoResultado = ref(null);
-const estadoAccion = ref(''); // '' | 'reiniciando' | 'listo'
+const estadoAccion = ref(''); // '' | 'reiniciando' | 'listo' | 'sinCambios'
 
 function fecha(iso) {
   if (!iso) return '';
   return new Date(iso).toLocaleString('es-VE');
 }
+const corto = (commit) => (commit ? commit.slice(0, 7) : '?');
 
 async function cargarEstado() {
   info.value = await estadoUpdater();
@@ -99,7 +109,7 @@ function salir() {
 async function confirmarActualizar() {
   const { ok } = await confirm({
     titulo: 'Actualizar la aplicación',
-    mensaje: 'Esto va a descargar la última versión del repositorio, sobreescribir el código de la app y reiniciar el servicio. ¿Continuar?',
+    mensaje: 'Esto va a descargar la última versión del repositorio, reemplazar solo los archivos que cambiaron y, si cambió el backend, reiniciar el servicio. ¿Continuar?',
     tipo: 'danger',
     labelConfirmar: 'Actualizar',
   });
@@ -114,9 +124,15 @@ async function ejecutarActualizacion() {
   try {
     const r = await actualizarApi();
     ultimoResultado.value = r;
+    if (!r.archivos.length) { estadoAccion.value = 'sinCambios'; return; }
     estadoAccion.value = 'reiniciando';
-    await esperarReinicio();
-    estadoAccion.value = 'listo';
+    const listo = await esperarAplicado(r.commit);
+    await cargarEstado().catch(() => {});
+    if (listo) estadoAccion.value = 'listo';
+    else {
+      estadoAccion.value = '';
+      error.value = 'El servicio no confirmó la versión nueva. Revisa la consola del servidor y vuelve a entrar aquí para ver la versión instalada.';
+    }
   } catch (e) {
     error.value = e.response?.data?.error || 'No se pudo aplicar la actualización.';
   } finally {
@@ -124,24 +140,24 @@ async function ejecutarActualizacion() {
   }
 }
 
-// Espera a que /api/health vuelva a responder tras el reinicio del servicio.
-function esperarReinicio() {
+// Espera a que el servicio vuelva y confirme que quedó instalado ese commit con todos
+// sus archivos en su lugar (sin nada pendiente). true = confirmado.
+function esperarAplicado(commit) {
   const intentosMax = 40; // ~2 minutos a 3s cada intento
   let intento = 0;
   return new Promise((resolve) => {
     const tick = async () => {
       intento++;
       try {
-        await http.get('/health', { timeout: 3000 });
-        resolve();
-        return;
+        const e = await estadoUpdater();
+        if (!e.pendiente && e.ultima && (!commit || e.ultima.commit === commit)) { resolve(true); return; }
       } catch {
         // El servicio está caído mientras reinicia — esperado, se reintenta.
       }
-      if (intento >= intentosMax) { resolve(); return; }
+      if (intento >= intentosMax) { resolve(false); return; }
       setTimeout(tick, 3000);
     };
-    setTimeout(tick, 1500); // primer intento: darle un respiro a que el proceso salga
+    setTimeout(tick, 3000); // primer intento: darle tiempo a aplicar y reiniciar
   });
 }
 
@@ -169,6 +185,9 @@ onMounted(async () => {
 .upd__acciones { display: flex; gap: 10px; margin-top: 16px; }
 .upd__reiniciando { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted, #6b7280); margin: 12px 0 0; }
 .upd__ok { color: #059669; font-weight: 600; font-size: 13px; margin: 12px 0 0; }
+.upd__hint--sin-margen { margin: 4px 0 0; }
+.upd__archivos { margin-top: 10px; font-size: 12px; color: var(--muted, #6b7280); }
+.upd__archivos ul { margin: 6px 0 0; padding-left: 18px; max-height: 160px; overflow-y: auto; }
 .upd__spinner { width: 15px; height: 15px; border-radius: 50%; border: 2px solid rgba(0,0,0,.15); border-top-color: var(--accent, #16a34a); animation: upd-spin .7s linear infinite; }
 @keyframes upd-spin { to { transform: rotate(360deg); } }
 </style>

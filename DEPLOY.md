@@ -172,7 +172,10 @@ Al iniciar verás en consola:
 - **Adjuntos/comprobantes:** se guardan en `server/uploads/`. Asegura permisos de escritura
   y respáldala (no se borra al actualizar el código).
 - **Actualizar versión:** normalmente vía `/actualizador` (descarga el código de GitHub y
-  reinicia el servicio solo). Si actualizas a mano: reemplaza el código, `npm install`
+  reinicia el servicio solo). Prepara en `.actualizacion/` (raíz del proyecto) solo los
+  archivos que cambiaron y luego los pone en su lugar con renombres; si el proceso muere
+  a mitad, el siguiente arranque termina lo pendiente. No borres esa carpeta mientras
+  haya un `pendiente.json`. Si actualizas a mano: reemplaza el código, `npm install`
   si cambió algo, recompila el front (`npm run build`) y `nssm restart gastosgd`.
 - **Solo entran usuarios con rol** asignado en el panel; el resto de GENERAL queda fuera.
 - **Diagnóstico:** `GET http://<servidor>:3101/api/health` devuelve el estado de la API y la BD.

@@ -1,8 +1,8 @@
 const fs = require('fs');
 const path = require('path');
-const os = require('os');
 const crypto = require('crypto');
 const AdmZip = require('adm-zip');
+const { dirProyecto, dirActualizacion, rutaPendiente, escribirJsonSeguro } = require('../utils/actualizacionPendiente');
 
 // ── Clave de acceso (sección aparte, no ligada a usuarios ICG) ──────────────
 // Compara por hash + timingSafeEqual: evita timing attacks y el error de
@@ -43,75 +43,91 @@ function limpiarIntentos(ip) {
   intentos.delete(ip);
 }
 
-// ── Descarga + extracción + copia ───────────────────────────────────────────
+// ── Descarga + preparación ──────────────────────────────────────────────────
 // Nunca se sobreescriben (a cualquier profundidad), aunque el .zip los trajera
 // por error: secretos, dependencias instaladas y adjuntos reales. Se revisa por
 // segmento de ruta (no una lista exhaustiva) para no dejar afuera combinaciones
 // como "server/.env" o "server/node_modules" por descuido.
-function crearFiltro(targetDir) {
-  return (_src, dest) => {
-    const rel = path.relative(targetDir, dest).split(path.sep).join('/');
-    if (!rel) return true; // el propio targetDir
-    const segmentos = rel.split('/');
-    if (segmentos.includes('node_modules')) return false;
-    if (segmentos.includes('.git')) return false;
-    if (segmentos[segmentos.length - 1] === '.env') return false; // .env a cualquier profundidad
-    if (segmentos[segmentos.length - 1] === 'servers-extra.json') return false; // credenciales de marcas en otro servidor
-    if (rel === 'server/uploads' || rel.startsWith('server/uploads/')) return false;
-    return true;
-  };
+function excluido(rel) {
+  const segmentos = rel.split('/');
+  const nombre = segmentos[segmentos.length - 1];
+  if (segmentos.includes('node_modules') || segmentos.includes('.git')) return true;
+  if (nombre === '.env') return true; // .env a cualquier profundidad
+  if (nombre === 'servers-extra.json') return true; // credenciales de marcas en otro servidor
+  if (rel.startsWith('server/uploads/')) return true;
+  if (segmentos[0] === '.actualizacion') return true; // la propia carpeta de trabajo del actualizador
+  return false;
 }
 
-// Descarga el .zip del branch configurado (repo público, sin token), lo extrae en una
-// carpeta temporal y copia su contenido sobre targetDir. No corre npm install ni build:
-// asume que lo que hay en el repo (incl. client/dist ya compilado) es lo que se sirve.
-async function descargarYAplicar(opts = {}) {
+const sinCR = (buf) => Buffer.from(buf.filter((b) => b !== 13));
+
+// Igual = mismos bytes, o mismos salvo los \r (un archivo con CRLF en el servidor y
+// LF en el repo es el mismo archivo; no hace falta reescribirlo).
+function igualAlInstalado(destino, datos) {
+  if (!fs.existsSync(destino)) return false;
+  const actual = fs.readFileSync(destino);
+  return actual.equals(datos) || sinCR(actual).equals(sinCR(datos));
+}
+
+function escribirVerificado(ruta, datos) {
+  fs.mkdirSync(path.dirname(ruta), { recursive: true });
+  const fd = fs.openSync(ruta, 'w');
+  try { fs.writeSync(fd, datos); fs.fsyncSync(fd); } finally { fs.closeSync(fd); }
+  if (!fs.readFileSync(ruta).equals(datos)) throw new Error(`No se pudo escribir completo ${ruta}`);
+}
+
+// Descarga el .zip del branch configurado (repo público, sin token) y deja listos en
+// .actualizacion/nuevos/ solo los archivos que cambiaron, sin tocar todavía la app.
+// La app se toca recién en aplicarPendiente() (utils/actualizacionPendiente.js), con
+// renombres. No corre npm install ni build. `opts.zip` (Buffer) evita la descarga (pruebas).
+async function prepararActualizacion(opts = {}) {
   const owner = opts.owner || process.env.UPDATE_REPO_OWNER;
   const repo = opts.repo || process.env.UPDATE_REPO_NAME;
   const branch = opts.branch || process.env.UPDATE_REPO_BRANCH || 'main';
-  const targetDir = opts.targetDir || process.env.UPDATE_TARGET_DIR || path.resolve(__dirname, '..', '..', '..');
+  const targetDir = dirProyecto();
 
-  if (!owner || !repo) throw new Error('UPDATE_REPO_OWNER / UPDATE_REPO_NAME no configurados en .env');
-
-  const url = `https://codeload.github.com/${owner}/${repo}/zip/refs/heads/${branch}`;
-  console.log(`[updater] 1/6 descargando ${url}`);
-  const res = await fetch(url);
-  console.log(`[updater] 2/6 respuesta HTTP ${res.status}`);
-  if (!res.ok) throw new Error(`No se pudo descargar el repositorio (HTTP ${res.status})`);
-  const buffer = Buffer.from(await res.arrayBuffer());
-  console.log(`[updater] 3/6 descarga completa: ${buffer.length} bytes`);
-
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gastosgd-update-'));
-  console.log(`[updater] 4/6 extrayendo a carpeta temporal ${tmpDir}`);
-  try {
-    const zip = new AdmZip(buffer);
-    zip.extractAllTo(tmpDir, true);
-    console.log('[updater] 5/6 extracción completa');
-
-    // GitHub mete todo el contenido bajo una única carpeta raíz "{repo}-{branch}/".
-    const entradas = fs.readdirSync(tmpDir);
-    if (!entradas.length) throw new Error('El .zip descargado está vacío');
-    const origen = path.join(tmpDir, entradas[0]);
-
-    console.log(`[updater] 6/6 copiando ${origen} -> ${targetDir}`);
-    // No se copia el árbol completo de un solo golpe: si targetDir está instalado
-    // justo un nivel bajo la raíz de una unidad (ej. C:\GastosGD), fs.cpSync intenta
-    // internamente asegurar el padre del destino y termina pidiendo mkdir('C:'), que
-    // Windows rechaza (EPERM) porque una letra de unidad sola no es una ruta válida
-    // para crear. targetDir ya existe siempre (es donde corre este mismo proceso), así
-    // que se copia entrada por entrada dentro de él — el padre de cada copia pasa a ser
-    // targetDir (una carpeta normal que ya existe), nunca la raíz de la unidad.
-    if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
-    const filtro = crearFiltro(targetDir);
-    for (const entrada of fs.readdirSync(origen)) {
-      fs.cpSync(path.join(origen, entrada), path.join(targetDir, entrada), { recursive: true, force: true, filter: filtro });
-    }
-    console.log('[updater] copia completa, listo para reiniciar');
-
-    return { owner, repo, branch, targetDir, aplicadoEn: new Date().toISOString() };
-  } finally {
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+  if (fs.existsSync(rutaPendiente())) {
+    throw new Error('Hay una actualización anterior sin terminar de aplicar. Reinicia el servicio para que se complete y vuelve a intentar.');
   }
+
+  let buffer = opts.zip;
+  if (!buffer) {
+    if (!owner || !repo) throw new Error('UPDATE_REPO_OWNER / UPDATE_REPO_NAME no configurados en .env');
+    const url = `https://codeload.github.com/${owner}/${repo}/zip/refs/heads/${branch}`;
+    console.log(`[updater] 1/4 descargando ${url}`);
+    const res = await fetch(url, { signal: AbortSignal.timeout(120000) });
+    if (!res.ok) throw new Error(`No se pudo descargar el repositorio (HTTP ${res.status})`);
+    buffer = Buffer.from(await res.arrayBuffer());
+    console.log(`[updater] 2/4 descarga completa: ${buffer.length} bytes`);
+  }
+
+  const zip = new AdmZip(buffer);
+  const commit = (zip.getZipComment() || '').trim() || null; // GitHub pone ahí el commit del .zip
+  // GitHub mete todo el contenido bajo una única carpeta raíz "{repo}-{branch}/".
+  const archivos = zip.getEntries().filter((e) => !e.isDirectory);
+  if (!archivos.length) throw new Error('El .zip descargado está vacío');
+
+  const cambios = [];
+  for (const e of archivos) {
+    const rel = e.entryName.split('/').slice(1).join('/');
+    if (!rel || excluido(rel)) continue;
+    const datos = e.getData();
+    if (!igualAlInstalado(path.join(targetDir, rel), datos)) cambios.push({ rel, datos });
+  }
+  console.log(`[updater] 3/4 commit ${commit ? commit.slice(0, 7) : '?'}: ${cambios.length} archivo(s) cambiaron de ${archivos.length}`);
+  if (!cambios.length) return { commit, archivos: [] };
+
+  const nuevos = path.join(dirActualizacion(), 'nuevos');
+  fs.rmSync(nuevos, { recursive: true, force: true }); // restos de una preparación que no llegó al final
+  for (const c of cambios) escribirVerificado(path.join(nuevos, c.rel), c.datos);
+
+  // Los de server/ al final: al tocar el primero, nodemon reinicia el backend, y para
+  // entonces ya conviene que todo lo demás esté en su lugar.
+  const lista = cambios.map((c) => c.rel)
+    .sort((a, b) => Number(a.startsWith('server/')) - Number(b.startsWith('server/')) || a.localeCompare(b));
+  escribirJsonSeguro(rutaPendiente(), { commit, preparado: new Date().toISOString(), archivos: lista });
+  console.log(`[updater] 4/4 ${lista.length} archivo(s) listos en ${nuevos}`);
+  return { commit, archivos: lista };
 }
 
-module.exports = { verificarClave, intentoPermitido, registrarIntentoFallido, limpiarIntentos, descargarYAplicar };
+module.exports = { verificarClave, intentoPermitido, registrarIntentoFallido, limpiarIntentos, prepararActualizacion, excluido };

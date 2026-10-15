@@ -1,4 +1,17 @@
 require('dotenv').config();
+
+// Antes de cargar cualquier otro módulo: si una actualización quedó a medio aplicar
+// (el proceso murió entre un renombre y otro), se termina aquí.
+{
+  const { aplicarPendiente } = require('./utils/actualizacionPendiente');
+  try {
+    const r = aplicarPendiente();
+    if (r) console.log('[updater] actualización pendiente completada al arrancar:', JSON.stringify(r));
+  } catch (e) {
+    console.error('[updater] no se pudo completar la actualización pendiente:', e.message);
+  }
+}
+
 const path = require('path');
 const fs = require('fs');
 const express = require('express');
