@@ -1,0 +1,36 @@
+{
+  "ssoUrl": "https://<sso-de-banesco>/auth/realms/<realm>/protocol/openid-connect/token",
+  "saldoBaseUrl": "https://<api-consulta-de-productos-de-banesco>",
+  "horaDiaria": "08:00",
+  "modelo": "posicion",
+  "idUsuarioAutomatico": 1,
+  "bancos": { "DDA": 2, "MMK": 15 },
+  "bancoUsd": 2,
+  "grupo": {
+    "nombre": "EMPRESA DEL GRUPO CON CREDENCIAL, C.A.",
+    "rif": "J111111111",
+    "clientId": "client_id_de_banesco",
+    "clientSecret": "client_secret_de_banesco"
+  },
+  "empresas": [
+    {
+      "nombre": "TIENDA EJEMPLO, C.A.",
+      "rif": "J123456789",
+      "clientId": "client_id_de_banesco",
+      "clientSecret": "client_secret_de_banesco",
+      "codTienda": 101
+    },
+    {
+      "nombre": "OTRA TIENDA, C.A.",
+      "rif": "J987654321",
+      "clientId": "client_id_de_banesco",
+      "clientSecret": "client_secret_de_banesco"
+    },
+    {
+      "nombre": "TIENDA DEL GRUPO SIN USUARIO PROPIO, C.A.",
+      "rif": "J555555555",
+      "viaGrupo": true,
+      "codTienda": 102
+    }
+  ]
+}

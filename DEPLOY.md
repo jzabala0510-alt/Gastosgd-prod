@@ -116,6 +116,62 @@ a la entrada de ese host:
   otro servidor. No cambies el offset de un servidor una vez usado en producción
   (rompería todo lo que ya se guardó con ese codTienda).
 
+**Saldos Banesco automáticos (opcional):** crea `server/banesco.json` (copia
+`banesco.example.json`) con las URLs del API "Consulta de Cuenta" de Banesco y una
+entrada por tienda con la credencial que da Banesco (`nombre`, `rif`, `clientId`,
+`clientSecret`). Con eso, GastosGD consulta las cuentas de cada tienda y graba su
+saldo en las columnas de Carga de Saldos que indique `bancos` (pisa lo que se haya
+cargado a mano ese día). Igual que `servers-extra.json`, este archivo NO se sube al
+repo (está en `.gitignore`) y se relee en cada uso: editarlo no requiere reiniciar.
+- `bancos`: qué banco (columna) recibe cada tipo de cuenta de Banesco, por `IdBanco`
+  (`SELECT IdBanco, Nombre FROM GD_Banco`). Ej. `{ "DDA": 2, "MMK": 15 }`: corrientes
+  (`DDA`) → BANESCO CORRIENTE, `MMK` → BANESCO DEPOSITO. Usa los ids de **tu**
+  servidor (pueden no coincidir con los de desarrollo). Se suma por banco; si una
+  tienda no tiene cuentas de un tipo, esa columna queda en 0. Si Banesco devuelve un
+  tipo de cuenta que no está en `bancos`, esa tienda no se graba y se avisa.
+- `bancoUsd`: opcional; el `IdBanco` donde va el saldo en dólares (pestaña **Dólares ($)**
+  de Carga de Saldos, consulta "Moneda Extranjera" de Banesco). Esa consulta devuelve
+  una sola cuenta sin tipo, por eso va entera a un banco. Sin `bancoUsd` no se trae
+  el saldo en $. Los saldos en $ son informativos: no entran en Tesorería ni en el
+  reporte de saldos.
+- `modelo`: `"posicion"` para que todas las empresas consulten con su propia credencial la
+  "Posición del cliente" (`/v2/customer/position/evaluate`), que trae Bs y $ en una sola
+  consulta; así el botón "Actualizar Banesco (Bs y $)" y la corrida diaria graban las dos
+  monedas. Sin `modelo` se usan las consultas de productos (una para Bs y otra para $).
+  Las cuentas en VES/BS van a `bancos` según su tipo y las de USD a `bancoUsd`; otra
+  moneda frena esa empresa y se avisa.
+- `grupo` y `viaGrupo`: para empresas del grupo **sin usuario propio** en Banesco. `grupo`
+  es la credencial que Banesco habilitó para consultarlas (`nombre`, `rif`, `clientId`,
+  `clientSecret`, `sid` opcional); cada empresa con `"viaGrupo": true` no lleva credencial
+  propia y se consulta con esa, en "Posición del cliente" (`/v2/customer/position/evaluate`),
+  que trae Bs y $ en una sola consulta. Se valida que el RIF del token sea el de `grupo` y
+  que Banesco devuelva las cuentas del RIF de esa empresa; si no, no se graba nada.
+  `rutaPosicion` (opcional) cambia el path si Banesco lo modifica.
+- `rif`: con la letra, ej. `J500769300` (guiones y espacios se ignoran).
+- `codTienda`: opcional. Si no lo pones, se busca la tienda por el RIF en el ERP
+  (`EMPRESASCONTABLES.NIF`); si el RIF no está o tiene varias tiendas, esa entrada
+  se salta y se avisa. Las tiendas de una GENERAL extra (bloque `general` de arriba)
+  siempre necesitan `codTienda`.
+- `sid`: opcional; si no está, se genera uno fijo a partir del `clientId`.
+- `horaDiaria` (ej. `"08:00"`, hora Venezuela): actualización automática una vez al
+  día. Si el servidor estaba apagado a esa hora, corre apenas arranca. La fecha de la
+  última corrida queda en `banesco.estado.json`, en la raíz del proyecto y no en `server/`:
+  nodemon vigila los `.json` de `server/` y reiniciaría el backend a mitad de la corrida.
+- `idUsuarioAutomatico`: el `IdUsuario` de `GD_Usuario` a cuyo nombre se graba la
+  corrida automática (`SELECT IdUsuario, Usuario, Nombre FROM GD_Usuario`).
+  Sin él, no hay corrida automática.
+
+En Carga de Saldos aparece el botón **Actualizar Banesco** (solo con la fecha de hoy y
+en zonas con tiendas configuradas) para correrlo a mano. Antes de grabar se valida que
+el RIF asociado a la credencial en Banesco sea el de esa tienda; si no coincide, no se
+graba nada y se muestra el error. La corrida automática trae Bs y, si hay `bancoUsd`, $.
+
+**Consola Banesco** (solo ADMIN, botón en Carga de Saldos): muestra cada petición al
+API con su respuesta (las de la consola, las de "Actualizar Banesco" y las automáticas),
+con el `client_secret` oculto y `client_id`/tokens recortados. Permite consultar una
+empresa en Bs y/o $ sin grabar saldos, y descargar el registro en JSON. El registro vive
+en memoria (las últimas 300 peticiones): se vacía al reiniciar el servicio.
+
 ---
 
 ## 4. Compilar el frontend

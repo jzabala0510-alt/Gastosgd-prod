@@ -56,4 +56,4 @@ async function bloqueadoPorAlcance(user, codTienda) {
   return !a.codTiendas.has(Number(codTienda));
 }
 
-module.exports = { alcanceDe, zonasDe, bloqueadoPorAlcance };
+module.exports = { alcanceDe, zonasDe, bloqueadoPorAlcance, codTiendasDeZonas };

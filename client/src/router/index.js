@@ -12,6 +12,7 @@ import AdminBancos from '../views/AdminBancos.vue';
 import AdminAliasTiendas from '../views/AdminAliasTiendas.vue';
 import CargaMontos from '../views/CargaMontos.vue';
 import ImportarSaldos from '../views/ImportarSaldos.vue';
+import ConsolaBanesco from '../views/ConsolaBanesco.vue';
 import Reportes from '../views/Reportes.vue';
 import Archivo from '../views/Archivo.vue';
 import Notificaciones from '../views/Notificaciones.vue';
@@ -29,6 +30,7 @@ const routes = [
   { path: '/pagadas', name: 'pagadas', component: Pagadas },
   { path: '/fondos', name: 'fondos', component: CargaMontos },
   { path: '/fondos/importar', name: 'importar-saldos', component: ImportarSaldos },
+  { path: '/fondos/banesco/consola', name: 'consola-banesco', component: ConsolaBanesco, meta: { admin: true } },
   { path: '/reportes', name: 'reportes', component: Reportes },
   { path: '/archivo', name: 'archivo', component: Archivo },
   { path: '/notificaciones', name: 'notificaciones', component: Notificaciones },

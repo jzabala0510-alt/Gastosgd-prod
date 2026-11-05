@@ -14,4 +14,9 @@ function hoyVE() {
   return new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(new Date());
 }
 
-module.exports = { hoyVE, TZ };
+// Hora actual en Venezuela como 'HH:MM' (24 h; h23 evita el "24:00" de medianoche).
+function horaVE() {
+  return new Intl.DateTimeFormat('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date());
+}
+
+module.exports = { hoyVE, horaVE, TZ };

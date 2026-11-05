@@ -54,6 +54,7 @@ function excluido(rel) {
   if (segmentos.includes('node_modules') || segmentos.includes('.git')) return true;
   if (nombre === '.env') return true; // .env a cualquier profundidad
   if (nombre === 'servers-extra.json') return true; // credenciales de marcas en otro servidor
+  if (/^banesco(\.[\w-]+)?\.json$/.test(nombre) && nombre !== 'banesco.example.json') return true; // credenciales y estado de Banesco
   if (rel.startsWith('server/uploads/')) return true;
   if (segmentos[0] === '.actualizacion') return true; // la propia carpeta de trabajo del actualizador
   return false;

@@ -30,6 +30,7 @@ const notificacionesRoutes = require('./routes/notificaciones.routes');
 const tiendaAliasRoutes = require('./routes/tiendaAlias.routes');
 const importarSaldosRoutes = require('./routes/importarSaldos.routes');
 const updaterRoutes = require('./routes/updater.routes');
+const banescoService = require('./services/banesco.service');
 
 const app = express();
 
@@ -90,4 +91,7 @@ process.on('unhandledRejection', (err) => { console.error('[diagnostico] unhandl
 process.on('exit', (code) => { console.error(`[diagnostico] Proceso saliendo con código ${code}.`); });
 
 const PORT = Number(process.env.PORT || 3101);
-app.listen(PORT, () => console.log(`[server] API escuchando en http://localhost:${PORT}`));
+app.listen(PORT, () => {
+  console.log(`[server] API escuchando en http://localhost:${PORT}`);
+  banescoService.iniciarProgramacion();
+});

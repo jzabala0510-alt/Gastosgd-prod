@@ -2,6 +2,7 @@ const { sql, getPool } = require('../config/db');
 const { resolverTienda, tiendasExtra } = require('./marca');
 const { CTE_PENDIENTE, columnasLibres, expr } = require('./facturasCompra.service');
 const bancosService = require('./bancos.service');
+const { MONEDA } = require('./fondos.service');
 
 const esc = (s) => String(s).replace(/'/g, "''");
 
@@ -255,7 +256,7 @@ async function saldos({ zona, codTienda, fecha }) {
         WHERE ${filtro}
       ) t
       OUTER APPLY (
-        SELECT IdBanco, MontoDisponible FROM dbo.GD_DispTienda WHERE CodTienda = t.codTienda AND Fecha = @f
+        SELECT IdBanco, MontoDisponible FROM dbo.GD_DispTienda WHERE CodTienda = t.codTienda AND Fecha = @f AND CodMoneda = ${MONEDA.BS}
       ) d
       OUTER APPLY (
         -- Ajuste manual de Tesorería: es por tienda, sin banco asociado (GD_DispAjuste no tiene IdBanco).
@@ -266,7 +267,7 @@ async function saldos({ zona, codTienda, fecha }) {
     extraTiendas.length ? pool.request().input('f', sql.Date, fecha).query(`
       SELECT t.codTienda, t.zona, t.tienda, t.marca, d.IdBanco, d.MontoDisponible AS monto, a.MontoAjuste AS ajuste
       FROM (VALUES ${extraTiendas.map((t) => `(${Number(t.CodTienda)}, N'${esc(t.Zona || '')}', N'${esc(t.Tienda || '')}', N'${esc(t.Marca || '')}')`).join(',')}) t(codTienda, zona, tienda, marca)
-      OUTER APPLY (SELECT IdBanco, MontoDisponible FROM dbo.GD_DispTienda WHERE CodTienda = t.codTienda AND Fecha = @f) d
+      OUTER APPLY (SELECT IdBanco, MontoDisponible FROM dbo.GD_DispTienda WHERE CodTienda = t.codTienda AND Fecha = @f AND CodMoneda = ${MONEDA.BS}) d
       OUTER APPLY (SELECT MontoAjuste FROM dbo.GD_DispAjuste WHERE CodTienda = t.codTienda AND Fecha = @f) a`)
       : Promise.resolve({ recordset: [] }),
   ]);

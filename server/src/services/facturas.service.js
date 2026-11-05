@@ -1,6 +1,7 @@
 const { sql, getPool } = require('../config/db');
 const { resolverTienda } = require('./marca');
 const { CTE_PENDIENTE_TIENDA, columnasLibres, expr } = require('./facturasCompra.service');
+const { MONEDA } = require('./fondos.service');
 
 const ESTADO_DEFAULT = 'PENDIENTE_ANALISTA';
 
@@ -190,7 +191,7 @@ async function cobertura(codTienda, fecha) {
   const disp = await appPool.request().input('c', sql.Int, codTienda).input('f', sql.Date, fecha)
     .query(`
       SELECT
-        (SELECT SUM(MontoDisponible) FROM dbo.GD_DispTienda WHERE CodTienda=@c AND Fecha=@f) AS SumaBancos,
+        (SELECT SUM(MontoDisponible) FROM dbo.GD_DispTienda WHERE CodTienda=@c AND Fecha=@f AND CodMoneda=${MONEDA.BS}) AS SumaBancos,
         (SELECT MontoAjuste FROM dbo.GD_DispAjuste WHERE CodTienda=@c AND Fecha=@f) AS Ajuste`);
   const fila = disp.recordset[0] || {};
   const disponible = (Number(fila.SumaBancos) || 0) + (Number(fila.Ajuste) || 0);
@@ -258,7 +259,7 @@ async function guardarAjusteDisponibilidad({ codTienda, fecha, montoDisponible, 
   const pool = await getPool();
 
   const sum = await pool.request().input('c', sql.Int, codTienda).input('f', sql.Date, fecha)
-    .query('SELECT SUM(MontoDisponible) AS Total FROM dbo.GD_DispTienda WHERE CodTienda=@c AND Fecha=@f');
+    .query(`SELECT SUM(MontoDisponible) AS Total FROM dbo.GD_DispTienda WHERE CodTienda=@c AND Fecha=@f AND CodMoneda=${MONEDA.BS}`);
   const sumaBancos = Number(sum.recordset[0]?.Total) || 0;
   const ajuste = Number(montoDisponible) - sumaBancos;
 

@@ -10,7 +10,7 @@
           <router-link v-if="auth.esAuditor" to="/auditoria" :class="{ active: $route.path === '/auditoria' }">Auditoría<span v-if="notif.auditoria + notif.pagosRevision" class="nav-badge">{{ notif.auditoria + notif.pagosRevision }}</span></router-link>
           <router-link v-if="auth.esPagador" to="/pagos" :class="{ active: $route.path === '/pagos' }">Pagos<span v-if="notif.pago" class="nav-badge">{{ notif.pago }}</span></router-link>
           <router-link v-if="auth.esPagadas" to="/pagadas" :class="{ active: $route.path === '/pagadas' }">Pagadas</router-link>
-          <router-link v-if="auth.esSaldos" to="/fondos" :class="{ active: $route.path === '/fondos' }">Saldos</router-link>
+          <router-link v-if="auth.esSaldos" to="/fondos" :class="{ active: $route.path.startsWith('/fondos') }">Saldos</router-link>
           <router-link v-if="auth.esReportes" to="/reportes" :class="{ active: $route.path === '/reportes' }">Reportes</router-link>
           <router-link v-if="auth.esArchivo" to="/archivo" :class="{ active: $route.path === '/archivo' || $route.path.startsWith('/factura') }">Archivo</router-link>
           <router-link v-if="auth.esAdmin" to="/admin/usuarios" :class="{ active: $route.path === '/admin/usuarios' }">Usuarios</router-link>

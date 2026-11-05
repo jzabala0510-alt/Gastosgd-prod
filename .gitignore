@@ -1,6 +1,9 @@
 node_modules/
 .env
 servers-extra.json
+banesco.json
+banesco.estado.json
+banesco.qa.json
 *.local
 server/uploads/*
 !server/uploads/.gitkeep
