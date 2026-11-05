@@ -97,6 +97,13 @@
             <td class="r"><b>{{ conSimbolo(totalTienda(t)) }}</b></td>
           </tr>
         </tbody>
+        <tfoot>
+          <tr class="fila-totales">
+            <td colspan="2">Total por banco<span v-if="filtroTienda"> (tienda filtrada)</span></td>
+            <td v-for="b in bancos" :key="b.IdBanco" class="r">{{ money(totalesPorBanco[b.IdBanco]) }}</td>
+            <td class="r">{{ conSimbolo(totalSaldo) }}</td>
+          </tr>
+        </tfoot>
       </table></div>
       <div style="margin-top:14px">
         <button class="btn btn--primary" :disabled="busy || banescoBusy" @click="guardar">Guardar saldos en {{ simbolo }} del {{ fechaLabel }}</button>
@@ -161,6 +168,10 @@ const visibles = computed(() => (filtroTienda.value
 const num = (v) => (v === '' || v == null ? 0 : Number(v) || 0);
 const totalTienda = (t) => bancos.value.reduce((a, b) => a + num(montos.value[t.codTienda]?.[b.IdBanco]), 0);
 const totalSaldo = computed(() => visibles.value.reduce((a, t) => a + totalTienda(t), 0));
+// Total de cada banco (columna) sobre las tiendas visibles; se actualiza mientras escriben.
+const totalesPorBanco = computed(() => Object.fromEntries(bancos.value.map((b) => [
+  b.IdBanco, visibles.value.reduce((a, t) => a + num(montos.value[t.codTienda]?.[b.IdBanco]), 0),
+])));
 const fechaLabel = computed(() => fecha.value.split('-').reverse().join('/'));
 
 async function onZona() {
@@ -291,6 +302,13 @@ onMounted(async () => {
 .monto-usd { position: relative; display: inline-block; }
 .monto-usd__signo { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); font-size: 13px; color: #6b7280; pointer-events: none; }
 .monto-usd .monto-input { padding-left: 20px; }
+
+/* Totales por banco: fila fija al pie de la tabla (se ve aunque se baje por las tiendas) */
+.fila-totales td {
+  position: sticky; bottom: 0; z-index: 1;
+  background: #f3f4f6; border-top: 2px solid var(--border); font-weight: 700;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
 
 /* Tiendas que ya tienen saldo guardado en esa fecha y moneda */
 .fila-cargada td { background: #f0fdf4; }
