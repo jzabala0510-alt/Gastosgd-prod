@@ -23,7 +23,7 @@ router.get('/', async (req, res, next) => {
       filtros = filtrosDeReporte(tipo, req.query);
     } else {
       if (!tieneRol(req.user, 'ARCHIVO')) return res.status(403).json({ error: 'Acceso denegado para tu rol' });
-      filtros = { zona: req.query.zona || undefined, codTienda: req.query.codTienda ? Number(req.query.codTienda) : null };
+      filtros = { zona: req.query.zona || undefined, codTienda: req.query.codTienda ? Number(req.query.codTienda) : null, incluirTransferidos: true };
     }
     res.json(await reportesService.listado(filtros));
   } catch (e) { next(e); }

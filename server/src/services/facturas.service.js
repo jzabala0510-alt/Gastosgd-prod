@@ -2,10 +2,26 @@ const { sql, getPool } = require('../config/db');
 const { resolverTienda } = require('./marca');
 const { CTE_PENDIENTE_TIENDA, columnasLibres, expr } = require('./facturasCompra.service');
 const { MONEDA } = require('./fondos.service');
+const { mayoresDe, claveTienda } = require('./traspasosMayores.service');
 
 const ESTADO_DEFAULT = 'PENDIENTE_ANALISTA';
 
 const claveFactura = (x) => `${(x.NUMSERIE ?? x.NumSerie).trim()}|${x.NUMFACTURA ?? x.NumFactura}|${(x.N).trim()}`;
+
+// Lo último que vio el seguimiento de ICG (seguimientoIcg.service.js) de un gasto del flujo:
+// { fecha, tipo } si ICG lo saldó, null si no. Solo para mostrar la etiqueta "Saldado en ICG".
+const saldadoIcg = (x) => (x && x.IcgEstado === 'S' ? { fecha: x.IcgSaldadoFecha || null, tipo: x.IcgTipoPago || null } : null);
+// Gasto de mayores transferido en ICG a una tienda (traspasosMayores.service.js): la factura de
+// la tienda { codTienda, tienda, marca, numserie, numfactura, n }, o null.
+const transferidoIcg = (x) => {
+  if (!x || !x.IcgTransferidoA) return null;
+  try { return JSON.parse(x.IcgTransferidoA); } catch { return null; }
+};
+
+// Estados en los que el gasto sigue en proceso dentro de la app (alguien tiene que actuar).
+const EN_PROCESO = ['PENDIENTE_TESORERIA', 'PENDIENTE_AUDITORIA', 'PENDIENTE_PAGO', 'PAGO_EN_REVISION', 'DEVUELTO', 'APROBADO'];
+const DIAS_HISTORICO = 30; // PAGADO/RECHAZADO/TRANSFERIDO ya saldados en ICG que Gastos sigue mostrando (al filtrar por ese estado)
+const TERMINADOS = ['PAGADO', 'RECHAZADO', 'TRANSFERIDO'];
 
 // Gastos que siguen en el flujo de la app pero que ICG ya saldó (no están en el
 // pendiente de TESORERIA): se traen por clave para que su bandeja los siga mostrando
@@ -85,24 +101,48 @@ async function listarPendientes(codTienda, estadoFiltro) {
     ORDER BY f.FECHA DESC`);
 
   const appPool = await getPool();
-  const fl = await appPool.request().input('e', sql.Int, codTienda)
-    .query('SELECT NumSerie, NumFactura, N, Estado FROM dbo.GD_FacturaFlujo WHERE CodTienda=@e');
-  const estados = new Map(fl.recordset.map((x) => [claveFactura(x), x.Estado]));
+  const fl = await appPool.request().input('e', sql.Int, codTienda).query(`
+    SELECT NumSerie, NumFactura, N, Estado, IcgEstado, IcgSaldadoFecha, IcgTipoPago, IcgTransferidoA,
+      CASE WHEN FechaActualizacion >= DATEADD(day, -${DIAS_HISTORICO}, GETDATE()) THEN 1 ELSE 0 END AS Reciente
+    FROM dbo.GD_FacturaFlujo WHERE CodTienda=@e`);
+  const flujos = new Map(fl.recordset.map((x) => [claveFactura(x), x]));
 
-  // Devueltos que ICG ya saldó: salen del pendiente, pero siguen siendo tarea del Analista
-  // (corregir y reenviar). Sin esto quedarían trabados fuera de toda bandeja. Los que nunca
-  // entraron al flujo sí salen de Gastos al saldarse.
+  // Gastos que ya entraron al flujo y que ICG saldó: salen del pendiente de ICG, pero no
+  // deben desaparecer de Gastos. Los que siguen en proceso se muestran siempre; los PAGADO,
+  // RECHAZADO y TRANSFERIDO de los últimos DIAS_HISTORICO días solo al filtrar por ese estado
+  // (Historico).
+  // Los que nunca entraron al flujo (PENDIENTE_ANALISTA) sí salen al saldarse: para entrar
+  // al flujo hay que estar pendiente en ICG.
   // Si esta búsqueda falla, la bandeja se muestra igual que antes (sin los saldados).
   const enIcg = new Set(fac.recordset.map(claveFactura));
-  const trabados = fl.recordset.filter((x) => x.Estado === 'DEVUELTO' && !enIcg.has(claveFactura(x)));
+  const fuera = fl.recordset.filter((x) => !enIcg.has(claveFactura(x))
+    && (EN_PROCESO.includes(x.Estado) || (TERMINADOS.includes(x.Estado) && x.Reciente)));
   let saldados = [];
   try {
-    saldados = (await facturasPorClave(r.pool, cols, trabados)).map((f) => ({ ...f, PendienteVes: 0, SaldadoIcg: true }));
+    saldados = (await facturasPorClave(r.pool, cols, fuera)).map((f) => {
+      const x = flujos.get(claveFactura(f));
+      return {
+        ...f, PendienteVes: 0,
+        // Si el seguimiento aún no pasó (corre cada 10 min), igual se sabe que ICG lo saldó.
+        SaldadoIcg: saldadoIcg(x) || { fecha: null, tipo: null },
+        Historico: !EN_PROCESO.includes(x.Estado),
+      };
+    });
   } catch (e) {
-    console.error(`[facturas] Gastos tienda ${codTienda}: no se pudieron traer los devueltos saldados en ICG:`, e.message);
+    console.error(`[facturas] Gastos tienda ${codTienda}: no se pudieron traer los saldados en ICG:`, e.message);
   }
 
-  let facturas = [...fac.recordset, ...saldados].map((f) => ({ ...f, Estado: estados.get(claveFactura(f)) || ESTADO_DEFAULT }));
+  // Los TRANSFERIDO (gasto de mayores cuya factura oficial es la de la tienda) tampoco ocupan
+  // la bandeja aunque sigan pendientes en ICG: solo se ven al filtrar por ese estado.
+  const mayores = await mayoresDe();
+  let facturas = [...fac.recordset, ...saldados].map((f) => {
+    const x = flujos.get(claveFactura(f));
+    const Estado = (x && x.Estado) || ESTADO_DEFAULT;
+    return {
+      ...f, Estado, Historico: !!f.Historico || Estado === 'TRANSFERIDO', TransferidoIcg: transferidoIcg(x),
+      MayoresIcg: mayores.get(claveTienda(codTienda, f.NUMSERIE, f.NUMFACTURA, f.N)) || null,
+    };
+  });
   if (saldados.length) facturas.sort((a, b) => new Date(b.FECHA) - new Date(a.FECHA));
   if (estadoFiltro) facturas = facturas.filter((f) => f.Estado === estadoFiltro);
 
@@ -200,8 +240,9 @@ async function cobertura(codTienda, fecha) {
   if (r.error) return { tienda: r.tienda, disponibleLocal: false, disponible, aviso: r.mensaje, gastos: [] };
 
   const fl = await appPool.request().input('e', sql.Int, codTienda)
-    .query('SELECT NumSerie, NumFactura, N, Estado FROM dbo.GD_FacturaFlujo WHERE CodTienda=@e');
+    .query('SELECT NumSerie, NumFactura, N, Estado, IcgEstado, IcgSaldadoFecha, IcgTipoPago, IcgTransferidoA FROM dbo.GD_FacturaFlujo WHERE CodTienda=@e');
   const estados = new Map(fl.recordset.map((x) => [claveFactura(x), x.Estado]));
+  const flujos = new Map(fl.recordset.map((x) => [claveFactura(x), x]));
 
   const cols = await columnasLibres(r.pool, `${r.host}|${r.dbName}`);
   // ENLACE_EMPRESA es el código nativo dentro de la BD de la marca (ver nota igual en
@@ -218,6 +259,8 @@ async function cobertura(codTienda, fecha) {
     WHERE f.ENLACE_EMPRESA = @e AND f.TIPODOC IN (12, 20)
     ORDER BY f.FECHA DESC`);
 
+  const mayores = await mayoresDe();
+  const deMayores = (f) => mayores.get(claveTienda(codTienda, f.NUMSERIE, f.NUMFACTURA, f.N)) || null;
   let acum = 0;
   const gastos = fac.recordset
     .filter((f) => (estados.get(claveFactura(f)) || ESTADO_DEFAULT) === 'PENDIENTE_TESORERIA')
@@ -228,6 +271,7 @@ async function cobertura(codTienda, fecha) {
         NumSerie: f.NUMSERIE, NumFactura: f.NUMFACTURA, N: f.N, Proveedor: f.Proveedor, FechaGasto: f.FECHA,
         TipoGasto: f.TipoGasto,
         Monto: Math.round(v * 100) / 100, Acumulado: Math.round(acum * 100) / 100, Cubierto: acum <= disponible,
+        TransferidoIcg: transferidoIcg(flujos.get(claveFactura(f))), MayoresIcg: deMayores(f),
       };
     });
 
@@ -240,7 +284,9 @@ async function cobertura(codTienda, fecha) {
     for (const f of await facturasPorClave(r.pool, cols, trabados)) {
       gastos.push({
         NumSerie: f.NUMSERIE, NumFactura: f.NUMFACTURA, N: f.N, Proveedor: f.Proveedor, FechaGasto: f.FECHA,
-        TipoGasto: f.TipoGasto, Monto: 0, Acumulado: Math.round(acum * 100) / 100, Cubierto: true, SaldadoIcg: true,
+        TipoGasto: f.TipoGasto, Monto: 0, Acumulado: Math.round(acum * 100) / 100, Cubierto: true,
+        SaldadoIcg: saldadoIcg(flujos.get(claveFactura(f))) || { fecha: null, tipo: null },
+        TransferidoIcg: transferidoIcg(flujos.get(claveFactura(f))), MayoresIcg: deMayores(f),
       });
     }
   } catch (e) {
@@ -309,12 +355,12 @@ async function detalle({ codTienda, numserie, numfactura, n }) {
   const appPool = await getPool();
   const flq = await appPool.request().input('c', sql.Int, codTienda).input('s', sql.NVarChar, numserie)
     .input('f', sql.Int, numfactura).input('n', sql.NVarChar, n)
-    .query('SELECT IdFlujo, Estado, EsPresupuesto FROM dbo.GD_FacturaFlujo WHERE CodTienda=@c AND NumSerie=@s AND NumFactura=@f AND N=@n');
+    .query('SELECT IdFlujo, Estado, EsPresupuesto, IcgEstado, IcgSaldadoFecha, IcgTipoPago, IcgTransferidoA FROM dbo.GD_FacturaFlujo WHERE CodTienda=@c AND NumSerie=@s AND NumFactura=@f AND N=@n');
   const flujo = flq.recordset[0];
   let adjuntos = [], aprobaciones = [];
   if (flujo) {
     adjuntos = (await appPool.request().input('id', sql.Int, flujo.IdFlujo)
-      .query('SELECT IdAdjunto, Tipo, NombreOriginal, RutaArchivo, Mime, Tamano, FechaSubida FROM dbo.GD_FacturaAdjunto WHERE IdFlujo=@id ORDER BY IdAdjunto')).recordset;
+      .query('SELECT IdAdjunto, Tipo, NombreOriginal, RutaArchivo, Mime, Tamano, FechaSubida, Anulado, FechaAnulado FROM dbo.GD_FacturaAdjunto WHERE IdFlujo=@id ORDER BY IdAdjunto')).recordset;
     aprobaciones = (await appPool.request().input('id', sql.Int, flujo.IdFlujo)
       .query(`SELECT a.Etapa, a.Decision, a.Comentario, a.Fecha, u.Nombre AS Usuario
               FROM dbo.GD_FacturaAprobacion a LEFT JOIN dbo.GD_Usuario u ON u.IdUsuario=a.IdUsuario
@@ -323,6 +369,11 @@ async function detalle({ codTienda, numserie, numfactura, n }) {
   return {
     ...factura, tienda: { codTienda: Number(codTienda), ...r.tienda },
     Estado: flujo ? flujo.Estado : ESTADO_DEFAULT, EsPresupuesto: flujo ? !!flujo.EsPresupuesto : false,
+    // Con pendiente en ICG ahora mismo no se muestra como saldado aunque el seguimiento
+    // (cada 10 min) todavía no lo haya visto.
+    SaldadoIcg: Number(factura.PendienteVes) > 0.10 ? null : saldadoIcg(flujo),
+    TransferidoIcg: transferidoIcg(flujo),
+    MayoresIcg: (await mayoresDe()).get(claveTienda(codTienda, numserie, numfactura, n)) || null,
     lineas: lin.recordset, adjuntos, aprobaciones,
   };
 }
@@ -332,6 +383,7 @@ async function guardarAdjuntos({ codTienda, numserie, numfactura, n, marca, tipo
   const appPool = await getPool();
   const flujo = await getOrCreateFlujo(appPool, { codTienda, numserie, numfactura, n, marca });
   if (flujo.Estado === 'PAGADO') return { error: 'La factura ya está pagada. No se pueden agregar más soportes.', status: 409 };
+  if (flujo.Estado === 'TRANSFERIDO') return { error: 'El gasto fue transferido a una tienda; la factura oficial es la de la tienda.', status: 409 };
   const tipoBody = (tipo || '').toUpperCase();
   const out = [];
   for (const file of files) {
@@ -351,17 +403,23 @@ async function guardarAdjuntos({ codTienda, numserie, numfactura, n, marca, tipo
 async function eliminarAdjunto(id) {
   const appPool = await getPool();
   const r = await appPool.request().input('id', sql.Int, id)
-    .query('SELECT IdAdjunto, Tipo, RutaArchivo FROM dbo.GD_FacturaAdjunto WHERE IdAdjunto=@id');
+    .query(`SELECT a.IdAdjunto, a.Tipo, a.RutaArchivo, f.Estado FROM dbo.GD_FacturaAdjunto a
+            JOIN dbo.GD_FacturaFlujo f ON f.IdFlujo = a.IdFlujo WHERE a.IdAdjunto=@id`);
   if (!r.recordset.length) return { error: 'Soporte no encontrado', status: 404 };
   const adj = r.recordset[0];
   if ((adj.Tipo || '').toUpperCase() === 'COMPROBANTE') {
     return { error: 'Los comprobantes de pago no se pueden eliminar', status: 403 };
+  }
+  // Igual que al agregar (guardarAdjuntos): un gasto pagado o transferido ya no cambia sus soportes.
+  if (['PAGADO', 'TRANSFERIDO'].includes(adj.Estado)) {
+    return { error: 'El gasto ya está pagado o transferido; sus soportes no se pueden eliminar.', status: 409 };
   }
   await appPool.request().input('id', sql.Int, id).query('DELETE FROM dbo.GD_FacturaAdjunto WHERE IdAdjunto=@id');
   return { ok: true, rutaArchivo: adj.RutaArchivo };
 }
 
 const DECISIONES = ['APROBADO', 'DEVUELTO', 'RECHAZADO'];
+const CAMBIO_ENTRETANTO = 'El gasto cambió mientras lo revisabas (lo movió otro usuario o el seguimiento de ICG). Recarga y revísalo de nuevo.';
 
 // Transición de etapa (Analista/Tesorería/Auditoría). etapa/estadosReq/mapEstado los
 // fija cada ruta (ver rutas /analista, /tesoreria, /auditoria).
@@ -375,8 +433,10 @@ async function accionFactura(etapa, estadosReq, mapEstado, { codTienda, numserie
   }
   const nuevo = mapEstado[decision];
   if (!nuevo) return { error: 'Decisión inválida para esta etapa', status: 400 };
-  await appPool.request().input('id', sql.Int, flujo.IdFlujo).input('e', sql.NVarChar, nuevo)
-    .query('UPDATE dbo.GD_FacturaFlujo SET Estado=@e, FechaActualizacion=GETDATE(), VistoPorAnalista=0 WHERE IdFlujo=@id');
+  // Condicionado al estado leído: si otro usuario o el seguimiento de ICG lo movió entretanto, no se pisa.
+  const up = await appPool.request().input('id', sql.Int, flujo.IdFlujo).input('e', sql.NVarChar, nuevo).input('a', sql.NVarChar, flujo.Estado)
+    .query('UPDATE dbo.GD_FacturaFlujo SET Estado=@e, FechaActualizacion=GETDATE(), VistoPorAnalista=0 WHERE IdFlujo=@id AND Estado=@a');
+  if (!up.rowsAffected[0]) return { error: CAMBIO_ENTRETANTO, status: 409 };
   await appPool.request().input('id', sql.Int, flujo.IdFlujo).input('et', sql.NVarChar, etapa)
     .input('u', sql.Int, idUsuario).input('d', sql.NVarChar, decision).input('c', sql.NVarChar, comentario || null)
     .query('INSERT INTO dbo.GD_FacturaAprobacion (IdFlujo, Etapa, IdUsuario, Decision, Comentario) VALUES (@id,@et,@u,@d,@c)');
@@ -391,6 +451,11 @@ async function pagar({ codTienda, numserie, numfactura, n, marca, idUsuario, fil
   if (flujo.Estado !== 'PENDIENTE_PAGO') {
     return { error: `La factura no está pendiente de pago (estado: ${flujo.Estado})`, status: 409 };
   }
+  // Primero el cambio de estado, condicionado: si entretanto dejó de estar pendiente de pago,
+  // no se registra nada.
+  const up = await appPool.request().input('id', sql.Int, flujo.IdFlujo)
+    .query(`UPDATE dbo.GD_FacturaFlujo SET Estado='PAGO_EN_REVISION', FechaActualizacion=GETDATE() WHERE IdFlujo=@id AND Estado='PENDIENTE_PAGO'`);
+  if (!up.rowsAffected[0]) return { error: CAMBIO_ENTRETANTO, status: 409 };
   for (const file of files) {
     await appPool.request().input('id', sql.Int, flujo.IdFlujo).input('t', sql.NVarChar, 'COMPROBANTE')
       .input('ruta', sql.NVarChar, file.filename).input('nom', sql.NVarChar, file.originalname)
@@ -398,8 +463,6 @@ async function pagar({ codTienda, numserie, numfactura, n, marca, idUsuario, fil
       .query(`INSERT INTO dbo.GD_FacturaAdjunto (IdFlujo, Tipo, RutaArchivo, NombreOriginal, Mime, Tamano)
               VALUES (@id, @t, @ruta, @nom, @mime, @tam)`);
   }
-  await appPool.request().input('id', sql.Int, flujo.IdFlujo)
-    .query(`UPDATE dbo.GD_FacturaFlujo SET Estado='PAGO_EN_REVISION', FechaActualizacion=GETDATE() WHERE IdFlujo=@id`);
   const comentario = `Comprobante de pago registrado (${files.length} archivo${files.length > 1 ? 's' : ''}). Pendiente de confirmación por Auditoría.`;
   await appPool.request().input('id', sql.Int, flujo.IdFlujo).input('u', sql.Int, idUsuario)
     .input('c', sql.NVarChar, comentario)
@@ -428,8 +491,9 @@ async function confirmarPago({ codTienda, numserie, numfactura, n, marca, decisi
     }
   }
   const nuevo = decision === 'CONFIRMADO' ? 'PAGADO' : 'PENDIENTE_PAGO';
-  await appPool.request().input('id', sql.Int, flujo.IdFlujo).input('e', sql.NVarChar, nuevo)
-    .query('UPDATE dbo.GD_FacturaFlujo SET Estado=@e, FechaActualizacion=GETDATE(), VistoPorAnalista=0 WHERE IdFlujo=@id');
+  const up = await appPool.request().input('id', sql.Int, flujo.IdFlujo).input('e', sql.NVarChar, nuevo)
+    .query(`UPDATE dbo.GD_FacturaFlujo SET Estado=@e, FechaActualizacion=GETDATE(), VistoPorAnalista=0 WHERE IdFlujo=@id AND Estado='PAGO_EN_REVISION'`);
+  if (!up.rowsAffected[0]) return { error: CAMBIO_ENTRETANTO, status: 409 };
   await appPool.request().input('id', sql.Int, flujo.IdFlujo).input('u', sql.Int, idUsuario)
     .input('d', sql.NVarChar, decision).input('c', sql.NVarChar, comentario || null)
     .query(`INSERT INTO dbo.GD_FacturaAprobacion (IdFlujo, Etapa, IdUsuario, Decision, Comentario)
@@ -444,7 +508,8 @@ async function confirmarPago({ codTienda, numserie, numfactura, n, marca, decisi
 async function bandeja(estado, alcance) {
   const appPool = await getPool();
   const fl = await appPool.request().input('e', sql.NVarChar, estado)
-    .query('SELECT IdFlujo, CodTienda, Marca, NumSerie, NumFactura, N, Estado, EsPresupuesto FROM dbo.GD_FacturaFlujo WHERE Estado=@e ORDER BY FechaActualizacion DESC');
+    .query(`SELECT IdFlujo, CodTienda, Marca, NumSerie, NumFactura, N, Estado, EsPresupuesto, IcgEstado, IcgSaldadoFecha, IcgTipoPago, IcgTransferidoA
+            FROM dbo.GD_FacturaFlujo WHERE Estado=@e ORDER BY FechaActualizacion DESC`);
 
   const filas = alcance.irrestricto ? fl.recordset : fl.recordset.filter((row) => alcance.codTiendas.has(row.CodTienda));
 
@@ -485,6 +550,7 @@ async function bandeja(estado, alcance) {
     }
   }
 
+  const mayores = await mayoresDe();
   const out = [];
   for (const row of filas) {
     const info = infoPorTienda.get(row.CodTienda);
@@ -495,6 +561,9 @@ async function bandeja(estado, alcance) {
       proveedor: fac ? fac.Proveedor : null, fecha: fac ? fac.FECHA : null, total: fac ? fac.TotalVes : null,
       tipoGasto: fac ? fac.TipoGasto : null,
       necesitaFactura: !!row.EsPresupuesto && !conFactura.has(row.IdFlujo),
+      saldadoIcg: saldadoIcg(row),
+      transferidoIcg: transferidoIcg(row),
+      mayoresIcg: mayores.get(claveTienda(row.CodTienda, row.NumSerie, row.NumFactura, row.N)) || null,
     });
   }
   return out;
@@ -503,4 +572,5 @@ async function bandeja(estado, alcance) {
 module.exports = {
   listarPendientes, marcarVisto, marcarPresupuesto, pagadasRecientes, cobertura, guardarAjusteDisponibilidad,
   detalle, guardarAdjuntos, eliminarAdjunto, accionFactura, pagar, confirmarPago, bandeja,
+  facturasPorClave,
 };

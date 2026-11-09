@@ -51,4 +51,19 @@ async function columnasLibres(pool, cacheKey) {
 const expr = (cols, nombre, tipoNull = 'NVARCHAR(MAX)') =>
   cols.has(nombre.toUpperCase()) ? `cl.${nombre}` : `CAST(NULL AS ${tipoNull})`;
 
-module.exports = { CTE_PENDIENTE, CTE_PENDIENTE_TIENDA, columnasLibres, expr };
+// Tipos de documento con vencimientos de compras (TESORERIA ORIGEN 'P') en una BD: F, E, A,
+// L… Sirve para ir por el índice principal de TESORERIA (ORIGEN, TIPODOCUMENTO, SERIE,
+// NUMERO, N) en vez de recorrerla. Cacheado 1 hora por host+BD.
+const tiposCache = new Map();
+async function tiposDocumentoCompra(pool, cacheKey) {
+  const c = tiposCache.get(cacheKey);
+  if (c && Date.now() - c.ts < 60 * 60 * 1000) return c.tipos;
+  const r = await pool.request().query("SELECT DISTINCT TIPODOCUMENTO FROM TESORERIA WHERE ORIGEN = 'P'");
+  const tipos = r.recordset.map((x) => String(x.TIPODOCUMENTO).replace(/'/g, '')).filter(Boolean);
+  tiposCache.set(cacheKey, { tipos, ts: Date.now() });
+  return tipos;
+}
+// Lista SQL de esos tipos para un IN (...): "'F','E'".
+const sqlTipos = (tipos) => tipos.map((t) => `'${t}'`).join(',');
+
+module.exports = { CTE_PENDIENTE, CTE_PENDIENTE_TIENDA, columnasLibres, expr, tiposDocumentoCompra, sqlTipos };

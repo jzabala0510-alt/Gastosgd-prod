@@ -6,7 +6,7 @@
         <p v-if="moneda === 'BS'" class="page__hint">Selecciona zona, tienda y fecha, y carga el saldo disponible (Bs) por tienda y banco. Alimenta la cobertura de Tesorería.</p>
         <p v-else class="page__hint">Saldo en dólares por tienda y banco. Es informativo: no entra en la cobertura de Tesorería ni en el reporte de saldos, que son en Bs.</p>
       </div>
-      <router-link v-if="auth.esAdmin" to="/fondos/banesco/consola" class="btn btn--sm">Consola Banesco</router-link>
+      <router-link v-if="auth.esSuperUsuario" to="/fondos/banesco/consola" class="btn btn--sm">Consola Banesco</router-link>
     </div>
 
     <div class="tabs-bar">
@@ -180,7 +180,8 @@ async function onZona() {
   banescoAviso.value = null;
   banescoTiendas.value = [];
   await cargar();
-  if (!zona.value) return;
+  // El botón "Actualizar Banesco" es solo para superusuarios: a los demás ni se les consulta.
+  if (!zona.value || !auth.esSuperUsuario) return;
   try {
     const est = await getBanescoEstado(zona.value);
     banescoTiendas.value = est.tiendas || [];

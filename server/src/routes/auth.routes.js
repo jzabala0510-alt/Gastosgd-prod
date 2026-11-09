@@ -1,6 +1,6 @@
 const { Router } = require('express');
 const { encriptar } = require('../auth/icgCrypto');
-const { generarToken, authenticate } = require('../middleware/auth.middleware');
+const { generarToken, authenticate, esSuperUsuario } = require('../middleware/auth.middleware');
 const authService = require('../services/auth.service');
 
 const router = Router();
@@ -58,14 +58,15 @@ router.post('/login', async (req, res, next) => {
       zonas,
     };
 
-    res.json({ token: generarToken(payload), ...payload });
+    // superUsuario: solo para mostrar u ocultar menús; el servidor lo vuelve a revisar en cada ruta.
+    res.json({ token: generarToken(payload), ...payload, superUsuario: esSuperUsuario(payload) });
   } catch (err) { next(err); }
 });
 
 // GET /api/auth/me - datos del usuario autenticado (desde el token)
 router.get('/me', authenticate, (req, res) => {
   const { idUsuario, codUsuarioIcg, usuario, nombre, roles, rol, tiendas, zonas } = req.user;
-  res.json({ idUsuario, codUsuarioIcg, usuario, nombre, roles: roles || (rol ? [rol] : []), rol, tiendas, zonas: zonas || [] });
+  res.json({ idUsuario, codUsuarioIcg, usuario, nombre, roles: roles || (rol ? [rol] : []), rol, tiendas, zonas: zonas || [], superUsuario: esSuperUsuario(req.user) });
 });
 
 module.exports = router;

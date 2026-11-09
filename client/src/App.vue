@@ -15,6 +15,7 @@
           <router-link v-if="auth.esArchivo" to="/archivo" :class="{ active: $route.path === '/archivo' || $route.path.startsWith('/factura') }">Archivo</router-link>
           <router-link v-if="auth.esAdmin" to="/admin/usuarios" :class="{ active: $route.path === '/admin/usuarios' }">Usuarios</router-link>
           <router-link v-if="auth.esAdmin" to="/admin/bancos" :class="{ active: $route.path === '/admin/bancos' }">Bancos</router-link>
+          <router-link v-if="auth.esAdmin && auth.esSuperUsuario" to="/admin/seguimiento-icg" :class="{ active: $route.path === '/admin/seguimiento-icg' }">Seguimiento ICG</router-link>
           <router-link v-if="auth.esAdmin" to="/actualizador" :class="{ active: $route.path === '/actualizador' }">Actualizador</router-link>
           <!-- Importar (Excel) y Alias de tiendas: ocultos por ahora, no van a producción
                (los saldos se cargan manual). Rutas y backend siguen intactos por si se
@@ -64,6 +65,7 @@ function refrescar() { if (auth.isAuth) notif.refrescar(); }
 let timer = null;
 onMounted(() => {
   refrescar();
+  auth.refrescarSuperUsuario();
   timer = setInterval(refrescar, 120000); // refresco cada 2 min (menos carga con muchos usuarios)
 });
 onUnmounted(() => { if (timer) clearInterval(timer); });

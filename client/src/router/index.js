@@ -10,6 +10,7 @@ import Pagadas from '../views/Pagadas.vue';
 import AdminUsuarios from '../views/AdminUsuarios.vue';
 import AdminBancos from '../views/AdminBancos.vue';
 import AdminAliasTiendas from '../views/AdminAliasTiendas.vue';
+import AdminSeguimientoIcg from '../views/AdminSeguimientoIcg.vue';
 import CargaMontos from '../views/CargaMontos.vue';
 import ImportarSaldos from '../views/ImportarSaldos.vue';
 import ConsolaBanesco from '../views/ConsolaBanesco.vue';
@@ -30,13 +31,14 @@ const routes = [
   { path: '/pagadas', name: 'pagadas', component: Pagadas },
   { path: '/fondos', name: 'fondos', component: CargaMontos },
   { path: '/fondos/importar', name: 'importar-saldos', component: ImportarSaldos },
-  { path: '/fondos/banesco/consola', name: 'consola-banesco', component: ConsolaBanesco, meta: { admin: true } },
+  { path: '/fondos/banesco/consola', name: 'consola-banesco', component: ConsolaBanesco, meta: { superUsuario: true } },
   { path: '/reportes', name: 'reportes', component: Reportes },
   { path: '/archivo', name: 'archivo', component: Archivo },
   { path: '/notificaciones', name: 'notificaciones', component: Notificaciones },
   { path: '/admin/usuarios', name: 'admin-usuarios', component: AdminUsuarios, meta: { admin: true } },
   { path: '/admin/bancos', name: 'admin-bancos', component: AdminBancos, meta: { admin: true } },
   { path: '/admin/alias-tiendas', name: 'admin-alias-tiendas', component: AdminAliasTiendas, meta: { admin: true } },
+  { path: '/admin/seguimiento-icg', name: 'admin-seguimiento-icg', component: AdminSeguimientoIcg, meta: { admin: true, superUsuario: true } },
 ];
 
 const router = createRouter({ history: createWebHistory(), routes });
@@ -46,6 +48,8 @@ router.beforeEach((to) => {
   if (!to.meta.public && !token) return { name: 'login' };
   if (to.name === 'login' && token) return { name: 'home' };
   if (to.meta.admin && !JSON.parse(localStorage.getItem('gd_roles') || '[]').includes('ADMIN')) return { name: 'home' };
+  // Consola Banesco y Seguimiento ICG: solo superusuarios (el servidor también lo valida).
+  if (to.meta.superUsuario && localStorage.getItem('gd_super') !== '1') return { name: 'home' };
   return true;
 });
 

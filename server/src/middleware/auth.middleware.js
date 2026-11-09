@@ -61,4 +61,22 @@ function requireRol(...roles) {
   };
 }
 
-module.exports = { generarToken, authenticate, requireRol, tieneRol, rolesDe, generarTokenUpdater, requireUpdaterAuth };
+// Funciones reservadas (Consola Banesco, botón "Actualizar Banesco", Seguimiento ICG): solo
+// los usuarios ICG listados en SUPERUSUARIOS del .env (separados por coma, sin distinguir
+// mayúsculas). Sin la variable: REDESIP. Se revisa en cada petición contra el usuario del
+// token, así que cambiar el .env (y reiniciar) aplica sin esperar a que venzan las sesiones.
+function superUsuarios() {
+  return String(process.env.SUPERUSUARIOS || 'REDESIP').split(',').map((s) => s.trim().toUpperCase()).filter(Boolean);
+}
+function esSuperUsuario(user) {
+  return !!user && superUsuarios().includes(String(user.usuario || '').trim().toUpperCase());
+}
+function requireSuperUsuario(req, res, next) {
+  if (esSuperUsuario(req.user)) return next();
+  res.status(403).json({ error: 'Función reservada' });
+}
+
+module.exports = {
+  generarToken, authenticate, requireRol, tieneRol, rolesDe, generarTokenUpdater, requireUpdaterAuth,
+  esSuperUsuario, requireSuperUsuario,
+};

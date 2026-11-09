@@ -1,5 +1,5 @@
 const { Router } = require('express');
-const { authenticate, requireRol } = require('../middleware/auth.middleware');
+const { authenticate, requireRol, requireSuperUsuario } = require('../middleware/auth.middleware');
 const { hoyVE } = require('../utils/fecha');
 const fondosService = require('../services/fondos.service');
 const banescoService = require('../services/banesco.service');
@@ -47,8 +47,10 @@ router.post('/bulk', requireRol('ANALISTA', 'SALDOS'), async (req, res, next) =>
   } catch (e) { next(e); }
 });
 
+// El botón "Actualizar Banesco" y la Consola Banesco son solo para SUPERUSUARIOS (ver
+// auth.middleware.js). La corrida automática diaria de Banesco no depende de esto.
 // GET /api/fondos/banesco?zona= — tiendas de la zona con credencial Banesco (para mostrar el botón).
-router.get('/banesco', requireRol('ANALISTA', 'SALDOS'), async (req, res, next) => {
+router.get('/banesco', requireRol('ANALISTA', 'SALDOS'), requireSuperUsuario, async (req, res, next) => {
   try {
     if (!req.query.zona) return res.status(400).json({ error: 'zona requerida' });
     if (zonaFueraDeAlcance(req.user, req.query.zona)) return res.status(403).json({ error: FUERA_ALCANCE });
@@ -58,7 +60,7 @@ router.get('/banesco', requireRol('ANALISTA', 'SALDOS'), async (req, res, next) 
 
 // POST /api/fondos/banesco — { zona, moneda?: 'BS'|'USD' } trae de Banesco el saldo de esas
 // tiendas y lo graba en las columnas Banesco. Siempre HOY: el API da el saldo actual, no histórico.
-router.post('/banesco', requireRol('ANALISTA', 'SALDOS'), async (req, res, next) => {
+router.post('/banesco', requireRol('ANALISTA', 'SALDOS'), requireSuperUsuario, async (req, res, next) => {
   try {
     const { zona } = req.body || {};
     const moneda = String((req.body || {}).moneda || '').toUpperCase() === 'USD' ? 'USD' : 'BS';
@@ -72,16 +74,16 @@ router.post('/banesco', requireRol('ANALISTA', 'SALDOS'), async (req, res, next)
   } catch (e) { next(e); }
 });
 
-// ── Consola Banesco (solo ADMIN): peticiones y respuestas, para la certificación ──
+// ── Consola Banesco (solo SUPERUSUARIOS): peticiones y respuestas, para la certificación ──
 // GET /api/fondos/banesco/consola — empresas configuradas (sin credenciales) + registro.
-router.get('/banesco/consola', requireRol('ADMIN'), async (req, res, next) => {
+router.get('/banesco/consola', requireSuperUsuario, async (req, res, next) => {
   try {
     res.json({ empresas: await banescoService.empresasConsola(), trazas: banescoService.listarTrazas() });
   } catch (e) { next(e); }
 });
 
 // POST /api/fondos/banesco/consola/probar — { indice, monedas: ['BS','USD'] } consulta sin grabar.
-router.post('/banesco/consola/probar', requireRol('ADMIN'), async (req, res, next) => {
+router.post('/banesco/consola/probar', requireSuperUsuario, async (req, res, next) => {
   try {
     const { indice, monedas } = req.body || {};
     if (!Number.isInteger(indice) || indice < 0) return res.status(400).json({ error: 'empresa requerida' });
@@ -90,7 +92,7 @@ router.post('/banesco/consola/probar', requireRol('ADMIN'), async (req, res, nex
 });
 
 // DELETE /api/fondos/banesco/consola — vacía el registro.
-router.delete('/banesco/consola', requireRol('ADMIN'), (req, res) => {
+router.delete('/banesco/consola', requireSuperUsuario, (req, res) => {
   banescoService.limpiarTrazas();
   res.json({ ok: true });
 });

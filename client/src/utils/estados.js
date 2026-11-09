@@ -9,6 +9,7 @@ export const ESTADO_LABEL = {
   RECHAZADO: 'Rechazado',
   DEVUELTO: 'Devuelto',
   PAGADO: 'Pagado',
+  TRANSFERIDO: 'Transferido',
 };
 
 export const ESTADO_CLASS = {
@@ -22,4 +23,5 @@ export const ESTADO_CLASS = {
   RECHAZADO: 'badge--red',
   DEVUELTO: 'badge--red',
   PAGADO: 'badge--green',
+  TRANSFERIDO: 'badge--gray',
 };

@@ -6,9 +6,24 @@
           Factura {{ f.NUMSERIE }}-{{ f.NUMFACTURA }}
           <span class="badge" :class="estClass(f.Estado)">{{ estLabel(f.Estado) }}</span>
           <span v-if="f.EsPresupuesto" class="badge badge--blue">Presupuesto</span>
+          <EtiquetaIcg :saldado="f.SaldadoIcg" :transferido="f.TransferidoIcg" :mayores="f.MayoresIcg" :estado="f.Estado" />
           <span v-if="soloLectura" class="badge badge--gray">Solo lectura (Archivo)</span>
         </h1>
         <p class="page__hint">{{ f.tienda?.Tienda }} · {{ f.tienda?.Zona }} · {{ f.tienda?.Marca }}</p>
+        <p v-if="f.TransferidoIcg" class="page__hint">
+          {{ f.Estado === 'TRANSFERIDO' ? 'Gasto de mayores transferido a la tienda; la factura oficial es la de la tienda:' : 'En ICG este gasto también está registrado en la tienda:' }}
+          <router-link :to="rutaGemela(f.TransferidoIcg)">
+            {{ f.TransferidoIcg.marca }} · {{ f.TransferidoIcg.tienda }} · {{ f.TransferidoIcg.numserie }}-{{ f.TransferidoIcg.numfactura }} →
+          </router-link>
+        </p>
+        <p v-if="f.MayoresIcg" class="page__hint" :class="{ 'txt--danger': pagadoPorMayores }">
+          {{ pagadoPorMayores
+            ? `⚠ Este gasto ya lo ${f.MayoresIcg.estado === 'PAGADO' ? 'pagó' : 'cargó como pagado'} mayores; revisa antes de enviarlo o pagarlo:`
+            : 'Este gasto también está registrado en mayores:' }}
+          <router-link :to="rutaGemela(f.MayoresIcg)">
+            {{ f.MayoresIcg.marca }} · {{ f.MayoresIcg.numserie }}-{{ f.MayoresIcg.numfactura }} →
+          </router-link>
+        </p>
       </div>
       <div class="head-actions"><button class="btn" @click="$router.back()">← Volver</button></div>
     </div>
@@ -47,9 +62,11 @@
             <a :href="`/api/uploads/${a.RutaArchivo}`" target="_blank" rel="noopener">
               <img v-if="img(a)" :src="`/api/uploads/${a.RutaArchivo}`" class="adjuntos__thumb" alt="" />
               <span v-else class="adjuntos__file">📄</span>
-              <span class="adjuntos__name">{{ a.NombreOriginal }}</span>
+              <span class="adjuntos__name" :class="{ 'adjuntos__name--anulado': a.Anulado }">{{ a.NombreOriginal }}</span>
             </a>
-            <span class="badge" :class="a.Tipo === 'COMPROBANTE' ? 'badge--green' : 'badge--gray'">{{ a.Tipo }}</span>
+            <span v-if="a.Anulado" class="badge badge--red"
+                  :title="`ICG reabrió el gasto después de este pago${a.FechaAnulado ? ` (anulado el ${fechaHora(a.FechaAnulado)})` : ''}: ya no vale como comprobante.`">{{ a.Tipo }} anulado</span>
+            <span v-else class="badge" :class="a.Tipo === 'COMPROBANTE' ? 'badge--green' : 'badge--gray'">{{ a.Tipo }}</span>
             <button v-if="puedeAdjuntar && a.Tipo !== 'COMPROBANTE'" class="adjuntos__del"
                     :disabled="busy" title="Eliminar soporte" @click="borrarAdjunto(a)">🗑</button>
           </li>
@@ -172,10 +189,10 @@
       <h3 class="card__title">Historial del flujo</h3>
       <ol class="timeline">
         <li v-for="(a, i) in f.aprobaciones" :key="i">
-          <span class="timeline__dot" :class="['APROBADO','PAGADO'].includes(a.Decision) ? 'timeline__dot--green' : 'timeline__dot--red'"></span>
+          <span class="timeline__dot" :class="a.Etapa === 'SISTEMA' ? 'timeline__dot--icg' : ['APROBADO','PAGADO'].includes(a.Decision) ? 'timeline__dot--green' : 'timeline__dot--red'"></span>
           <div>
-            <b>{{ etapa(a.Etapa) }}: {{ a.Decision }}</b>
-            <small>{{ a.Usuario }} · {{ fechaHora(a.Fecha) }}</small>
+            <b>{{ etapa(a.Etapa) }}: {{ decision(a.Decision) }}</b>
+            <small>{{ a.Usuario || 'Automático' }} · {{ fechaHora(a.Fecha) }}</small>
             <p v-if="a.Comentario" class="timeline__comment">{{ a.Comentario }}</p>
           </div>
         </li>
@@ -186,7 +203,7 @@
       </ol>
     </div>
   </section>
-  <p v-else class="page__hint" style="padding:28px">Cargando…</p>
+  <p v-else class="page__hint" :class="{ 'txt--danger': errorCarga }" style="padding:28px">{{ errorCarga || 'Cargando…' }}</p>
 
   <ModalFeedback
     :visible="modal.visible"
@@ -198,7 +215,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { getFacturaDetalle, accionAnalista, accionTesoreria, accionAuditoria, uploadAdjuntos, deleteAdjunto, pagarFactura, confirmarPago, marcarVisto, marcarPresupuesto } from '../api/facturas';
 import { useAuthStore } from '../stores/auth';
@@ -206,6 +223,7 @@ import { useNotifStore } from '../stores/notificaciones';
 import { useConfirm } from '../composables/useConfirm';
 import AccionesFlujo from '../components/AccionesFlujo.vue';
 import ModalFeedback from '../components/ModalFeedback.vue';
+import EtiquetaIcg from '../components/EtiquetaIcg.vue';
 import { ESTADO_LABEL, ESTADO_CLASS } from '../utils/estados';
 import { money, fecha, fechaHora } from '../utils/format';
 
@@ -218,6 +236,14 @@ const route = useRoute();
 // Llegó desde el módulo Archivo (?soloVista=1): ninguna acción debe estar disponible
 // acá, sin importar qué otros roles tenga el usuario — Archivo es solo para consultar.
 const soloLectura = computed(() => route.query.soloVista === '1');
+// Enlace a la factura gemela (mayores ↔ tienda). Desde Archivo sigue en solo lectura.
+const rutaGemela = (g) => ({
+  path: `/factura/${g.codTienda}/${encodeURIComponent(g.numserie)}/${g.numfactura}/${encodeURIComponent(g.n)}`,
+  query: soloLectura.value ? { soloVista: '1' } : {},
+});
+// Mayores ya pagó (o cargó el pago de) la factura gemela de esta: riesgo de pagarla dos veces.
+const pagadoPorMayores = computed(() => f.value?.Estado !== 'PAGADO' && ['PAGADO', 'PAGO_EN_REVISION'].includes(f.value?.MayoresIcg?.estado));
+const errorCarga = ref('');
 const f = ref(null);
 const busy = ref(false);
 const msg = ref('');
@@ -228,7 +254,9 @@ const modal = ref({ visible: false, titulo: '', mensaje: '', tipo: 'success' });
 
 const estLabel = (e) => ESTADO_LABEL[e] || e;
 const estClass = (e) => ESTADO_CLASS[e] || 'badge--gray';
-const etapa = (e) => ({ ANALISTA: 'Analista', TESORERIA: 'Tesorería', AUDITORIA: 'Auditoría', PAGADOR: 'Pagos', AUDITOR_PAGO: 'Confirmación de pago' }[e] || e);
+const etapa = (e) => ({ ANALISTA: 'Analista', TESORERIA: 'Tesorería', AUDITORIA: 'Auditoría', PAGADOR: 'Pagos', AUDITOR_PAGO: 'Confirmación de pago', SISTEMA: 'Sistema' }[e] || e);
+// Eventos automáticos del seguimiento de ICG (Etapa SISTEMA); las demás decisiones se muestran tal cual.
+const decision = (d) => ({ SALDADO_ICG: 'Saldado en ICG', REABIERTO_ICG: 'Reabierto en ICG', TRANSFERIDO: 'Transferido a la tienda', TRANSFERIDO_ICG: 'Transferido en ICG' }[d] || d);
 const tipoDoc = (t) => t === 12 ? 'Factura Gastos' : t === 20 ? 'Gastos no deducibles' : '—';
 const img = (a) => (a.Mime || '').startsWith('image/');
 
@@ -244,12 +272,12 @@ const esAud = computed(() => !soloLectura.value && f.value?.Estado === 'PENDIENT
 const esPag = computed(() => !soloLectura.value && f.value?.Estado === 'PENDIENTE_PAGO' && auth.esPagador);
 const esAudPago = computed(() => !soloLectura.value && f.value?.Estado === 'PAGO_EN_REVISION' && auth.esAuditor);
 const puedeDecidir = computed(() => esAna.value || esTes.value || esAud.value);
-const puedeAdjuntar = computed(() => !soloLectura.value && f.value?.Estado !== 'PAGADO' && (auth.esAnalista || auth.esTesoreria || auth.esAuditor));
+const puedeAdjuntar = computed(() => !soloLectura.value && !['PAGADO', 'TRANSFERIDO'].includes(f.value?.Estado) && (auth.esAnalista || auth.esTesoreria || auth.esAuditor));
 const tieneFactura = computed(() => (f.value?.adjuntos || []).some((a) => a.Tipo === 'FACTURA'));
 // Factura real del presupuesto: la cargan Analista, Pagador o Auditor en cualquier etapa
 // antes de PAGADO, incluso en modo solo lectura (Archivo) — llega después de pagar,
 // cuando el gasto ya salió de sus bandejas. Confirmar el pago sigue siendo del Auditor.
-const puedeCargarFactura = computed(() => f.value?.EsPresupuesto && !tieneFactura.value && f.value?.Estado !== 'PAGADO'
+const puedeCargarFactura = computed(() => f.value?.EsPresupuesto && !tieneFactura.value && !['PAGADO', 'TRANSFERIDO'].includes(f.value?.Estado)
   && (auth.esAnalista || auth.esPagador || auth.esAuditor));
 // El bloqueo de Presupuesto es solo en la confirmación final del pago (esAudPago) — un
 // presupuesto SÍ puede pasar por Auditoría→Pagos y ser pagado con normalidad; lo único
@@ -287,7 +315,15 @@ const mensajeDecision = (decision) => {
 };
 
 async function cargar() {
-  f.value = await getFacturaDetalle(Number(props.codTienda), props.numserie, Number(props.numfactura), props.n);
+  errorCarga.value = '';
+  try {
+    f.value = await getFacturaDetalle(Number(props.codTienda), props.numserie, Number(props.numfactura), props.n);
+  } catch (e) {
+    // p. ej. 403: la factura gemela de otra tienda puede estar fuera del alcance del usuario.
+    f.value = null;
+    errorCarga.value = e.response?.data?.error || 'No se pudo cargar la factura.';
+    return;
+  }
   // Avisos informativos del analista (PAGADO/RECHAZADO): al abrirlos se marcan vistos.
   // Las DEVUELTO no: son tareas que solo salen del contador al reenviarlas.
   if (!soloLectura.value && ['PAGADO', 'RECHAZADO'].includes(f.value?.Estado) && auth.esAnalista) {
@@ -409,4 +445,14 @@ function onModalClose() {
 }
 
 onMounted(cargar);
+// Al saltar a otra factura (enlace a la gemela) Vue reutiliza esta vista: hay que limpiar y
+// recargar, o la pantalla seguiría mostrando la anterior con las acciones apuntando a la nueva.
+watch(() => [props.codTienda, props.numserie, props.numfactura, props.n], () => {
+  f.value = null;
+  msg.value = '';
+  nuevos.value = [];
+  comprobantes.value = [];
+  facturaPresupuesto.value = [];
+  cargar();
+});
 </script>

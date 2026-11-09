@@ -25,7 +25,7 @@
     <template v-if="tabActivo === 'auditoria'">
       <div class="card"><SelectorZMT :store="store" @buscar="onTienda" /></div>
 
-      <div v-if="pendientes.length" class="card colapsable-card">
+      <div v-if="pendientes.length" ref="pendCard" class="card colapsable-card">
         <button class="colapsable-toggle" @click="pendientesAbiertos = !pendientesAbiertos">
           <span class="colapsable-toggle__text">
             <span class="badge badge--amber">{{ pendientes.length }}</span>
@@ -68,7 +68,7 @@
           <tbody>
             <tr v-for="g in filtradas" :key="g.codTienda + '-' + g.numserie + '-' + g.numfactura">
               <td v-if="!store.codTienda" style="white-space:nowrap">{{ g.marca }} · {{ g.tienda }}</td>
-              <td><code>{{ g.numserie }}-{{ g.numfactura }}</code></td>
+              <td><code>{{ g.numserie }}-{{ g.numfactura }}</code><EtiquetaIcg bloque :saldado="g.saldadoIcg" :transferido="g.transferidoIcg" :mayores="g.mayoresIcg" :estado="g.estado" /></td>
               <td>{{ fecha(g.fecha) }}</td>
               <td>{{ g.proveedor || '—' }}</td>
               <td>{{ g.tipoGasto || '—' }}</td>
@@ -120,7 +120,7 @@
           <tbody>
             <tr v-for="g in pagoItemsFiltrados" :key="g.codTienda + '-' + g.numserie + '-' + g.numfactura">
               <td style="white-space:nowrap">{{ g.marca }} · {{ g.tienda }}</td>
-              <td><code>{{ g.numserie }}-{{ g.numfactura }}</code></td>
+              <td><code>{{ g.numserie }}-{{ g.numfactura }}</code><EtiquetaIcg bloque :saldado="g.saldadoIcg" :transferido="g.transferidoIcg" :mayores="g.mayoresIcg" :estado="g.estado" /></td>
               <td>{{ fecha(g.fecha) }}</td>
               <td>{{ g.proveedor || '—' }}</td>
               <td>{{ g.tipoGasto || '—' }}</td>
@@ -143,9 +143,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import SelectorZMT from '../components/SelectorZMT.vue';
 import ModalFeedback from '../components/ModalFeedback.vue';
+import EtiquetaIcg from '../components/EtiquetaIcg.vue';
 import { useAuditoriaStore } from '../stores/vistas';
 import { useNotifStore } from '../stores/notificaciones';
 import { useConfirm } from '../composables/useConfirm';
@@ -170,7 +171,15 @@ const tabActivo = ref('auditoria');
 
 const pendientes = computed(() => notif.detalle.auditoria);
 const pendientesAbiertos = ref(false);
+const pendCard = ref(null);
+// Al elegir una tienda de la lista: se cierra la lista y la pantalla sube hasta ella, así el
+// resultado queda a la vista justo debajo (antes había que bajar hasta el final de la lista).
+function cerrarPendientes() {
+  pendientesAbiertos.value = false;
+  nextTick(() => pendCard.value?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+}
 function saltarA(it) {
+  cerrarPendientes();
   store.$patch({ zona: it.zona, marca: it.marca, codTienda: it.codTienda, autobuscar: true });
 }
 

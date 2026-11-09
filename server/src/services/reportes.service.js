@@ -1,5 +1,6 @@
 const { sql, getPool } = require('../config/db');
 const { resolverTienda, tiendasExtra } = require('./marca');
+const { mayoresDe, claveTienda } = require('./traspasosMayores.service');
 const { CTE_PENDIENTE, columnasLibres, expr } = require('./facturasCompra.service');
 const bancosService = require('./bancos.service');
 const { MONEDA } = require('./fondos.service');
@@ -31,7 +32,7 @@ const ESTADOS_PENDIENTES = ['PENDIENTE_ANALISTA', 'PENDIENTE_TESORERIA', 'PENDIE
 // soloPendientes=1 → cualquier etapa de ESTADOS_PENDIENTES (en vez de un solo `estado`).
 // soloPresupuestos=1 → solo gastos marcados EsPresupuesto (cualquier estado, incl. ya
 // pagados — por eso este flag NUNCA implica soloERP, que los escondería al pagarse).
-async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPendientes, soloPresupuestos }) {
+async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPendientes, soloPresupuestos, incluirTransferidos }) {
   const appPool = await getPool();
   const vacio = { rows: [], totales: { count: 0, totalVes: 0, porEstado: {} }, advertencias: [] };
 
@@ -54,9 +55,11 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPen
 
   // 2) Estados del flujo de esas tiendas (clave cod|serie|num|n → {estado, esPresupuesto})
   const fl = await appPool.request()
-    .query(`SELECT CodTienda, NumSerie, NumFactura, N, Estado, EsPresupuesto FROM dbo.GD_FacturaFlujo WHERE CodTienda IN (${scope.map(Number).join(',')})`);
+    .query(`SELECT CodTienda, NumSerie, NumFactura, N, Estado, EsPresupuesto, IcgEstado, IcgSaldadoFecha, IcgTipoPago, IcgTransferidoA
+            FROM dbo.GD_FacturaFlujo WHERE CodTienda IN (${scope.map(Number).join(',')})`);
   const flujoMap = new Map();
-  for (const r of fl.recordset) flujoMap.set(`${r.CodTienda}|${(r.NumSerie || '').trim()}|${r.NumFactura}|${(r.N || '').trim()}`, { estado: r.Estado, esPresupuesto: !!r.EsPresupuesto });
+  const destino = (txt) => { if (!txt) return null; try { return JSON.parse(txt); } catch { return null; } };
+  for (const r of fl.recordset) flujoMap.set(`${r.CodTienda}|${(r.NumSerie || '').trim()}|${r.NumFactura}|${(r.N || '').trim()}`, { estado: r.Estado, esPresupuesto: !!r.EsPresupuesto, transferidoIcg: destino(r.IcgTransferidoA) });
 
   // Marcas/fuentes que fallaron: se omiten y se informan, en vez de tumbar el
   // reporte entero (con "todas las zonas" entran todas las marcas, y bastaba
@@ -86,10 +89,11 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPen
     porBrand[bk].codigos.push(cod - (info.offset || 0));
   });
 
+  const mayores = await mayoresDe(); // factura de tienda que también está en mayores (etiqueta)
   const rows = [];
   const seen = new Set();
   const enIcg = new Set(); // claves que vinieron en el pendiente de ICG (paso 4), pasen o no los filtros
-  const addRow = (cod, d, est, esPresupuesto) => {
+  const addRow = (cod, d, est, esPresupuesto, saldadoIcg = null, transferidoIcg = null) => {
     const k = `${cod}|${(d.NUMSERIE || '').trim()}|${d.NUMFACTURA}|${(d.N || '').trim()}`;
     if (seen.has(k)) return;
     // El rango Desde/Hasta filtra por Fecha de Solicitud (no la fecha de la factura),
@@ -102,6 +106,10 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPen
     if (desde && fechaIso < desde) return;
     if (hasta && fechaIso > hasta) return;
     if (estado && est !== estado) return;
+    // Transferido = gasto de mayores cuya factura oficial es la de la tienda: no cuenta en los
+    // reportes (sería doble), solo sale si se pide ese estado. Archivo los trae
+    // (incluirTransferidos) y los oculta salvo que se filtre por ese estado.
+    if (est === 'TRANSFERIDO' && estado !== 'TRANSFERIDO' && !incluirTransferidos) return;
     if (soloPendientes && !ESTADOS_PENDIENTES.includes(est)) return;
     if (soloPresupuestos && !esPresupuesto) return;
     seen.add(k);
@@ -115,6 +123,10 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPen
       fecha: d.FechaSolicitud, fechaFactura: d.FECHA, proveedor: d.Proveedor, tipoGasto: d.TipoGasto,
       totalVes: Number(d.TotalVes) || 0, pendienteVes: Number(d.PendienteVes) || 0, estado: est,
       esPresupuesto: !!esPresupuesto,
+      // Etiqueta "Saldado en ICG" (lo que vio seguimientoIcg.service.js). Solo para los que
+      // ya no están en el pendiente de ICG (paso 5).
+      saldadoIcg, transferidoIcg,
+      mayoresIcg: mayores.get(claveTienda(cod, d.NUMSERIE, d.NUMFACTURA, d.N)) || null,
     });
   };
 
@@ -152,7 +164,7 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPen
       const k = `${cod}|${(d.NUMSERIE || '').trim()}|${d.NUMFACTURA}|${(d.N || '').trim()}`;
       enIcg.add(k);
       const flu = flujoMap.get(k);
-      addRow(cod, d, flu ? flu.estado : 'PENDIENTE_ANALISTA', flu ? flu.esPresupuesto : false);
+      addRow(cod, d, flu ? flu.estado : 'PENDIENTE_ANALISTA', flu ? flu.esPresupuesto : false, null, flu ? flu.transferidoIcg : null);
     }
   }
 
@@ -172,10 +184,14 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPen
     if (seen.has(k) || enIcg.has(k)) continue;
     // No traer de ICG lo que addRow igual descartaría por estado.
     if (estado && r.Estado !== estado) continue;
+    if (r.Estado === 'TRANSFERIDO' && estado !== 'TRANSFERIDO' && !incluirTransferidos) continue;
     if (soloPendientes && !ESTADOS_PENDIENTES.includes(r.Estado)) continue;
     // Pendientes: un gasto que nunca se envió (Pendiente Analista) y que ICG ya saldó no es
     // tarea de nadie — misma regla que la bandeja de Gastos.
     if (soloPendientes && r.Estado === 'PENDIENTE_ANALISTA') continue;
+    // Fila creada solo para llevar la etiqueta "Transferido en ICG" (gasto de mayores que nunca
+    // entró al flujo) y que ICG ya saldó: no es un gasto de la app, no se lista.
+    if (r.Estado === 'PENDIENTE_ANALISTA' && r.IcgTransferidoA && !r.EsPresupuesto) continue;
     const info = infoCache[r.CodTienda];
     if (!info || info.error) continue;
     const bk = `${info.host}|${info.dbName}`;
@@ -212,7 +228,9 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPen
     for (const d of q.recordset) dmap[`${(d.NUMSERIE || '').trim()}|${d.NUMFACTURA}|${(d.N || '').trim()}`] = d;
     for (const r of b.rows) {
       const d = dmap[`${(r.NumSerie || '').trim()}|${r.NumFactura}|${(r.N || '').trim()}`];
-      if (d) addRow(r.CodTienda, d, r.Estado, r.EsPresupuesto);
+      if (d) addRow(r.CodTienda, d, r.Estado, r.EsPresupuesto,
+        r.IcgEstado === 'S' ? { fecha: r.IcgSaldadoFecha || null, tipo: r.IcgTipoPago || null } : null,
+        destino(r.IcgTransferidoA));
     }
   }
 

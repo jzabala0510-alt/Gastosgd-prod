@@ -11,6 +11,8 @@ export const useAuthStore = defineStore('auth', {
     roles: JSON.parse(localStorage.getItem('gd_roles') || '[]'),
     tiendas: JSON.parse(localStorage.getItem('gd_tiendas') || '[]'),
     zonas: JSON.parse(localStorage.getItem('gd_zonas') || '[]'),
+    // Consola Banesco, "Actualizar Banesco" y Seguimiento ICG (el servidor lo valida igual).
+    superUsuario: localStorage.getItem('gd_super') === '1',
   }),
   getters: {
     isAuth: (s) => !!s.token,
@@ -21,6 +23,7 @@ export const useAuthStore = defineStore('auth', {
       return visibles.length ? visibles.map((r) => ROL_LABEL[r] || r).join(' · ') : '—';
     },
     esAdmin: (s) => s.roles.includes('ADMIN'),
+    esSuperUsuario: (s) => s.superUsuario,
     esAnalista: (s) => s.roles.includes('ANALISTA') || s.roles.includes('ADMIN'),
     esTesoreria: (s) => s.roles.includes('TESORERIA') || s.roles.includes('ADMIN'),
     esAuditor: (s) => s.roles.includes('AUDITOR') || s.roles.includes('ADMIN'),
@@ -46,7 +49,9 @@ export const useAuthStore = defineStore('auth', {
       this.$patch({
         token: data.token, idUsuario: data.idUsuario, usuario: data.usuario,
         nombre: data.nombre, roles, tiendas: data.tiendas || [], zonas: data.zonas || [],
+        superUsuario: !!data.superUsuario,
       });
+      localStorage.setItem('gd_super', data.superUsuario ? '1' : '0');
       localStorage.setItem('gd_token', data.token);
       localStorage.setItem('gd_idUsuario', String(data.idUsuario || 0));
       localStorage.setItem('gd_usuario', data.usuario || '');
@@ -56,8 +61,18 @@ export const useAuthStore = defineStore('auth', {
       localStorage.setItem('gd_zonas', JSON.stringify(data.zonas || []));
     },
     logout() {
-      this.$patch({ token: '', idUsuario: 0, usuario: '', nombre: '', roles: [], tiendas: [], zonas: [] });
-      ['gd_token', 'gd_idUsuario', 'gd_usuario', 'gd_nombre', 'gd_roles', 'gd_rol', 'gd_tiendas', 'gd_zonas'].forEach((k) => localStorage.removeItem(k));
+      this.$patch({ token: '', idUsuario: 0, usuario: '', nombre: '', roles: [], tiendas: [], zonas: [], superUsuario: false });
+      ['gd_token', 'gd_idUsuario', 'gd_usuario', 'gd_nombre', 'gd_roles', 'gd_rol', 'gd_tiendas', 'gd_zonas', 'gd_super'].forEach((k) => localStorage.removeItem(k));
+    },
+    // Al abrir la app con una sesión ya iniciada: vuelve a preguntar si es superusuario (las
+    // sesiones de antes de este cambio no lo traían, y el .env del servidor puede cambiar).
+    async refrescarSuperUsuario() {
+      if (!this.token) return;
+      try {
+        const { data } = await http.get('/auth/me');
+        this.superUsuario = !!data.superUsuario;
+        localStorage.setItem('gd_super', this.superUsuario ? '1' : '0');
+      } catch { /* sin conexión o sesión vencida: se queda como estaba */ }
     },
   },
 });

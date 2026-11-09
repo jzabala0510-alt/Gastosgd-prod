@@ -1,8 +1,9 @@
 const { Router } = require('express');
-const { authenticate, requireRol } = require('../middleware/auth.middleware');
+const { authenticate, requireRol, requireSuperUsuario } = require('../middleware/auth.middleware');
 const usuariosService = require('../services/usuarios.service');
 const bancosService = require('../services/bancos.service');
 const { TAGS_REPORTE } = require('../services/catalogoReportes');
+const seguimientoIcg = require('../services/seguimientoIcg.service');
 
 const router = Router();
 router.use(authenticate, requireRol('ADMIN')); // todo el módulo es solo para ADMIN
@@ -107,6 +108,22 @@ router.put('/bancos/:id', async (req, res, next) => {
     const nombre = req.body?.nombre != null ? String(req.body.nombre).trim().toUpperCase() : null;
     await bancosService.actualizar(id, { nombre, activo: req.body?.activo, permiteNegativo: req.body?.permiteNegativo });
     res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+// Seguimiento ICG: solo SUPERUSUARIOS (además de ADMIN), ver auth.middleware.js.
+// GET /api/admin/seguimiento-icg — reabiertos en ICG y transferencias de mayores: lo que se
+// detectó y qué haría (o hizo) el sistema con cada uno, según el modo del .env.
+router.get('/seguimiento-icg', requireSuperUsuario, async (req, res, next) => {
+  try { res.json(await seguimientoIcg.estadoPanel()); } catch (e) { next(e); }
+});
+
+// POST /api/admin/seguimiento-icg/revisar — revisa las transferencias de mayores ahora (si no,
+// corre sola una vez por hora). Tarda: recorre todas las BD de marca.
+router.post('/seguimiento-icg/revisar', requireSuperUsuario, async (req, res, next) => {
+  try {
+    await seguimientoIcg.revisarTransferencias();
+    res.json(await seguimientoIcg.estadoPanel());
   } catch (e) { next(e); }
 });
 

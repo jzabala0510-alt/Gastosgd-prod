@@ -40,7 +40,7 @@
             <td>{{ g.proveedor || '—' }}</td>
             <td>{{ g.tipoGasto || '—' }}</td>
             <td class="r">{{ money(g.total) }} Bs</td>
-            <td><span class="badge badge--green">Pagada</span></td>
+            <td style="white-space:nowrap"><span class="badge badge--green">Pagada</span><EtiquetaIcg :saldado="g.saldadoIcg" :transferido="g.transferidoIcg" :mayores="g.mayoresIcg" :estado="g.estado" /></td>
             <td>
               <router-link class="btn btn--sm"
                 :to="`/factura/${g.codTienda}/${enc(g.numserie)}/${g.numfactura}/${enc(g.n)}`">
@@ -60,6 +60,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import SelectorZMT from '../components/SelectorZMT.vue';
+import EtiquetaIcg from '../components/EtiquetaIcg.vue';
 import { usePagadasStore } from '../stores/vistas';
 import { getBandeja } from '../api/facturas';
 import { money, fecha } from '../utils/format';

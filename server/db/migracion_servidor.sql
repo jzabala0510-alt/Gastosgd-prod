@@ -124,7 +124,7 @@ BEGIN
         CONSTRAINT UQ_GD_FF UNIQUE (CodTienda, NumSerie, NumFactura, N),
         CONSTRAINT CK_GD_FF_Estado CHECK (Estado IN (
             'PENDIENTE_ANALISTA','PENDIENTE_TESORERIA','PENDIENTE_AUDITORIA',
-            'PENDIENTE_PAGO','PAGO_EN_REVISION','PAGADO','APROBADO','RECHAZADO','DEVUELTO'))
+            'PENDIENTE_PAGO','PAGO_EN_REVISION','PAGADO','APROBADO','RECHAZADO','DEVUELTO','TRANSFERIDO'))
     );
     CREATE INDEX IX_GD_FF_Estado ON dbo.GD_FacturaFlujo(Estado);
     PRINT '✅ Tabla GD_FacturaFlujo creada.';
@@ -166,14 +166,15 @@ BEGIN
         IdAprobacion INT IDENTITY(1,1) PRIMARY KEY,
         IdFlujo      INT NOT NULL,
         Etapa        NVARCHAR(20)  NOT NULL,
-        IdUsuario    INT NOT NULL,
+        IdUsuario    INT NULL,                 -- NULL = evento automático del sistema (Etapa SISTEMA)
         Decision     NVARCHAR(20)  NOT NULL,
         Comentario   NVARCHAR(500) NULL,
         Fecha        DATETIME NOT NULL CONSTRAINT DF_GD_FAp_Fecha DEFAULT (GETDATE()),
         CONSTRAINT FK_GD_FAp_Flujo   FOREIGN KEY (IdFlujo)   REFERENCES dbo.GD_FacturaFlujo(IdFlujo) ON DELETE CASCADE,
         CONSTRAINT FK_GD_FAp_Usuario FOREIGN KEY (IdUsuario) REFERENCES dbo.GD_Usuario(IdUsuario),
-        CONSTRAINT CK_GD_FAp_Etapa    CHECK (Etapa IN ('ANALISTA','TESORERIA','AUDITORIA','PAGADOR','AUDITOR_PAGO')),
-        CONSTRAINT CK_GD_FAp_Decision CHECK (Decision IN ('APROBADO','RECHAZADO','DEVUELTO','PAGADO','PAGO_EN_REVISION','CONFIRMADO'))
+        CONSTRAINT CK_GD_FAp_Etapa    CHECK (Etapa IN ('ANALISTA','TESORERIA','AUDITORIA','PAGADOR','AUDITOR_PAGO','SISTEMA')),
+        CONSTRAINT CK_GD_FAp_Decision CHECK (Decision IN ('APROBADO','RECHAZADO','DEVUELTO','PAGADO','PAGO_EN_REVISION','CONFIRMADO',
+                                                          'SALDADO_ICG','REABIERTO_ICG','TRANSFERIDO','TRANSFERIDO_ICG'))
     );
     PRINT '✅ Tabla GD_FacturaAprobacion creada.';
 END
@@ -453,24 +454,75 @@ IF EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_GD_FF_Estado')
 GO
 ALTER TABLE dbo.GD_FacturaFlujo ADD CONSTRAINT CK_GD_FF_Estado CHECK (Estado IN (
     'PENDIENTE_ANALISTA','PENDIENTE_TESORERIA','PENDIENTE_AUDITORIA',
-    'PENDIENTE_PAGO','PAGO_EN_REVISION','PAGADO','APROBADO','RECHAZADO','DEVUELTO'));
-PRINT '✅ CK_GD_FF_Estado actualizado (incluye PAGO_EN_REVISION).';
+    'PENDIENTE_PAGO','PAGO_EN_REVISION','PAGADO','APROBADO','RECHAZADO','DEVUELTO','TRANSFERIDO'));
+PRINT '✅ CK_GD_FF_Estado actualizado (incluye PAGO_EN_REVISION y TRANSFERIDO).';
 GO
 
 IF EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_GD_FAp_Etapa')
     ALTER TABLE dbo.GD_FacturaAprobacion DROP CONSTRAINT CK_GD_FAp_Etapa;
 GO
 ALTER TABLE dbo.GD_FacturaAprobacion ADD CONSTRAINT CK_GD_FAp_Etapa CHECK (
-    Etapa IN ('ANALISTA','TESORERIA','AUDITORIA','PAGADOR','AUDITOR_PAGO'));
-PRINT '✅ CK_GD_FAp_Etapa actualizado (incluye AUDITOR_PAGO).';
+    Etapa IN ('ANALISTA','TESORERIA','AUDITORIA','PAGADOR','AUDITOR_PAGO','SISTEMA'));
+PRINT '✅ CK_GD_FAp_Etapa actualizado (incluye AUDITOR_PAGO y SISTEMA).';
 GO
 
 IF EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_GD_FAp_Decision')
     ALTER TABLE dbo.GD_FacturaAprobacion DROP CONSTRAINT CK_GD_FAp_Decision;
 GO
 ALTER TABLE dbo.GD_FacturaAprobacion ADD CONSTRAINT CK_GD_FAp_Decision CHECK (
-    Decision IN ('APROBADO','RECHAZADO','DEVUELTO','PAGADO','PAGO_EN_REVISION','CONFIRMADO'));
-PRINT '✅ CK_GD_FAp_Decision actualizado (incluye PAGO_EN_REVISION y CONFIRMADO).';
+    Decision IN ('APROBADO','RECHAZADO','DEVUELTO','PAGADO','PAGO_EN_REVISION','CONFIRMADO',
+                 'SALDADO_ICG','REABIERTO_ICG','TRANSFERIDO','TRANSFERIDO_ICG'));
+PRINT '✅ CK_GD_FAp_Decision actualizado (incluye eventos del sistema: SALDADO_ICG, REABIERTO_ICG, TRANSFERIDO, TRANSFERIDO_ICG).';
+GO
+
+-- ============================================================
+-- 6h. Seguimiento de ICG (saldado / reabierto / transferido)
+--     El historial acepta eventos automáticos del sistema: Etapa SISTEMA y sin usuario.
+--     En GD_FacturaFlujo, lo último que se vio en ICG del gasto: P (pendiente) o S (saldado),
+--     y la fecha y el tipo de pago del saldado. Lo llena seguimientoIcg.service.js.
+-- ============================================================
+IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.GD_FacturaAprobacion') AND name = 'IdUsuario' AND is_nullable = 0)
+BEGIN
+    IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_GD_FAp_Usuario')
+        ALTER TABLE dbo.GD_FacturaAprobacion DROP CONSTRAINT FK_GD_FAp_Usuario;
+    ALTER TABLE dbo.GD_FacturaAprobacion ALTER COLUMN IdUsuario INT NULL;
+    ALTER TABLE dbo.GD_FacturaAprobacion ADD CONSTRAINT FK_GD_FAp_Usuario FOREIGN KEY (IdUsuario) REFERENCES dbo.GD_Usuario(IdUsuario);
+    PRINT '✅ GD_FacturaAprobacion.IdUsuario acepta NULL (eventos del sistema).';
+END
+GO
+
+IF COL_LENGTH('dbo.GD_FacturaFlujo', 'IcgEstado') IS NULL
+BEGIN
+    ALTER TABLE dbo.GD_FacturaFlujo ADD
+        IcgEstado       CHAR(1)      NULL,   -- P = pendiente en ICG, S = saldado en ICG
+        IcgSaldadoFecha DATETIME     NULL,   -- FECHASALDADO del último saldado visto
+        IcgTipoPago     NVARCHAR(60) NULL;   -- tipo de pago de ese saldado (TIPOSPAGO)
+    PRINT '✅ Columnas de seguimiento de ICG agregadas a GD_FacturaFlujo.';
+END
+GO
+
+-- ============================================================
+-- 6i. Seguimiento de ICG, fases 2 y 3 (reabiertos y transferidos de mayores)
+--     GD_FacturaAdjunto.Anulado: comprobante de un pago que ICG reabrió (el gasto
+--     volvió a Pagos); se conserva como historial pero ya no vale como comprobante.
+--     GD_FacturaFlujo.IcgTransferidoA: en un gasto de mayores (TOP GROUP / MAYORES), la
+--     factura de la tienda a la que se transfirió en ICG (JSON). Lo llena
+--     traspasosMayores.service.js.
+-- ============================================================
+IF COL_LENGTH('dbo.GD_FacturaAdjunto', 'Anulado') IS NULL
+BEGIN
+    ALTER TABLE dbo.GD_FacturaAdjunto ADD
+        Anulado      BIT      NOT NULL CONSTRAINT DF_GD_FA_Anulado DEFAULT (0),
+        FechaAnulado DATETIME NULL;
+    PRINT '✅ Columnas Anulado/FechaAnulado agregadas a GD_FacturaAdjunto.';
+END
+GO
+
+IF COL_LENGTH('dbo.GD_FacturaFlujo', 'IcgTransferidoA') IS NULL
+BEGIN
+    ALTER TABLE dbo.GD_FacturaFlujo ADD IcgTransferidoA NVARCHAR(400) NULL;
+    PRINT '✅ Columna IcgTransferidoA agregada a GD_FacturaFlujo.';
+END
 GO
 
 -- ============================================================

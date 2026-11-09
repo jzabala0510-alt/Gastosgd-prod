@@ -209,7 +209,7 @@ code { background: #f3f4f6; padding: 1px 6px; border-radius: 4px; font-size: 12p
 
 /* Panel colapsable genérico (pendientes/pagadas): oculta listas largas por defecto,
    para que no compitan con los filtros de arriba como foco principal de la pantalla. */
-.colapsable-card { padding: 0; overflow: hidden; }
+.colapsable-card { padding: 0; overflow: hidden; scroll-margin-top: 12px; }
 .colapsable-toggle {
   width: 100%;
   display: flex;
@@ -265,6 +265,13 @@ code { background: #f3f4f6; padding: 1px 6px; border-radius: 4px; font-size: 12p
 .badge--green  { background: var(--accent-soft); color: #4f6f17; }
 .badge--purple { background: #ede9fe; color: #6d28d9; }
 .badge--red    { background: #fde8e8; color: #c81e1e; }
+/* Etiqueta informativa "Saldado en ICG" (EtiquetaIcg.vue): distinta de los colores de estado. */
+.badge--icg    { background: #ccfbf1; color: #0f766e; margin-left: 4px; white-space: nowrap; }
+.badge--icg-bloque { display: table; margin: 4px 0 0; }
+.badge--icg-transf { background: #ffedd5; color: #9a3412; }
+.badge--icg-alerta { background: #fee2e2; color: #991b1b; }
+/* Comprobante de un pago que ICG reabrió (FacturaDetalle.vue). */
+.adjuntos__name--anulado { text-decoration: line-through; color: var(--muted); }
 
 /* ── Tablas: filas clicables y alineacion ───────────────── */
 .row-link { cursor: pointer; }
@@ -387,6 +394,7 @@ code { background: #f3f4f6; padding: 1px 6px; border-radius: 4px; font-size: 12p
 .timeline__dot--amber { background: #f59e0b; }
 .timeline__dot--green { background: var(--accent); }
 .timeline__dot--red { background: var(--danger); }
+.timeline__dot--icg { background: #14b8a6; }
 .timeline b { font-size: 14px; }
 .timeline small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
 .timeline__comment { margin: 6px 0 0; font-size: 13px; background: #f9fafb; padding: 8px 10px; border-radius: 6px; }

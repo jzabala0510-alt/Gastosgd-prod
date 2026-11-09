@@ -33,7 +33,7 @@
         <button class="btn btn--sm" @click="store.limpiarFiltros()">Limpiar</button>
       </div>
 
-      <p class="page__hint">{{ filtradas.length }} de {{ store.facturas.length }} facturas</p>
+      <p class="page__hint">{{ filtradas.length }} de {{ totalVisibles }} facturas</p>
       <div class="table-wrap"><table class="grid">
         <thead><tr>
           <th v-if="!store.codTienda" class="th-sort" @click="ordenarPor('marca')">Tienda{{ flecha('marca') }}</th>
@@ -56,7 +56,7 @@
             <td>{{ f.tipoGasto || '—' }}</td>
             <td class="r">{{ money(f.totalVes) }}</td>
             <td class="r">{{ money(f.pendienteVes) }}</td>
-            <td><span class="badge" :class="estClass(f.estado)">{{ estLabel(f.estado) }}</span></td>
+            <td style="white-space:nowrap"><span class="badge" :class="estClass(f.estado)">{{ estLabel(f.estado) }}</span><EtiquetaIcg :saldado="f.saldadoIcg" :transferido="f.transferidoIcg" :mayores="f.mayoresIcg" :estado="f.estado" /></td>
           </tr>
         </tbody>
       </table></div>
@@ -70,6 +70,7 @@
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import SelectorZMT from '../components/SelectorZMT.vue';
+import EtiquetaIcg from '../components/EtiquetaIcg.vue';
 import { useArchivoStore } from '../stores/vistas';
 import { getReporte } from '../api/reportes';
 import { ESTADO_LABEL, ESTADO_CLASS } from '../utils/estados';
@@ -89,6 +90,7 @@ const tiposGasto = computed(() => {
   return [...set].sort();
 });
 
+const totalVisibles = computed(() => store.facturas.filter((f) => f.estado !== 'TRANSFERIDO' || store.filtros.estado === 'TRANSFERIDO').length);
 const filtradas = computed(() => {
   const ff = store.filtros;
   return store.facturas.filter((f) => {
@@ -96,6 +98,8 @@ const filtradas = computed(() => {
     if (ff.fechaSolicitud && (f.fecha || '').slice(0, 10) !== ff.fechaSolicitud) return false;
     if (ff.proveedor && !(f.proveedor || '').toLowerCase().includes(ff.proveedor.toLowerCase())) return false;
     if (ff.estado && f.estado !== ff.estado) return false;
+    // Transferido (gasto de mayores; la oficial es la de la tienda): solo al filtrar por ese estado.
+    if (f.estado === 'TRANSFERIDO' && ff.estado !== 'TRANSFERIDO') return false;
     if (ff.tipoGasto && (f.tipoGasto || 'SIN ESPECIFICAR') !== ff.tipoGasto) return false;
     return true;
   });

@@ -55,8 +55,9 @@
         <button class="btn btn--sm" @click="store.limpiarFiltros()">Limpiar</button>
       </div>
 
-      <p class="page__hint">{{ filtradas.length }} de {{ facturas.length }} facturas</p>
-      <div class="table-wrap"><table class="grid">
+      <p class="page__hint">{{ filtradas.length }} de {{ totalVisibles }} facturas</p>
+      <p v-if="!filtradas.length" class="empty card">Sin facturas para estos filtros. Las pagadas, rechazadas y transferidas se ven filtrando por ese estado.</p>
+      <div v-else class="table-wrap"><table class="grid">
         <thead><tr>
           <th v-if="!store.codTienda">Tienda</th>
           <th>Factura</th><th>Fecha</th><th>F. Solicitud</th><th>Proveedor</th><th>Nº control</th><th>Tipo de gasto</th><th>Tipo doc.</th><th class="r">Total (Bs)</th><th class="r">Pendiente (Bs)</th><th>Estado</th>
@@ -75,7 +76,7 @@
             <td class="r">{{ money(f.PendienteVes) }}</td>
             <td style="white-space:nowrap">
               <span class="badge" :class="estClass(f.Estado)">{{ estLabel(f.Estado) }}</span>
-              <span v-if="f.SaldadoIcg" class="badge badge--blue" style="margin-left:4px" title="ICG ya lo saldó; sigue aquí porque está devuelto y hay que reenviarlo.">Saldado en ICG</span>
+              <EtiquetaIcg :saldado="f.SaldadoIcg" :transferido="f.TransferidoIcg" :mayores="f.MayoresIcg" :estado="f.Estado" />
             </td>
           </tr>
         </tbody>
@@ -90,6 +91,7 @@
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import SelectorZMT from '../components/SelectorZMT.vue';
+import EtiquetaIcg from '../components/EtiquetaIcg.vue';
 import { useGastosStore } from '../stores/vistas';
 import { getFacturas, getPagadasRecientes } from '../api/facturas';
 import { ESTADO_LABEL, ESTADO_CLASS } from '../utils/estados';
@@ -108,14 +110,21 @@ const estClass = (e) => ESTADO_CLASS[e] || 'badge--gray';
 const key = (f) => `${f.NUMSERIE}-${f.NUMFACTURA}-${f.N}`;
 const tipoDoc = (t) => t === 12 ? 'Factura Gastos' : t === 20 ? 'Gastos no deducibles' : '—';
 
+
+// Historico: PAGADO/RECHAZADO/TRANSFERIDO que ICG ya saldó (últimos 30 días) y los TRANSFERIDO.
+// No ocupan la bandeja; se ven solo al filtrar por su estado (el backend los marca, ver
+// listarPendientes).
+const visible = (f) => !f.Historico || store.filtros.estado === f.Estado;
+const totalVisibles = computed(() => facturas.value.filter(visible).length);
 const tiposGasto = computed(() => {
-  const set = new Set(facturas.value.map((f) => f.TipoGasto || 'SIN ESPECIFICAR'));
+  const set = new Set(facturas.value.filter(visible).map((f) => f.TipoGasto || 'SIN ESPECIFICAR'));
   return [...set].sort();
 });
 
 const filtradas = computed(() => {
   const ff = store.filtros;
   return facturas.value.filter((f) => {
+    if (!visible(f)) return false;
     if (ff.fecha && (f.FECHA || '').slice(0, 10) !== ff.fecha) return false;
     if (ff.fechaSolicitud && (f.FechaSolicitud || '').slice(0, 10) !== ff.fechaSolicitud) return false;
     if (ff.proveedor && !(f.Proveedor || '').toLowerCase().includes(ff.proveedor.toLowerCase())) return false;

@@ -31,6 +31,7 @@ const tiendaAliasRoutes = require('./routes/tiendaAlias.routes');
 const importarSaldosRoutes = require('./routes/importarSaldos.routes');
 const updaterRoutes = require('./routes/updater.routes');
 const banescoService = require('./services/banesco.service');
+const seguimientoIcg = require('./services/seguimientoIcg.service');
 
 const app = express();
 
@@ -94,4 +95,5 @@ const PORT = Number(process.env.PORT || 3101);
 app.listen(PORT, () => {
   console.log(`[server] API escuchando en http://localhost:${PORT}`);
   banescoService.iniciarProgramacion();
+  seguimientoIcg.iniciar();
 });

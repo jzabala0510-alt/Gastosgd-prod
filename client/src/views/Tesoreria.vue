@@ -31,7 +31,7 @@
       </div>
     </div>
 
-    <div v-if="pendientes.length" class="card colapsable-card">
+    <div v-if="pendientes.length" ref="pendCard" class="card colapsable-card">
       <button class="colapsable-toggle" @click="pendientesAbiertos = !pendientesAbiertos">
         <span class="colapsable-toggle__text">
           <span class="badge badge--amber">{{ pendientes.length }}</span>
@@ -92,8 +92,8 @@
             <td class="r">{{ money(g.Monto) }}</td>
             <td class="r">{{ money(g.Acumulado) }}</td>
             <td>
-              <span v-if="g.SaldadoIcg" class="badge badge--blue" title="ICG ya lo saldó; sigue aquí para que el flujo continúe. No consume el disponible.">Saldado en ICG</span>
-              <span v-else class="badge" :class="g.Cubierto ? 'badge--green' : 'badge--red'">{{ g.Cubierto ? 'Cubierto' : 'Excede' }}</span>
+              <EtiquetaIcg v-if="g.SaldadoIcg" :saldado="g.SaldadoIcg" :transferido="g.TransferidoIcg" :mayores="g.MayoresIcg" />
+              <template v-else><span class="badge" :class="g.Cubierto ? 'badge--green' : 'badge--red'">{{ g.Cubierto ? 'Cubierto' : 'Excede' }}</span><EtiquetaIcg :transferido="g.TransferidoIcg" :mayores="g.MayoresIcg" /></template>
             </td>
             <td class="acciones-inline">
               <router-link class="btn btn--sm" :to="`/factura/${g.CodTienda || store.codTienda}/${enc(g.NumSerie)}/${g.NumFactura}/${enc(g.N)}`">Detalle</router-link>
@@ -113,10 +113,11 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive, computed, nextTick } from 'vue';
 import SelectorZMT from '../components/SelectorZMT.vue';
 import ModalFeedback from '../components/ModalFeedback.vue';
 import InputMonto from '../components/InputMonto.vue';
+import EtiquetaIcg from '../components/EtiquetaIcg.vue';
 import { useTesoreriaStore } from '../stores/vistas';
 import { useNotifStore } from '../stores/notificaciones';
 import { useConfirm } from '../composables/useConfirm';
@@ -130,7 +131,15 @@ const enc = encodeURIComponent;
 
 const pendientes = computed(() => notif.detalle.tesoreria);
 const pendientesAbiertos = ref(false);
+const pendCard = ref(null);
+// Al elegir una tienda de la lista: se cierra la lista y la pantalla sube hasta ella, así el
+// resultado queda a la vista justo debajo (antes había que bajar hasta el final de la lista).
+function cerrarPendientes() {
+  pendientesAbiertos.value = false;
+  nextTick(() => pendCard.value?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+}
 function saltarA(it) {
+  cerrarPendientes();
   store.$patch({
     zona: it.zona, marca: it.marca, codTienda: it.codTienda,
     marcasSel: it.marca ? [it.marca] : [],
@@ -149,6 +158,9 @@ const sel = reactive({});
 const modal = ref({ visible: false, titulo: '', mensaje: '', tipo: 'success' });
 
 // Incluye CodTienda en la clave para evitar colisiones al combinar múltiples tiendas.
+// Se preseleccionan los cubiertos, salvo los que ICG ya saldó y los que mayores ya pagó (o
+// cargó como pagados): esos se aprueban a mano, mirándolos, para no pagarlos dos veces.
+const preseleccionar = (g) => !!g.Cubierto && !g.SaldadoIcg && !['PAGADO', 'PAGO_EN_REVISION'].includes(g.MayoresIcg?.estado);
 const keyOf = (g) => `${g.CodTienda || store.codTienda}-${g.NumSerie}-${g.NumFactura}-${g.N}`;
 // Disponible real = monto registrado + préstamo/ajuste manual (puede ser negativo).
 const efectivo = computed(() => (cob.value?.disponible || 0) + (prestamo.value || 0));
@@ -206,7 +218,7 @@ async function load() {
         monto.value = r.disponible ?? 0;
         Object.keys(sel).forEach((k) => delete sel[k]);
         // Los saldados en ICG no se preseleccionan: que Tesorería los apruebe a conciencia.
-        r.gastos.forEach((g) => { sel[keyOf({ ...g, CodTienda: cod })] = !!g.Cubierto && !g.SaldadoIcg; });
+        r.gastos.forEach((g) => { sel[keyOf({ ...g, CodTienda: cod })] = preseleccionar(g); });
       }
     } else {
       // Varias tiendas elegidas en el selector múltiple, o ninguna (toda la zona/marca) —
@@ -247,7 +259,7 @@ async function load() {
       cob.value = { disponible: totalDisp, totalPendiente: totalPend, gastos: allGastos, tienda: null };
       monto.value = totalDisp;
       Object.keys(sel).forEach((k) => delete sel[k]);
-      allGastos.forEach((g) => { sel[keyOf(g)] = !!g.Cubierto && !g.SaldadoIcg; });
+      allGastos.forEach((g) => { sel[keyOf(g)] = preseleccionar(g); });
     }
   } finally { loading.value = false; }
 }
