@@ -7,6 +7,7 @@
           <span class="badge" :class="estClass(f.Estado)">{{ estLabel(f.Estado) }}</span>
           <span v-if="f.EsPresupuesto" class="badge badge--blue">Presupuesto</span>
           <EtiquetaIcg :saldado="f.SaldadoIcg" :transferido="f.TransferidoIcg" :mayores="f.MayoresIcg" :estado="f.Estado" />
+          <EtiquetaPagador :pagador="f.PagadoPor" />
           <span v-if="soloLectura" class="badge badge--gray">Solo lectura (Archivo)</span>
         </h1>
         <p class="page__hint">{{ f.tienda?.Tienda }} · {{ f.tienda?.Zona }} · {{ f.tienda?.Marca }}</p>
@@ -111,7 +112,18 @@
     <div class="card" v-if="puedeDecidir">
       <h3 class="card__title">{{ tituloDecision }}</h3>
       <p v-if="sinSoportes" class="soporte-aviso">⚠ Debes subir al menos un soporte antes de poder aprobar este gasto.</p>
-      <AccionesFlujo :busy="busy" :disabled-aprobar="sinSoportes" :aprobar-label="aprobarLabel" :solo-aprobar="esAna" @decidir="decidir" />
+      <!-- "Se paga por": lo decide el Analista al meter el gasto al flujo (obligatorio para enviar). -->
+      <div v-if="esAna" class="field pagador-field" :class="{ 'field--active': pagadoPor }">
+        <label>Se paga por <span class="txt--danger">*</span></label>
+        <select v-model="pagadoPor">
+          <option value="" disabled>Selecciona quién paga…</option>
+          <option v-for="o in opcionesTienda" :key="o.codTienda" :value="o.codTienda">{{ o.nombre }} (la tienda)</option>
+          <optgroup v-if="opcionesMayores.length" label="Mayores">
+            <option v-for="o in opcionesMayores" :key="o.codTienda" :value="o.codTienda">{{ o.nombre }}</option>
+          </optgroup>
+        </select>
+      </div>
+      <AccionesFlujo :busy="busy" :disabled-aprobar="sinSoportes || (esAna && !pagadoPor)" :aprobar-label="aprobarLabel" :solo-aprobar="esAna" @decidir="decidir" />
     </div>
 
     <!-- Sección exclusiva del pagador -->
@@ -224,6 +236,7 @@ import { useConfirm } from '../composables/useConfirm';
 import AccionesFlujo from '../components/AccionesFlujo.vue';
 import ModalFeedback from '../components/ModalFeedback.vue';
 import EtiquetaIcg from '../components/EtiquetaIcg.vue';
+import EtiquetaPagador from '../components/EtiquetaPagador.vue';
 import { ESTADO_LABEL, ESTADO_CLASS } from '../utils/estados';
 import { money, fecha, fechaHora } from '../utils/format';
 
@@ -244,6 +257,11 @@ const rutaGemela = (g) => ({
 // Mayores ya pagó (o cargó el pago de) la factura gemela de esta: riesgo de pagarla dos veces.
 const pagadoPorMayores = computed(() => f.value?.Estado !== 'PAGADO' && ['PAGADO', 'PAGO_EN_REVISION'].includes(f.value?.MayoresIcg?.estado));
 const errorCarga = ref('');
+// "Se paga por" (Analista): la propia tienda o una mayor. Si ya lo había elegido (p. ej. un
+// gasto devuelto que se reenvía), viene precargado.
+const pagadoPor = ref('');
+const opcionesTienda = computed(() => (f.value?.OpcionesPagador || []).filter((o) => o.esTienda));
+const opcionesMayores = computed(() => (f.value?.OpcionesPagador || []).filter((o) => !o.esTienda));
 const f = ref(null);
 const busy = ref(false);
 const msg = ref('');
@@ -318,6 +336,7 @@ async function cargar() {
   errorCarga.value = '';
   try {
     f.value = await getFacturaDetalle(Number(props.codTienda), props.numserie, Number(props.numfactura), props.n);
+    pagadoPor.value = f.value?.PagadoPor ? f.value.PagadoPor.codTienda : '';
   } catch (e) {
     // p. ej. 403: la factura gemela de otra tienda puede estar fuera del alcance del usuario.
     f.value = null;
@@ -402,7 +421,7 @@ async function decidir({ decision, comentario }) {
   busy.value = true; msg.value = '';
   try {
     const comentarioFinal = conf.comentario;
-    if (esAna.value) await accionAnalista({ ...payload.value, decision, comentario: comentarioFinal });
+    if (esAna.value) await accionAnalista({ ...payload.value, decision, comentario: comentarioFinal, pagadoPor: decision === 'APROBADO' ? pagadoPor.value : undefined });
     else if (esTes.value) await accionTesoreria({ ...payload.value, decision, comentario: comentarioFinal });
     else await accionAuditoria({ ...payload.value, decision, comentario: comentarioFinal });
     modal.value = { ...mensajeDecision(decision), visible: true };
@@ -456,3 +475,7 @@ watch(() => [props.codTienda, props.numserie, props.numfactura, props.n], () => 
   cargar();
 });
 </script>
+
+<style scoped>
+.pagador-field { max-width: 420px; margin-bottom: 12px; }
+</style>

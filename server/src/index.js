@@ -30,6 +30,7 @@ const notificacionesRoutes = require('./routes/notificaciones.routes');
 const tiendaAliasRoutes = require('./routes/tiendaAlias.routes');
 const importarSaldosRoutes = require('./routes/importarSaldos.routes');
 const updaterRoutes = require('./routes/updater.routes');
+const auditoriaUsuariosRoutes = require('./routes/auditoriaUsuarios.routes');
 const banescoService = require('./services/banesco.service');
 const seguimientoIcg = require('./services/seguimientoIcg.service');
 
@@ -55,6 +56,7 @@ app.use('/api/notificaciones', notificacionesRoutes);
 app.use('/api/admin/alias-tiendas', tiendaAliasRoutes);
 app.use('/api/fondos/importar-excel', importarSaldosRoutes);
 app.use('/api/updater', updaterRoutes);
+app.use('/api/auditoria-usuarios', auditoriaUsuariosRoutes);
 
 // ── Frontend compilado (producción): el backend sirve client/dist ──────
 // En desarrollo no existe dist; ahí se usa el dev-server de Vite con su proxy /api.

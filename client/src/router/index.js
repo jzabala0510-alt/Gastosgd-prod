@@ -11,6 +11,7 @@ import AdminUsuarios from '../views/AdminUsuarios.vue';
 import AdminBancos from '../views/AdminBancos.vue';
 import AdminAliasTiendas from '../views/AdminAliasTiendas.vue';
 import AdminSeguimientoIcg from '../views/AdminSeguimientoIcg.vue';
+import AuditoriaUsuarios from '../views/AuditoriaUsuarios.vue';
 import CargaMontos from '../views/CargaMontos.vue';
 import ImportarSaldos from '../views/ImportarSaldos.vue';
 import ConsolaBanesco from '../views/ConsolaBanesco.vue';
@@ -34,6 +35,7 @@ const routes = [
   { path: '/fondos/banesco/consola', name: 'consola-banesco', component: ConsolaBanesco, meta: { superUsuario: true } },
   { path: '/reportes', name: 'reportes', component: Reportes },
   { path: '/archivo', name: 'archivo', component: Archivo },
+  { path: '/auditoria-usuarios', name: 'auditoria-usuarios', component: AuditoriaUsuarios, meta: { rol: 'AUDITORIA_USUARIOS' } },
   { path: '/notificaciones', name: 'notificaciones', component: Notificaciones },
   { path: '/admin/usuarios', name: 'admin-usuarios', component: AdminUsuarios, meta: { admin: true } },
   { path: '/admin/bancos', name: 'admin-bancos', component: AdminBancos, meta: { admin: true } },
@@ -48,6 +50,11 @@ router.beforeEach((to) => {
   if (!to.meta.public && !token) return { name: 'login' };
   if (to.name === 'login' && token) return { name: 'home' };
   if (to.meta.admin && !JSON.parse(localStorage.getItem('gd_roles') || '[]').includes('ADMIN')) return { name: 'home' };
+  // Módulos con permiso propio: con ese permiso o ADMIN (el servidor también lo valida).
+  if (to.meta.rol) {
+    const roles = JSON.parse(localStorage.getItem('gd_roles') || '[]');
+    if (!roles.includes(to.meta.rol) && !roles.includes('ADMIN')) return { name: 'home' };
+  }
   // Consola Banesco y Seguimiento ICG: solo superusuarios (el servidor también lo valida).
   if (to.meta.superUsuario && localStorage.getItem('gd_super') !== '1') return { name: 'home' };
   return true;

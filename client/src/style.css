@@ -192,6 +192,19 @@ code { background: #f3f4f6; padding: 1px 6px; border-radius: 4px; font-size: 12p
 }
 .topbar__nav a:hover { background: #2e2e2c; color: #fff; }
 .topbar__nav a.active { background: var(--accent); color: #fff; }
+/* Que ningún módulo se parta en dos líneas (los contadores quedan al lado del nombre). */
+.topbar__nav { align-items: center; }
+.topbar__nav a, .navmenu__btn { white-space: nowrap; }
+/* Menú "Administración" (App.vue): mismo aspecto que los enlaces de la barra. */
+.navmenu { position: relative; }
+.navmenu__btn { background: none; border: none; font: inherit; color: #cbd5e1; padding: 7px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+.navmenu__btn:hover, .navmenu__btn.abierto { background: #2e2e2c; color: #fff; }
+.navmenu__btn.active { background: var(--accent); color: #fff; }
+.navmenu__caret { font-size: 10px; margin-left: 2px; }
+.navmenu__overlay { position: fixed; inset: 0; z-index: 49; }
+.navmenu__pop { position: absolute; top: calc(100% + 6px); right: 0; z-index: 50; min-width: 200px; background: var(--dark); border: 1px solid var(--dark-2);
+  border-radius: 8px; padding: 6px; display: flex; flex-direction: column; gap: 2px; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+.topbar__nav .navmenu__pop a { display: block; }
 .nav-badge { display: inline-block; min-width: 18px; height: 18px; padding: 0 5px; margin-left: 6px; border-radius: 999px; background: #f59e0b; color: #fff; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; vertical-align: middle; }
 .nav-badge--green { background: var(--accent); }
 .nav-badge--red { background: #ef4444; }
@@ -270,6 +283,9 @@ code { background: #f3f4f6; padding: 1px 6px; border-radius: 4px; font-size: 12p
 .badge--icg-bloque { display: table; margin: 4px 0 0; }
 .badge--icg-transf { background: #ffedd5; color: #9a3412; }
 .badge--icg-alerta { background: #fee2e2; color: #991b1b; }
+/* "Se paga por" (EtiquetaPagador.vue): gris si paga la tienda, índigo si paga una mayor. */
+.badge--pagador { background: #f3f4f6; color: #374151; margin-left: 4px; white-space: nowrap; }
+.badge--pagador-mayor { background: #e0e7ff; color: #3730a3; }
 /* Comprobante de un pago que ICG reabrió (FacturaDetalle.vue). */
 .adjuntos__name--anulado { text-decoration: line-through; color: var(--muted); }
 

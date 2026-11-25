@@ -85,7 +85,7 @@
           <tr v-for="g in filtradas" :key="keyOf(g)" :class="{ sel: sel[keyOf(g)] }">
             <td><input type="checkbox" v-model="sel[keyOf(g)]" /></td>
             <td v-if="!codTiendaEfectivo" style="white-space:nowrap">{{ g.Marca }} · {{ g._tiendaNombre }}</td>
-            <td><code>{{ g.NumSerie }}-{{ g.NumFactura }}</code></td>
+            <td><code>{{ g.NumSerie }}-{{ g.NumFactura }}</code><EtiquetaPagador bloque :pagador="g.PagadoPor" /></td>
             <td>{{ fecha(g.FechaGasto) }}</td>
             <td>{{ g.Proveedor || '—' }}</td>
             <td>{{ g.TipoGasto || '—' }}</td>
@@ -118,6 +118,7 @@ import SelectorZMT from '../components/SelectorZMT.vue';
 import ModalFeedback from '../components/ModalFeedback.vue';
 import InputMonto from '../components/InputMonto.vue';
 import EtiquetaIcg from '../components/EtiquetaIcg.vue';
+import EtiquetaPagador from '../components/EtiquetaPagador.vue';
 import { useTesoreriaStore } from '../stores/vistas';
 import { useNotifStore } from '../stores/notificaciones';
 import { useConfirm } from '../composables/useConfirm';

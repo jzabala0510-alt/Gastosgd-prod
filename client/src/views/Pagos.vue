@@ -54,7 +54,7 @@
         <tbody>
           <tr v-for="g in filtradas" :key="g.codTienda + '-' + g.numserie + '-' + g.numfactura">
             <td v-if="!store.codTienda" style="white-space:nowrap">{{ g.marca }} · {{ g.tienda }}</td>
-            <td><code>{{ g.numserie }}-{{ g.numfactura }}</code><EtiquetaIcg bloque :saldado="g.saldadoIcg" :transferido="g.transferidoIcg" :mayores="g.mayoresIcg" :estado="g.estado" /></td>
+            <td><code>{{ g.numserie }}-{{ g.numfactura }}</code><EtiquetaIcg bloque :saldado="g.saldadoIcg" :transferido="g.transferidoIcg" :mayores="g.mayoresIcg" :estado="g.estado" /><EtiquetaPagador bloque :pagador="g.pagadoPor" /></td>
             <td>{{ fecha(g.fecha) }}</td>
             <td>{{ g.proveedor || '—' }}</td>
             <td>{{ g.tipoGasto || '—' }}</td>
@@ -81,6 +81,7 @@ import { ref, computed, onMounted, nextTick } from 'vue';
 import SelectorZMT from '../components/SelectorZMT.vue';
 import ModalFeedback from '../components/ModalFeedback.vue';
 import EtiquetaIcg from '../components/EtiquetaIcg.vue';
+import EtiquetaPagador from '../components/EtiquetaPagador.vue';
 import { usePagosStore } from '../stores/vistas';
 import { useNotifStore } from '../stores/notificaciones';
 import { useAuthStore } from '../stores/auth';

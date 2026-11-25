@@ -25,7 +25,7 @@
     <template v-else>
       <p class="page__hint"><b>{{ conAcceso }}</b> con acceso · {{ usuarios.length }} usuarios ICG · {{ filtrados.length }} mostrados</p>
       <div class="table-wrap"><table class="grid">
-        <thead><tr><th>Usuario</th><th>Permisos (qué puede hacer)</th><th>Zonas (dónde trabaja)</th><th>Estado</th><th></th></tr></thead>
+        <thead><tr><th>Usuario</th><th>Permisos (qué puede hacer)</th><th>Zonas (dónde trabaja)</th><th>Tipos de gasto</th><th>Estado</th><th></th></tr></thead>
         <tbody>
           <tr v-for="u in paginadas" :key="u.codUsuarioIcg" :class="{ sel: editando === u }">
             <td><b>{{ u.usuario }}</b></td>
@@ -36,6 +36,7 @@
               <span v-else class="page__hint">Sin permisos</span>
             </td>
             <td class="zonas-resumen" :title="u.zonas.join(', ')">{{ !u.roles.length ? '—' : (u.zonas.length ? u.zonas.join(', ') : 'Todas') }}</td>
+            <td class="zonas-resumen" :title="u.tiposGasto.map(nombreTipo).join(', ')">{{ !u.roles.length ? '—' : (u.tiposGasto.length ? u.tiposGasto.map(nombreTipo).join(', ') : 'Todos') }}</td>
             <td>
               <span class="badge" :class="u.roles.length ? 'badge--green' : 'badge--gray'">
                 {{ u.roles.length ? 'Activo' : 'Sin acceso' }}
@@ -76,7 +77,23 @@
 
       <section v-for="s in secciones" :key="s.nombre" class="panel__seccion">
         <h3 class="panel__seccion-titulo">{{ s.nombre }}</h3>
-        <template v-if="s.zonas">
+        <template v-if="s.tipos">
+          <p v-if="!editando.roles.length" class="perm-nota perm-nota--sin-sangria">Asigna primero algún permiso.</p>
+          <template v-else>
+            <p class="perm-nota perm-nota--sin-sangria">Solo verá los gastos de los tipos marcados en las bandejas, Archivo y Reportes.</p>
+            <label class="perm">
+              <input type="checkbox" :checked="!editando.tiposGasto.length" :disabled="editando._saving" @change="todosLosTipos(editando, $event.target)" />
+              <b>Todos los tipos de gasto</b>
+            </label>
+            <p v-if="!tiposDisp.length" class="perm-nota">Cargando tipos de gasto de ICG…</p>
+            <label v-for="t in tiposDisp" :key="t.clave" class="perm perm--sub">
+              <input type="checkbox" :checked="editando.tiposGasto.includes(t.clave)" :disabled="editando._saving"
+                @change="toggleTipo(editando, t.clave, $event.target)" />
+              {{ t.nombre }}
+            </label>
+          </template>
+        </template>
+        <template v-else-if="s.zonas">
           <p v-if="!editando.roles.length" class="perm-nota perm-nota--sin-sangria">Asigna primero algún permiso.</p>
           <template v-else>
             <label class="perm">
@@ -114,7 +131,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
-import { getUsuarios, setUsuario, setUsuarioZonas } from '../api/admin';
+import { getUsuarios, setUsuario, setUsuarioZonas, getTiposGasto, setUsuarioTiposGasto } from '../api/admin';
 import { getZonas } from '../api/facturas';
 import { ROLES_INFO, GRUPOS_PERMISOS, REPORTES_INFO } from '../utils/roles';
 
@@ -130,11 +147,14 @@ const grupos = GRUPOS_PERMISOS.map((nombre) => ({
 const secciones = [
   ...grupos.filter((g) => g.nombre !== 'Administración'),
   { nombre: 'Zonas (dónde trabaja)', zonas: true },
+  { nombre: 'Tipos de gasto (qué gastos ve)', tipos: true },
   ...grupos.filter((g) => g.nombre === 'Administración'),
 ];
 
 const usuarios = ref([]);
 const zonasDisp = ref([]);
+const tiposDisp = ref([]); // catálogo de tipos de gasto de ICG: [{ clave, nombre }]
+const nombreTipo = (clave) => (tiposDisp.value.find((t) => t.clave === clave) || { nombre: clave }).nombre;
 const editando = ref(null); // usuario abierto en el panel de permisos
 const loading = ref(false);
 const q = ref('');
@@ -216,6 +236,28 @@ async function toggleZona(u, zona, el) {
   await guardarZonas(u, [...set]);
   el.checked = u.zonas.includes(zona);
 }
+async function guardarTipos(u, tipos) {
+  u._saving = true; u._saved = false; u._error = '';
+  try {
+    const res = await setUsuarioTiposGasto(u.codUsuarioIcg, tipos);
+    u.tiposGasto = res.tiposGasto || [];
+    u._saved = true;
+    setTimeout(() => { u._saved = false; }, 2000);
+  } catch (e) {
+    u._error = e.response?.data?.error || 'No se pudo guardar';
+    setTimeout(() => { u._error = ''; }, 4000);
+  } finally { u._saving = false; }
+}
+async function toggleTipo(u, clave, el) {
+  const set = new Set(u.tiposGasto);
+  if (el.checked) set.add(clave); else set.delete(clave);
+  await guardarTipos(u, [...set]);
+  el.checked = u.tiposGasto.includes(clave);
+}
+async function todosLosTipos(u, el) {
+  if (el.checked) await guardarTipos(u, []);
+  el.checked = !u.tiposGasto.length;
+}
 // Desmarcar "Todas" no hace nada: para acotar se marcan zonas puntuales.
 async function todasLasZonas(u, el) {
   if (el.checked) await guardarZonas(u, []);
@@ -227,9 +269,11 @@ onMounted(async () => {
   loading.value = true;
   try {
     const [data, zonas] = await Promise.all([getUsuarios(), getZonas()]);
-    usuarios.value = data.map((u) => ({ ...u, roles: u.roles || [], zonas: u.zonas || [], _saving: false, _saved: false, _error: '' }));
+    usuarios.value = data.map((u) => ({ ...u, roles: u.roles || [], zonas: u.zonas || [], tiposGasto: u.tiposGasto || [], _saving: false, _saved: false, _error: '' }));
     zonasDisp.value = zonas;
   } finally { loading.value = false; }
+  // El catálogo recorre las BD de las marcas (tarda): se carga aparte, sin frenar la lista.
+  getTiposGasto().then((t) => { tiposDisp.value = t; }).catch(() => {});
 });
 onBeforeUnmount(() => window.removeEventListener('keydown', alTeclear));
 </script>

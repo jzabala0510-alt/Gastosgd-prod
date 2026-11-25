@@ -95,8 +95,23 @@
         <div v-else class="empty card">Sin saldos para los filtros.</div>
       </template>
       <template v-else>
-        <div class="card filtros" v-if="tiposGastoDisponibles.length > 1">
-          <div class="field">
+        <div class="card filtros" v-if="tiposGastoDisponibles.length > 1 || pagadoresDisponibles.length > 1">
+          <div class="field" v-if="pagadoresDisponibles.length > 1" :class="{ 'field--active': filtroPagador }">
+            <label>Se paga por</label>
+            <select v-model="filtroPagador">
+              <option value="">Todos</option>
+              <option v-for="p in pagadoresDisponibles" :key="p" :value="p">{{ p }}</option>
+            </select>
+          </div>
+          <div class="field" v-if="repTipo === 'pagador'" :class="{ 'field--active': filtroComprobante }">
+            <label>Comprobante</label>
+            <select v-model="filtroComprobante">
+              <option value="">Todos</option>
+              <option value="no">Sin comprobante</option>
+              <option value="si">Con comprobante</option>
+            </select>
+          </div>
+          <div class="field" v-if="tiposGastoDisponibles.length > 1">
             <label>Tipo de gasto</label>
             <div class="zona-cell">
               <button type="button" class="zona-cell__btn" :class="{ on: filtrosTipoGasto.length }"
@@ -125,7 +140,7 @@
           <button class="btn btn--sm" :disabled="!filasVisibles.length" @click="exportar" style="margin-left:auto">⬇ Exportar a Excel</button>
         </div>
         <div class="table-wrap" v-if="filasVisibles.length"><table class="grid">
-          <thead><tr><th>Zona</th><th>Tienda</th><th>Marca</th><th>Factura</th><th>Fecha</th><th>Proveedor</th><th>Tipo de gasto</th><th class="r">Total (Bs)</th><th class="r">Pendiente (Bs)</th><th>Estado</th></tr></thead>
+          <thead><tr><th>Zona</th><th>Tienda</th><th>Marca</th><th>Factura</th><th>Fecha</th><th>Proveedor</th><th>Tipo de gasto</th><th class="r">Total (Bs)</th><th class="r">Pendiente (Bs)</th><th>Estado</th><th>Se paga por</th><th v-if="repTipo === 'pagador'">Comprobante</th></tr></thead>
           <tbody>
             <tr v-for="(f, i) in filasVisibles" :key="i">
               <td>{{ f.zona || '—' }}</td><td>{{ f.tienda || '—' }}</td><td>{{ f.marca || '—' }}</td>
@@ -133,6 +148,8 @@
               <td>{{ fecha(f.fecha) }}</td><td>{{ f.proveedor || '—' }}</td><td>{{ f.tipoGasto || '—' }}</td>
               <td class="r">{{ money(f.totalVes) }}</td><td class="r">{{ money(f.pendienteVes) }}</td>
               <td><span class="badge" :class="estClass(f.estado)">{{ estLabel(f.estado) }}</span></td>
+              <td>{{ f.pagadoPor ? f.pagadoPor.nombre : '—' }}</td>
+              <td v-if="repTipo === 'pagador'"><span class="badge" :class="f.conComprobante ? 'badge--green' : 'badge--amber'">{{ f.conComprobante ? 'Cargado' : 'Falta' }}</span></td>
             </tr>
           </tbody>
         </table></div>
@@ -146,7 +163,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import * as XLSX from 'xlsx';
+import { descargarExcel } from '../utils/excel';
 import { getZonas, getTiendas } from '../api/facturas';
 import { getReporte, getSaldos } from '../api/reportes';
 import { ESTADO_LABEL, ESTADO_CLASS } from '../utils/estados';
@@ -176,6 +193,8 @@ const zona = ref('');
 const codTienda = ref('');
 const estado = ref('');
 const filtrosTipoGasto = ref([]); // [] = todos; selección múltiple vía checkbox-popover (ver popTipoGasto)
+const filtroPagador = ref('');     // "Se paga por" (nombre de la empresa), al instante sobre lo traído
+const filtroComprobante = ref(''); // reporte "Por dónde se paga": '' | 'si' | 'no'
 const popTipoGasto = ref(false);
 const desde = ref('');
 const hasta = ref('');
@@ -208,9 +227,15 @@ const tiposGastoDisponibles = computed(() => {
   if (repKind.value !== 'gastos' || !rep.value) return [];
   return [...new Set(rep.value.rows.map((r) => r.tipoGasto || 'SIN ESPECIFICAR'))].sort();
 });
+const pagadoresDisponibles = computed(() => {
+  if (repKind.value !== 'gastos' || !rep.value) return [];
+  return [...new Set(rep.value.rows.map((r) => (r.pagadoPor ? r.pagadoPor.nombre : null)).filter(Boolean))].sort();
+});
 const filasVisibles = computed(() => {
   if (repKind.value !== 'gastos' || !rep.value) return rep.value ? rep.value.rows : [];
   let rows = rep.value.rows;
+  if (filtroPagador.value) rows = rows.filter((f) => f.pagadoPor && f.pagadoPor.nombre === filtroPagador.value);
+  if (repTipo.value === 'pagador' && filtroComprobante.value) rows = rows.filter((f) => f.conComprobante === (filtroComprobante.value === 'si'));
   if (repTipo.value === 'pendientes_solicitud' && estado.value) rows = rows.filter((f) => f.estado === estado.value);
   if (filtrosTipoGasto.value.length) rows = rows.filter((f) => filtrosTipoGasto.value.includes(f.tipoGasto || 'SIN ESPECIFICAR'));
   return rows;
@@ -242,6 +267,8 @@ async function generar() {
     return;
   }
   filtrosTipoGasto.value = [];
+  filtroPagador.value = '';
+  filtroComprobante.value = '';
   popTipoGasto.value = false;
   // Sin esto, un fallo dejaba en pantalla el reporte anterior (de otra zona) como si fuera el nuevo.
   rep.value = null;
@@ -278,28 +305,62 @@ async function generar() {
   } finally { loading.value = false; }
 }
 
-function exportar() {
+async function exportar() {
   if (!rep.value || !rep.value.rows.length) return;
-  let data;
+  const titulo = TIPOS[repTipo.value || tipo.value].label;
+  const nombreTienda = codTienda.value ? (tiendas.value.find((t) => String(t.CodTienda) === String(codTienda.value)) || {}).Tienda : '';
+  const lugar = zona.value === 'TODAS' ? 'Todas las zonas' : `Zona: ${zona.value}${nombreTienda ? ` · Tienda: ${nombreTienda}` : ''}`;
+  let hoja;
   if (repKind.value === 'saldos') {
-    data = rep.value.rows.map((f) => {
-      const fila = { Zona: f.zona, Tienda: f.tienda, Marca: f.marca };
-      for (const b of rep.value.bancos) fila[b.Nombre] = Number(f.bancos[b.IdBanco]) || 0;
-      fila.Ajuste = Number(f.ajuste) || 0;
-      fila['Total (Bs)'] = Number(f.saldo) || 0;
+    const filas = rep.value.rows.map((f) => {
+      const fila = { zona: f.zona, tienda: f.tienda, marca: f.marca, ajuste: Number(f.ajuste) || 0, total: Number(f.saldo) || 0 };
+      for (const b of rep.value.bancos) fila[`b${b.IdBanco}`] = Number(f.bancos[b.IdBanco]) || 0;
       return fila;
     });
+    const tot = { zona: 'TOTAL', _tipo: 'total', ajuste: 0, total: 0 };
+    for (const f of filas) {
+      tot.ajuste += f.ajuste; tot.total += f.total;
+      for (const b of rep.value.bancos) tot[`b${b.IdBanco}`] = (tot[`b${b.IdBanco}`] || 0) + f[`b${b.IdBanco}`];
+    }
+    hoja = {
+      nombre: 'Saldos', titulo, subtitulo: [`${lugar} · Fecha: ${fecha(fechaSaldos.value)}`, GENERADO_TXT()], filtro: true,
+      columnas: [
+        { titulo: 'Zona', clave: 'zona', ancho: 16 }, { titulo: 'Tienda', clave: 'tienda', ancho: 34, ajustar: true }, { titulo: 'Marca', clave: 'marca', ancho: 16 },
+        ...rep.value.bancos.map((b) => ({ titulo: b.Nombre, clave: `b${b.IdBanco}`, ancho: 15, tipo: 'monto' })),
+        { titulo: 'Ajuste', clave: 'ajuste', ancho: 15, tipo: 'monto' }, { titulo: 'Total (Bs)', clave: 'total', ancho: 17, tipo: 'monto' },
+      ],
+      filas: [...filas, tot], estiloFila: (f) => f._tipo || null,
+    };
   } else {
-    data = filasVisibles.value.map((f) => ({
-      Zona: f.zona, Tienda: f.tienda, Marca: f.marca, Factura: `${f.numserie}-${f.numfactura}`, Fecha: fecha(f.fecha),
-      Proveedor: f.proveedor, 'Tipo de gasto': f.tipoGasto, 'Total (Bs)': Number(f.totalVes) || 0, 'Pendiente (Bs)': Number(f.pendienteVes) || 0, Estado: estLabel(f.estado),
+    const conComprobante = repTipo.value === 'pagador';
+    const filas = filasVisibles.value.map((f) => ({
+      zona: f.zona, tienda: f.tienda, marca: f.marca, factura: `${f.numserie}-${f.numfactura}`, fecha: fecha(f.fecha),
+      proveedor: f.proveedor, tipoGasto: f.tipoGasto, total: Number(f.totalVes) || 0, pendiente: Number(f.pendienteVes) || 0,
+      estado: estLabel(f.estado), pagador: f.pagadoPor ? f.pagadoPor.nombre : '', comprobante: f.conComprobante ? 'Cargado' : 'Falta',
     }));
+    const rango = esSolicitud.value || repTipo.value === 'pendientes_solicitud'
+      ? `F. solicitud: ${solDesde.value ? fecha(solDesde.value) : '…'} al ${solHasta.value ? fecha(solHasta.value) : '…'}`
+      : (desde.value || hasta.value ? `Desde ${desde.value ? fecha(desde.value) : '…'} hasta ${hasta.value ? fecha(hasta.value) : '…'}` : 'Sin rango de fechas');
+    const extra = [filtroPagador.value && `Se paga por: ${filtroPagador.value}`, filtrosTipoGasto.value.length && `Tipo de gasto: ${filtrosTipoGasto.value.join(', ')}`,
+      repTipo.value === 'pendientes_solicitud' && estado.value && `Estado: ${estLabel(estado.value)}`,
+      conComprobante && filtroComprobante.value && `Comprobante: ${filtroComprobante.value === 'si' ? 'cargado' : 'falta'}`].filter(Boolean).join(' · ');
+    hoja = {
+      nombre: 'Reporte', titulo, subtitulo: [`${lugar} · ${rango}`, ...(extra ? [`Filtros: ${extra}`] : []), GENERADO_TXT()], filtro: true,
+      columnas: [
+        { titulo: 'Zona', clave: 'zona', ancho: 14 }, { titulo: 'Tienda', clave: 'tienda', ancho: 30, ajustar: true }, { titulo: 'Marca', clave: 'marca', ancho: 14 },
+        { titulo: 'Factura', clave: 'factura', ancho: 14 }, { titulo: 'Fecha', clave: 'fecha', ancho: 12 },
+        { titulo: 'Proveedor', clave: 'proveedor', ancho: 32, ajustar: true }, { titulo: 'Tipo de gasto', clave: 'tipoGasto', ancho: 20, ajustar: true },
+        { titulo: 'Total (Bs)', clave: 'total', ancho: 16, tipo: 'monto' }, { titulo: 'Pendiente (Bs)', clave: 'pendiente', ancho: 16, tipo: 'monto' },
+        { titulo: 'Estado', clave: 'estado', ancho: 20 }, { titulo: 'Se paga por', clave: 'pagador', ancho: 28, ajustar: true },
+        ...(conComprobante ? [{ titulo: 'Comprobante', clave: 'comprobante', ancho: 14 }] : []),
+      ],
+      filas: [...filas, { zona: `TOTAL (${filas.length} facturas)`, _tipo: 'total', total: filas.reduce((a, f) => a + f.total, 0), pendiente: filas.reduce((a, f) => a + f.pendiente, 0) }],
+      estiloFila: (f) => f._tipo || null,
+    };
   }
-  const ws = XLSX.utils.json_to_sheet(data);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Reporte');
-  XLSX.writeFile(wb, `reporte_${repTipo.value || tipo.value}_${hoyVE()}.xlsx`);
+  await descargarExcel(`reporte_${repTipo.value || tipo.value}_${hoyVE()}.xlsx`, [hoja]);
 }
+const GENERADO_TXT = () => `Generado el ${new Date().toLocaleString('es-VE', { timeZone: 'America/Caracas', dateStyle: 'short', timeStyle: 'short' })}`;
 
 onMounted(async () => { zonas.value = await getZonas(); });
 </script>

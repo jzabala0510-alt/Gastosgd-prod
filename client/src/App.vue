@@ -12,11 +12,22 @@
           <router-link v-if="auth.esPagadas" to="/pagadas" :class="{ active: $route.path === '/pagadas' }">Pagadas</router-link>
           <router-link v-if="auth.esSaldos" to="/fondos" :class="{ active: $route.path.startsWith('/fondos') }">Saldos</router-link>
           <router-link v-if="auth.esReportes" to="/reportes" :class="{ active: $route.path === '/reportes' }">Reportes</router-link>
+          <router-link v-if="auth.esAuditoriaUsuarios" to="/auditoria-usuarios" :class="{ active: $route.path === '/auditoria-usuarios' }">Auditoría de usuarios</router-link>
           <router-link v-if="auth.esArchivo" to="/archivo" :class="{ active: $route.path === '/archivo' || $route.path.startsWith('/factura') }">Archivo</router-link>
-          <router-link v-if="auth.esAdmin" to="/admin/usuarios" :class="{ active: $route.path === '/admin/usuarios' }">Usuarios</router-link>
-          <router-link v-if="auth.esAdmin" to="/admin/bancos" :class="{ active: $route.path === '/admin/bancos' }">Bancos</router-link>
-          <router-link v-if="auth.esAdmin && auth.esSuperUsuario" to="/admin/seguimiento-icg" :class="{ active: $route.path === '/admin/seguimiento-icg' }">Seguimiento ICG</router-link>
-          <router-link v-if="auth.esAdmin" to="/actualizador" :class="{ active: $route.path === '/actualizador' }">Actualizador</router-link>
+          <!-- Administración (solo ADMIN): en un menú, para no saturar la barra. Los demás
+               usuarios no tienen estos módulos, así que su barra no cambia. -->
+          <div v-if="auth.esAdmin" class="navmenu">
+            <button type="button" class="navmenu__btn" :class="{ active: enAdmin, abierto: adminAbierto }" @click="adminAbierto = !adminAbierto">
+              Administración <span class="navmenu__caret">▾</span>
+            </button>
+            <div v-if="adminAbierto" class="navmenu__overlay" @click="adminAbierto = false"></div>
+            <div v-if="adminAbierto" class="navmenu__pop">
+              <router-link to="/admin/usuarios" :class="{ active: $route.path === '/admin/usuarios' }">Usuarios</router-link>
+              <router-link to="/admin/bancos" :class="{ active: $route.path === '/admin/bancos' }">Bancos</router-link>
+              <router-link v-if="auth.esSuperUsuario" to="/admin/seguimiento-icg" :class="{ active: $route.path === '/admin/seguimiento-icg' }">Seguimiento ICG</router-link>
+              <router-link to="/actualizador" :class="{ active: $route.path === '/actualizador' }">Actualizador</router-link>
+            </div>
+          </div>
           <!-- Importar (Excel) y Alias de tiendas: ocultos por ahora, no van a producción
                (los saldos se cargan manual). Rutas y backend siguen intactos por si se
                reactivan más adelante — ver /fondos/importar y /admin/alias-tiendas. -->
@@ -45,7 +56,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from './stores/auth';
 import { useNotifStore } from './stores/notificaciones';
@@ -57,8 +68,10 @@ const notif = useNotifStore();
 const router = useRouter();
 const route = useRoute();
 const menuAbierto = ref(false);
+const adminAbierto = ref(false);
+const enAdmin = computed(() => route.path.startsWith('/admin') || route.path === '/actualizador');
 
-watch(() => route.path, () => { menuAbierto.value = false; }); // cerrar al navegar
+watch(() => route.path, () => { menuAbierto.value = false; adminAbierto.value = false; }); // cerrar al navegar
 
 function refrescar() { if (auth.isAuth) notif.refrescar(); }
 

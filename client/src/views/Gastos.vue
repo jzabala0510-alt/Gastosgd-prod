@@ -77,6 +77,7 @@
             <td style="white-space:nowrap">
               <span class="badge" :class="estClass(f.Estado)">{{ estLabel(f.Estado) }}</span>
               <EtiquetaIcg :saldado="f.SaldadoIcg" :transferido="f.TransferidoIcg" :mayores="f.MayoresIcg" :estado="f.Estado" />
+              <EtiquetaPagador :pagador="f.PagadoPor" />
             </td>
           </tr>
         </tbody>
@@ -92,6 +93,7 @@ import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import SelectorZMT from '../components/SelectorZMT.vue';
 import EtiquetaIcg from '../components/EtiquetaIcg.vue';
+import EtiquetaPagador from '../components/EtiquetaPagador.vue';
 import { useGastosStore } from '../stores/vistas';
 import { getFacturas, getPagadasRecientes } from '../api/facturas';
 import { ESTADO_LABEL, ESTADO_CLASS } from '../utils/estados';

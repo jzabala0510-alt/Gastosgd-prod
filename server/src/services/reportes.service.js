@@ -1,6 +1,7 @@
 const { sql, getPool } = require('../config/db');
 const { resolverTienda, tiendasExtra } = require('./marca');
 const { mayoresDe, claveTienda } = require('./traspasosMayores.service');
+const pagadores = require('./pagadores');
 const { CTE_PENDIENTE, columnasLibres, expr } = require('./facturasCompra.service');
 const bancosService = require('./bancos.service');
 const { MONEDA } = require('./fondos.service');
@@ -32,7 +33,9 @@ const ESTADOS_PENDIENTES = ['PENDIENTE_ANALISTA', 'PENDIENTE_TESORERIA', 'PENDIE
 // soloPendientes=1 → cualquier etapa de ESTADOS_PENDIENTES (en vez de un solo `estado`).
 // soloPresupuestos=1 → solo gastos marcados EsPresupuesto (cualquier estado, incl. ya
 // pagados — por eso este flag NUNCA implica soloERP, que los escondería al pagarse).
-async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPendientes, soloPresupuestos, incluirTransferidos }) {
+// soloConPagador: reporte "Por dónde se paga" (gastos en el flujo a los que el Analista ya les
+// eligió quién paga).
+async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPendientes, soloPresupuestos, incluirTransferidos, soloConPagador }) {
   const appPool = await getPool();
   const vacio = { rows: [], totales: { count: 0, totalVes: 0, porEstado: {} }, advertencias: [] };
 
@@ -55,11 +58,18 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPen
 
   // 2) Estados del flujo de esas tiendas (clave cod|serie|num|n → {estado, esPresupuesto})
   const fl = await appPool.request()
-    .query(`SELECT CodTienda, NumSerie, NumFactura, N, Estado, EsPresupuesto, IcgEstado, IcgSaldadoFecha, IcgTipoPago, IcgTransferidoA
-            FROM dbo.GD_FacturaFlujo WHERE CodTienda IN (${scope.map(Number).join(',')})`);
+    .query(`SELECT CodTienda, NumSerie, NumFactura, N, Estado, EsPresupuesto, IcgEstado, IcgSaldadoFecha, IcgTipoPago, IcgTransferidoA, PagadoPor,
+              (SELECT COUNT(*) FROM dbo.GD_FacturaAdjunto a WHERE a.IdFlujo = f.IdFlujo AND a.Tipo = 'COMPROBANTE' AND a.Anulado = 0) AS Comprobantes
+            FROM dbo.GD_FacturaFlujo f WHERE CodTienda IN (${scope.map(Number).join(',')})`);
   const flujoMap = new Map();
   const destino = (txt) => { if (!txt) return null; try { return JSON.parse(txt); } catch { return null; } };
-  for (const r of fl.recordset) flujoMap.set(`${r.CodTienda}|${(r.NumSerie || '').trim()}|${r.NumFactura}|${(r.N || '').trim()}`, { estado: r.Estado, esPresupuesto: !!r.EsPresupuesto, transferidoIcg: destino(r.IcgTransferidoA) });
+  const pagador = await pagadores.etiquetador(fl.recordset.map((r) => r.PagadoPor));
+  for (const r of fl.recordset) {
+    flujoMap.set(`${r.CodTienda}|${(r.NumSerie || '').trim()}|${r.NumFactura}|${(r.N || '').trim()}`, {
+      estado: r.Estado, esPresupuesto: !!r.EsPresupuesto, transferidoIcg: destino(r.IcgTransferidoA),
+      pagadoPor: pagador(r.CodTienda, r.PagadoPor), comprobantes: r.Comprobantes,
+    });
+  }
 
   // Marcas/fuentes que fallaron: se omiten y se informan, en vez de tumbar el
   // reporte entero (con "todas las zonas" entran todas las marcas, y bastaba
@@ -112,6 +122,7 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPen
     if (est === 'TRANSFERIDO' && estado !== 'TRANSFERIDO' && !incluirTransferidos) return;
     if (soloPendientes && !ESTADOS_PENDIENTES.includes(est)) return;
     if (soloPresupuestos && !esPresupuesto) return;
+    if (soloConPagador && !(flujoMap.get(k) || {}).pagadoPor) return;
     seen.add(k);
     const info = infoCache[cod];
     rows.push({
@@ -127,6 +138,8 @@ async function listado({ desde, hasta, zona, codTienda, estado, soloERP, soloPen
       // ya no están en el pendiente de ICG (paso 5).
       saldadoIcg, transferidoIcg,
       mayoresIcg: mayores.get(claveTienda(cod, d.NUMSERIE, d.NUMFACTURA, d.N)) || null,
+      pagadoPor: (flujoMap.get(k) || {}).pagadoPor || null,
+      conComprobante: ((flujoMap.get(k) || {}).comprobantes || 0) > 0,
     });
   };
 

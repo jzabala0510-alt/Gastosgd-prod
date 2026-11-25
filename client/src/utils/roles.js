@@ -23,6 +23,7 @@ export const REPORTES_INFO = [
   { tipo: 'aprobado', tag: 'REP_PAGADO', label: 'Aprobado (pagado)' },
   { tipo: 'devueltos', tag: 'REP_DEVUELTOS', label: 'Devueltos' },
   { tipo: 'presupuestos', tag: 'REP_PRESUPUESTOS', label: 'Presupuestos' },
+  { tipo: 'pagador', tag: 'REP_PAGADOR', label: 'Gastos por entidad pagadora' },
   { tipo: 'saldos', tag: 'REP_SALDOS', label: 'General de saldos' },
 ];
 export const TAGS_REPORTE = REPORTES_INFO.map((r) => r.tag);
@@ -36,6 +37,7 @@ export const ROLES_INFO = [
   { tag: 'PAGADAS', label: 'Pagadas', grupo: 'Consulta' },
   { tag: 'SALDOS', label: 'Saldos', grupo: 'Consulta' },
   { tag: 'ARCHIVO', label: 'Archivo', grupo: 'Consulta' },
+  { tag: 'AUDITORIA_USUARIOS', label: 'Auditoría de usuarios', grupo: 'Consulta' },
   { tag: 'REPORTES', label: 'Reportes', grupo: 'Reportes' },
   ...REPORTES_INFO.map((r) => ({ tag: r.tag, label: `Reporte: ${r.label}`, shortLabel: r.label, parent: 'REPORTES' })),
   { tag: 'ADMIN', label: 'Administrador', grupo: 'Administración' },

@@ -56,7 +56,7 @@
             <td>{{ f.tipoGasto || '—' }}</td>
             <td class="r">{{ money(f.totalVes) }}</td>
             <td class="r">{{ money(f.pendienteVes) }}</td>
-            <td style="white-space:nowrap"><span class="badge" :class="estClass(f.estado)">{{ estLabel(f.estado) }}</span><EtiquetaIcg :saldado="f.saldadoIcg" :transferido="f.transferidoIcg" :mayores="f.mayoresIcg" :estado="f.estado" /></td>
+            <td style="white-space:nowrap"><span class="badge" :class="estClass(f.estado)">{{ estLabel(f.estado) }}</span><EtiquetaIcg :saldado="f.saldadoIcg" :transferido="f.transferidoIcg" :mayores="f.mayoresIcg" :estado="f.estado" /><EtiquetaPagador :pagador="f.pagadoPor" /></td>
           </tr>
         </tbody>
       </table></div>
@@ -71,6 +71,7 @@ import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import SelectorZMT from '../components/SelectorZMT.vue';
 import EtiquetaIcg from '../components/EtiquetaIcg.vue';
+import EtiquetaPagador from '../components/EtiquetaPagador.vue';
 import { useArchivoStore } from '../stores/vistas';
 import { getReporte } from '../api/reportes';
 import { ESTADO_LABEL, ESTADO_CLASS } from '../utils/estados';

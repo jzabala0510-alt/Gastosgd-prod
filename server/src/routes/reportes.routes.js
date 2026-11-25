@@ -4,6 +4,7 @@ const { hoyVE } = require('../utils/fecha');
 const reportesService = require('../services/reportes.service');
 const { esReporte, puedeVerReporte, filtrosDeReporte } = require('../services/catalogoReportes');
 
+const tiposGasto = require('../services/tiposGasto.service');
 const router = Router();
 router.use(authenticate);
 
@@ -25,7 +26,15 @@ router.get('/', async (req, res, next) => {
       if (!tieneRol(req.user, 'ARCHIVO')) return res.status(403).json({ error: 'Acceso denegado para tu rol' });
       filtros = { zona: req.query.zona || undefined, codTienda: req.query.codTienda ? Number(req.query.codTienda) : null, incluirTransferidos: true };
     }
-    res.json(await reportesService.listado(filtros));
+    const out = await reportesService.listado(filtros);
+    // Permisos por tipo de gasto (sin tipos asignados = todos): filas y totales.
+    const puedeVer = await tiposGasto.filtroDe(req.user);
+    out.rows = out.rows.filter((r) => puedeVer(r.tipoGasto));
+    const porEstado = {};
+    let totalVes = 0;
+    for (const r of out.rows) { porEstado[r.estado] = (porEstado[r.estado] || 0) + 1; totalVes += r.totalVes; }
+    out.totales = { count: out.rows.length, totalVes: Math.round(totalVes * 100) / 100, porEstado };
+    res.json(out);
   } catch (e) { next(e); }
 });
 

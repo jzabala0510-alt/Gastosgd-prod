@@ -85,11 +85,19 @@
             ⚠ No se pudieron aplicar: {{ d.transferencias.erroresAplicar.map((e) => `${e.factura} (${e.mensaje})`).join(' · ') }}
           </p>
           <p v-if="riesgos" class="soporte-aviso">⚠ {{ riesgos }} caso(s) con riesgo de pagarse dos veces (marcados abajo).</p>
+          <p v-if="d.transferencias.corte" class="page__hint">
+            Solo se trabajan las facturas de mayores registradas desde el <b>{{ fecha(d.transferencias.corte) }}</b>; las anteriores se listan aparte y no se tocan.
+          </p>
           <div class="seg__chips">
             <button v-for="a in ACCIONES" :key="a.clave" type="button" class="seg__chip"
                     :class="{ 'seg__chip--on': filtroAccion === a.clave }" @click="filtroAccion = filtroAccion === a.clave ? '' : a.clave">
               <span class="badge" :class="a.clase">{{ d.transferencias.resumen[a.clave] || 0 }}</span> {{ a.texto }}
             </button>
+            <button type="button" class="seg__chip" :class="{ 'seg__chip--on': filtroAccion === 'RIESGO' }"
+                    @click="filtroAccion = filtroAccion === 'RIESGO' ? '' : 'RIESGO'">
+              <span class="badge badge--red">{{ todosConRiesgo }}</span> Con riesgo (incluye anteriores)
+            </button>
+            <button type="button" class="btn btn--sm seg__exportar" :disabled="!casos.length" @click="exportar">⬇ Exportar a Excel</button>
           </div>
           <p v-if="d.transferencias.errores.length" class="page__hint">
             {{ d.transferencias.errores.length }} BD no se pudieron revisar: {{ d.transferencias.errores.map((e) => e.bd).join(', ') }}.
@@ -105,6 +113,7 @@
                 <td>
                   <span class="badge" :class="accion(c.accion).clase">{{ accion(c.accion).corto }}</span>
                   <span v-if="c.riesgo" class="badge badge--red seg__riesgo" title="Puede pagarse dos veces">⚠ Riesgo</span>
+                  <span v-if="c.accionPrevia" class="seg__sub" style="display:block">Habría sido: {{ accion(c.accionPrevia).corto }}</span>
                 </td>
                 <td>
                   <div style="white-space:nowrap">{{ c.mayores.marca }} · {{ c.mayores.tienda || c.mayores.codTienda }}</div>
@@ -154,7 +163,8 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { getSeguimientoIcg, revisarTransferencias } from '../api/admin';
 import { ESTADO_LABEL, ESTADO_CLASS } from '../utils/estados';
-import { money, fecha, fechaHora } from '../utils/format';
+import { descargarExcel } from '../utils/excel';
+import { money, fecha, fechaHora, hoyVE } from '../utils/format';
 
 const d = ref(null);
 const cargando = ref(false);
@@ -167,6 +177,7 @@ const ACCIONES = [
   { clave: 'AMBIGUO', texto: 'Ambiguos (revisar a mano)', corto: 'Ambiguo', clase: 'badge--amber' },
   { clave: 'ETIQUETA', texto: 'Solo etiqueta', corto: 'Etiqueta', clase: 'badge--icg' },
   { clave: 'YA_TRANSFERIDO', texto: 'Ya transferidos', corto: 'Ya transferido', clase: 'badge--gray' },
+  { clave: 'ANTERIOR', texto: 'Anteriores al corte (no se tocan)', corto: 'Anterior al corte', clase: 'badge--gray' },
   { clave: 'SIN_ACCION', texto: 'Sin acción (no están en la app)', corto: 'Sin acción', clase: 'badge--gray' },
 ];
 const accion = (k) => ACCIONES.find((a) => a.clave === k) || { corto: k, clase: 'badge--gray' };
@@ -185,14 +196,54 @@ const modos = computed(() => [
   { clave: 'transferidos', titulo: 'Transferencias de mayores', variable: 'SEGUIMIENTO_ICG_TRANSFERIDOS', aplicar: d.value.modos.transferidos === 'aplicar',
     siAplica: 'Cada hora los de mayores cuya factura de tienda ya está en el flujo pasan a Transferido.' },
 ]);
-const riesgos = computed(() => (d.value?.transferencias?.casos || []).filter((c) => c.riesgo).length);
+// Riesgo que se va a atender (los anteriores al corte no se tocan) y riesgo total (para revisar a mano).
+const riesgos = computed(() => (d.value?.transferencias?.casos || []).filter((c) => c.riesgo && c.accion !== 'ANTERIOR').length);
+const todosConRiesgo = computed(() => (d.value?.transferencias?.casos || []).filter((c) => c.riesgo).length);
 const ningunoAplica = computed(() => d.value && d.value.modos.reabiertos !== 'aplicar' && d.value.modos.transferidos !== 'aplicar');
 
 // Por defecto no se listan los "Sin acción" (no están en la app): son muchos y no dicen nada.
 const casos = computed(() => {
   const todos = d.value?.transferencias?.casos || [];
-  return filtroAccion.value ? todos.filter((c) => c.accion === filtroAccion.value) : todos.filter((c) => c.accion !== 'SIN_ACCION');
+  if (filtroAccion.value === 'RIESGO') return todos.filter((c) => c.riesgo);
+  return filtroAccion.value ? todos.filter((c) => c.accion === filtroAccion.value) : todos.filter((c) => c.accion !== 'SIN_ACCION' && c.accion !== 'ANTERIOR');
 });
+
+// Excel con lo que se ve en la tabla (el filtro elegido).
+async function exportar() {
+  const filas = casos.value.map((c) => {
+    const g = c.gemelas[0] || {};
+    return {
+      accion: accion(c.accion).corto, previa: c.accionPrevia ? accion(c.accionPrevia).corto : '', riesgo: c.riesgo ? 'Sí' : '',
+      mEmpresa: c.mayores.tienda, mMarca: c.mayores.marca, mFactura: `${c.mayores.numserie}-${c.mayores.numfactura}`,
+      mEstado: estLabel(c.mayores.estado), mPend: c.mayores.pendienteIcg ? 'Sí' : 'No',
+      proveedor: c.mayores.proveedor, sufactura: c.mayores.sufactura, fecha: fecha(c.mayores.fecha), monto: c.mayores.monto,
+      tMarca: g.marca, tienda: g.tienda, tFactura: g.numserie ? `${g.numserie}-${g.numfactura}` : '',
+      tEstado: estLabel(g.estado), tIcg: g.pendienteIcg === null ? 'Sin revisar' : g.pendienteIcg ? 'Pendiente' : 'Saldada',
+      otras: c.gemelas.length > 1 ? c.gemelas.slice(1).map((x) => `${x.marca} ${x.numserie}-${x.numfactura}`).join(' | ') : '',
+      detalle: c.motivo,
+    };
+  });
+  const filtro = filtroAccion.value === 'RIESGO' ? 'Con riesgo (incluye anteriores)' : filtroAccion.value ? accion(filtroAccion.value).texto : 'Por atender';
+  await descargarExcel(`seguimiento_mayores_${filtroAccion.value || 'por_atender'}_${hoyVE()}.xlsx`, [{
+    nombre: 'Transferencias', titulo: 'Seguimiento ICG — Transferencias de mayores a tiendas',
+    subtitulo: [`Filtro: ${filtro} · ${filas.length} caso(s)${d.value.transferencias.corte ? ` · Corte: ${fecha(d.value.transferencias.corte)}` : ''}`,
+      `Generado el ${new Date().toLocaleString('es-VE', { timeZone: 'America/Caracas', dateStyle: 'short', timeStyle: 'short' })}`],
+    filtro: true,
+    columnas: [
+      { titulo: 'Acción', clave: 'accion', ancho: 16 }, { titulo: 'Habría sido', clave: 'previa', ancho: 14 }, { titulo: 'Riesgo', clave: 'riesgo', ancho: 9 },
+      { titulo: 'Mayores (empresa)', clave: 'mEmpresa', ancho: 26, ajustar: true }, { titulo: 'Mayores (marca)', clave: 'mMarca', ancho: 14 },
+      { titulo: 'Factura mayores', clave: 'mFactura', ancho: 15 }, { titulo: 'Estado mayores', clave: 'mEstado', ancho: 18 },
+      { titulo: 'Pendiente en ICG (mayores)', clave: 'mPend', ancho: 14 },
+      { titulo: 'Proveedor', clave: 'proveedor', ancho: 30, ajustar: true }, { titulo: 'Factura proveedor', clave: 'sufactura', ancho: 16 },
+      { titulo: 'Fecha', clave: 'fecha', ancho: 12 }, { titulo: 'Monto', clave: 'monto', ancho: 16, tipo: 'monto' },
+      { titulo: 'Tienda (marca)', clave: 'tMarca', ancho: 14 }, { titulo: 'Tienda', clave: 'tienda', ancho: 28, ajustar: true },
+      { titulo: 'Factura tienda', clave: 'tFactura', ancho: 15 }, { titulo: 'Estado tienda', clave: 'tEstado', ancho: 18 },
+      { titulo: 'Tienda en ICG', clave: 'tIcg', ancho: 13 }, { titulo: 'Otras coincidencias', clave: 'otras', ancho: 26, ajustar: true },
+      { titulo: 'Detalle', clave: 'detalle', ancho: 60, ajustar: true },
+    ],
+    filas: filas.length ? filas : [{ accion: 'Sin casos' }],
+  }]);
+}
 
 // Si hay una revisión en curso (la de cada hora, o la de "Revisar ahora"), se vuelve a
 // preguntar cada 10 s hasta que termine, para que el spinner y los datos sean los reales.
@@ -229,6 +280,7 @@ onUnmounted(() => clearTimeout(sondeo));
 .seg__chip--on { border-color: var(--accent-dark); box-shadow: 0 0 0 2px var(--accent-soft); }
 .seg__chip .badge--icg { margin-left: 0; }
 .seg__estado { margin-left: 6px; }
+.seg__exportar { margin-left: auto; }
 .seg__riesgo { display: table; margin-top: 4px; }
 .seg__sub { color: var(--muted); }
 .seg__gemela + .seg__gemela { margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--border); }

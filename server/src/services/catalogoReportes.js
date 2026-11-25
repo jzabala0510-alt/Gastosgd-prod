@@ -17,6 +17,8 @@ const REPORTES = {
   devueltos: { tag: 'REP_DEVUELTOS', filtros: { estado: 'DEVUELTO' } },
   // Sin soloERP: un presupuesto ya pagado debe seguir apareciendo.
   presupuestos: { tag: 'REP_PRESUPUESTOS', filtros: { soloPresupuestos: true } },
+  // Guía de CxP: por dónde se paga cada gasto del flujo y si ya tiene comprobante.
+  pagador: { tag: 'REP_PAGADOR', filtros: { soloConPagador: true } },
   saldos: { tag: 'REP_SALDOS' },
 };
 const TAGS_REPORTE = Object.values(REPORTES).map((r) => r.tag);

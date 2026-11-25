@@ -27,6 +27,15 @@ const { tiposDocumentoCompra, sqlTipos } = require('./facturasCompra.service');
 const MARCAS_MAYORES = ['TOP GROUP', 'MAYORES'];
 const DIAS = 180;        // facturas de mayores de los últimos DIAS días
 const MARGEN_DIAS = 60;  // diferencia máxima de fecha entre la de mayores y la de la tienda
+// Fecha de corte: solo se tocan las facturas de mayores registradas desde esta fecha. Lo
+// anterior (gastos viejos que ya se manejaron como se pudo) queda como "ANTERIOR": se lista en
+// el panel pero nunca se transfiere ni se etiqueta. SEGUIMIENTO_ICG_TRANSFERIDOS_DESDE en el
+// .env (AAAA-MM-DD); por defecto 2026-11-24, la misma fecha desde la que entran al flujo las
+// facturas de tienda saldadas con PRESTAMO.
+const DESDE = () => (/^\d{4}-\d{2}-\d{2}$/.test(String(process.env.SEGUIMIENTO_ICG_TRANSFERIDOS_DESDE || '').trim())
+  ? String(process.env.SEGUIMIENTO_ICG_TRANSFERIDOS_DESDE).trim() : '2026-11-24');
+// FECHA de ICG llega como medianoche con componentes literales: su parte AAAA-MM-DD es el día.
+const diaDe = (v) => (v instanceof Date ? v.toISOString() : String(v || '')).slice(0, 10);
 const FUERA_DEL_FLUJO = ['PENDIENTE_ANALISTA', 'RECHAZADO', 'TRANSFERIDO'];
 const enFlujo = (estado) => !!estado && !FUERA_DEL_FLUJO.includes(estado);
 
@@ -197,7 +206,8 @@ async function detectar() {
 
   // 3) Qué correspondería con cada factura de mayores que tiene pareja.
   const casos = [];
-  const resumen = { TRANSFERIR: 0, ETIQUETA: 0, AMBIGUO: 0, YA_TRANSFERIDO: 0, SIN_ACCION: 0 };
+  const resumen = { TRANSFERIR: 0, ETIQUETA: 0, AMBIGUO: 0, YA_TRANSFERIDO: 0, ANTERIOR: 0, SIN_ACCION: 0 };
+  const corte = DESDE();
   for (const m of mayores.filter((x) => x.gemelas.length)) {
     const flM = m.g.flujos.get(k3(m.f.NUMSERIE, m.f.NUMFACTURA, m.f.N)) || null;
     const codM = flM ? flM.CodTienda : m.f.ENLACE_EMPRESA + (m.g.info.offset || 0);
@@ -254,15 +264,22 @@ async function detectar() {
         caso.motivo += ' En ICG la tienda ya la saldó, así que no debería entrar a la app.';
       }
     }
+    // Antes del corte: no se toca. Se conserva lo que habría correspondido (y si había riesgo)
+    // solo para consulta.
+    if (['TRANSFERIR', 'ETIQUETA', 'AMBIGUO'].includes(caso.accion) && diaDe(m.f.FECHA) < corte) {
+      caso.accionPrevia = caso.accion;
+      caso.accion = 'ANTERIOR';
+      caso.motivo = `Anterior al corte (${corte.split('-').reverse().join('/')}): no se toca. Habría sido: ${caso.motivo}`;
+    }
     resumen[caso.accion]++;
     casos.push(caso);
   }
-  const orden = { TRANSFERIR: 0, AMBIGUO: 1, ETIQUETA: 2, YA_TRANSFERIDO: 3, SIN_ACCION: 4 };
+  const orden = { TRANSFERIR: 0, AMBIGUO: 1, ETIQUETA: 2, YA_TRANSFERIDO: 3, ANTERIOR: 4, SIN_ACCION: 5 };
   casos.sort((a, b) => orden[a.accion] - orden[b.accion] || new Date(b.mayores.fecha) - new Date(a.mayores.fecha));
   // BD de tiendas que no se pudieron revisar: una pareja "única" podría no serlo (la otra estaría
   // en esa BD), así que en esa vuelta no se aplica Transferido (ver revisar()).
   const erroresTienda = errores.filter((e) => e.deTienda).length;
-  return { casos, resumen, errores, erroresTienda, segundos: Math.round((Date.now() - t0) / 100) / 10 };
+  return { casos, resumen, errores, erroresTienda, corte, segundos: Math.round((Date.now() - t0) / 100) / 10 };
 }
 
 // Aplica TRANSFERIR y ETIQUETA. Cada gasto en su propia transacción. TRANSFERIR solo si la de
@@ -294,7 +311,9 @@ async function aplicar(casos, { soloEtiquetas = false } = {}) {
         .input('c', sql.Int, m.codTienda).input('s', sql.NVarChar, m.numserie).input('f', sql.Int, m.numfactura)
         .input('n', sql.NVarChar, m.n).input('m', sql.NVarChar, m.marca).input('j', sql.NVarChar(400), json)
         .input('com', sql.NVarChar, comentario).input('t', sql.Bit, transferir ? 1 : 0)
-        .input('ev', sql.NVarChar(30), m.estado || null);
+        .input('ev', sql.NVarChar(30), m.estado || null)
+        .input('dest', sql.Int, transferir && d.idFlujo ? d.idFlujo : null)
+        .input('fm', sql.NVarChar(60), `${m.numserie}-${m.numfactura}`);
       const r = await rq.query(`
         SET NOCOUNT ON;
         DECLARE @id INT, @hubo INT = 0, @antes NVARCHAR(400), @estado NVARCHAR(30);
@@ -326,6 +345,22 @@ async function aplicar(casos, { soloEtiquetas = false } = {}) {
         IF @hubo = 1
           INSERT INTO dbo.GD_FacturaAprobacion (IdFlujo, Etapa, IdUsuario, Decision, Comentario)
           VALUES (@id, 'SISTEMA', NULL, CASE WHEN @t = 1 THEN 'TRANSFERIDO' ELSE 'TRANSFERIDO_ICG' END, @com);
+        -- La tienda es la oficial: sus soportes y comprobantes quedan en ella. Se copian los de la
+        -- de mayores (mismo archivo, sin duplicar los que ya tenga) y se anota en su historial.
+        IF @hubo = 1 AND @t = 1 AND @dest IS NOT NULL
+        BEGIN
+          INSERT INTO dbo.GD_FacturaAdjunto (IdFlujo, Tipo, RutaArchivo, NombreOriginal, Mime, Tamano)
+          SELECT @dest, a.Tipo, a.RutaArchivo, LEFT(N'[De mayores ' + @fm + N'] ' + ISNULL(a.NombreOriginal, N''), 200), a.Mime, a.Tamano
+          FROM dbo.GD_FacturaAdjunto a
+          WHERE a.IdFlujo = @id AND a.Anulado = 0
+            AND NOT EXISTS (SELECT 1 FROM dbo.GD_FacturaAdjunto b WHERE b.IdFlujo = @dest AND b.RutaArchivo = a.RutaArchivo);
+          DECLARE @copiados INT = @@ROWCOUNT;
+          IF @copiados > 0
+            INSERT INTO dbo.GD_FacturaAprobacion (IdFlujo, Etapa, IdUsuario, Decision, Comentario)
+            VALUES (@dest, 'SISTEMA', NULL, 'TRANSFERIDO_ICG',
+                    N'Recibe ' + CAST(@copiados AS NVARCHAR(10)) + N' soporte(s) de la factura de mayores ' + @fm
+                    + N', que pasó a Transferido. Esta factura es la oficial.');
+        END
         SELECT @hubo AS hubo;`);
       await tx.commit();
       if (r.recordset[0].hubo) { if (transferir) transferidos++; else etiquetados++; }

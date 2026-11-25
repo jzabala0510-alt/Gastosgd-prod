@@ -33,6 +33,7 @@ export const useAuthStore = defineStore('auth', {
     esReportes: (s) => s.roles.includes('REPORTES') || s.roles.includes('ADMIN'),
     esPagosDevolver: (s) => s.roles.includes('PAGOS_DEVOLVER') || s.roles.includes('ADMIN'),
     esArchivo: (s) => s.roles.includes('ARCHIVO') || s.roles.includes('ADMIN'),
+    esAuditoriaUsuarios: (s) => s.roles.includes('AUDITORIA_USUARIOS') || s.roles.includes('ADMIN'),
     // Tipos de reporte que puede ver (el servidor valida lo mismo en catalogoReportes.js):
     // null = todos (ADMIN, o Reportes sin ningún reporte marcado); si no, solo esos.
     reportesPermitidos: (s) => {

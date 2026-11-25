@@ -4,11 +4,12 @@ const usuariosService = require('../services/usuarios.service');
 const bancosService = require('../services/bancos.service');
 const { TAGS_REPORTE } = require('../services/catalogoReportes');
 const seguimientoIcg = require('../services/seguimientoIcg.service');
+const tiposGasto = require('../services/tiposGasto.service');
 
 const router = Router();
 router.use(authenticate, requireRol('ADMIN')); // todo el módulo es solo para ADMIN
 
-const MODULOS = ['ANALISTA', 'TESORERIA', 'AUDITOR', 'PAGADOR', 'PAGADAS', 'SALDOS', 'REPORTES', 'ARCHIVO', 'ADMIN'];
+const MODULOS = ['ANALISTA', 'TESORERIA', 'AUDITOR', 'PAGADOR', 'PAGADAS', 'SALDOS', 'REPORTES', 'ARCHIVO', 'AUDITORIA_USUARIOS', 'ADMIN'];
 // Sub-permisos: solo afinan un módulo (Devolver dentro de Pagos, qué reportes ve en
 // Reportes). Sin ningún módulo no dan acceso a nada, así que se guarda como revocado.
 const SUBPERMISOS = ['PAGOS_DEVOLVER', ...TAGS_REPORTE];
@@ -18,7 +19,25 @@ const ROLES = [...MODULOS, ...SUBPERMISOS];
 router.get('/usuarios', async (req, res, next) => {
   try {
     const out = await usuariosService.listarUsuarios();
-    res.json(out);
+    const tipos = await tiposGasto.tiposDeUsuarios();
+    res.json(out.map((u) => ({ ...u, tiposGasto: tipos.get(u.codUsuarioIcg) || [] })));
+  } catch (e) { next(e); }
+});
+
+// GET /api/admin/tipos-gasto — tipos de gasto que existen en ICG (para asignarlos a usuarios).
+router.get('/tipos-gasto', async (req, res, next) => {
+  try { res.json(await tiposGasto.catalogo()); } catch (e) { next(e); }
+});
+
+// PUT /api/admin/usuarios/:cod/tipos-gasto — { tiposGasto: ['INVERSION', ...] } · [] = ve todos.
+router.put('/usuarios/:cod/tipos-gasto', async (req, res, next) => {
+  try {
+    const cod = Number(req.params.cod);
+    if (!Number.isInteger(cod) || cod < 0) return res.status(400).json({ error: 'codUsuarioIcg inválido' });
+    const lista = (req.body && Array.isArray(req.body.tiposGasto)) ? req.body.tiposGasto.map((t) => String(t)).filter((t) => t.trim()) : [];
+    const r = await tiposGasto.asignar(cod, lista);
+    if (r.error) return res.status(400).json({ error: r.error });
+    res.json({ ok: true, codUsuarioIcg: cod, tiposGasto: r.tiposGasto });
   } catch (e) { next(e); }
 });
 

@@ -6,6 +6,9 @@ const { authenticate, requireRol, tieneRol } = require('../middleware/auth.middl
 const { alcanceDe, bloqueadoPorAlcance } = require('../services/alcance');
 const { hoyVE } = require('../utils/fecha');
 const facturasService = require('../services/facturas.service');
+const pagadores = require('../services/pagadores');
+const tiposGasto = require('../services/tiposGasto.service');
+const SIN_PERMISO_TIPO = 'No tienes permiso para ver este tipo de gasto.';
 const FUERA_ALCANCE = 'Esta tienda está fuera de tu zona asignada.';
 
 const router = Router();
@@ -31,6 +34,9 @@ router.get('/', async (req, res, next) => {
     if (!codTienda) return res.status(400).json({ error: 'codTienda requerido' });
     if (await bloqueadoPorAlcance(req.user, codTienda)) return res.status(403).json({ error: FUERA_ALCANCE });
     const out = await facturasService.listarPendientes(codTienda, req.query.estado);
+    // Permisos por tipo de gasto (sin tipos asignados = todos).
+    const puedeVer = await tiposGasto.filtroDe(req.user);
+    if (out.facturas) { out.facturas = out.facturas.filter((f) => puedeVer(f.TipoGasto)); out.total = out.facturas.length; }
     res.json(out);
   } catch (e) { next(e); }
 });
@@ -81,7 +87,7 @@ router.get('/cobertura', requireRol('TESORERIA'), async (req, res, next) => {
     const fecha = req.query.fecha || hoyVE();
     if (!codTienda) return res.status(400).json({ error: 'codTienda requerido' });
     if (await bloqueadoPorAlcance(req.user, codTienda)) return res.status(403).json({ error: FUERA_ALCANCE });
-    const out = await facturasService.cobertura(codTienda, fecha);
+    const out = await facturasService.cobertura(codTienda, fecha, await tiposGasto.filtroDe(req.user));
     res.json(out);
   } catch (e) { next(e); }
 });
@@ -105,6 +111,7 @@ router.get('/detalle', async (req, res, next) => {
     if (await bloqueadoPorAlcance(req.user, codTienda)) return res.status(403).json({ error: FUERA_ALCANCE });
     const out = await facturasService.detalle({ codTienda: Number(codTienda), numserie, numfactura: Number(numfactura), n });
     if (out.error) return res.status(out.status).json({ error: out.error });
+    if (!(await tiposGasto.filtroDe(req.user))(out.TipoGasto)) return res.status(403).json({ error: SIN_PERMISO_TIPO });
     res.json(out);
   } catch (e) { next(e); }
 });
@@ -123,6 +130,7 @@ router.post('/adjuntos', upload.array('archivos', 10), async (req, res, next) =>
     }
     const out = await facturasService.guardarAdjuntos({
       codTienda: Number(codTienda), numserie, numfactura: Number(numfactura), n, marca, tipo, files: req.files,
+      idUsuario: req.user.idUsuario,
     });
     if (out.error) return res.status(out.status).json({ error: out.error });
     res.status(201).json(out);
@@ -147,9 +155,17 @@ async function ejecutarAccion(req, res, etapa, estadosReq, mapEstado) {
   const { codTienda, numserie, numfactura, n, marca, decision, comentario } = req.body || {};
   if (!codTienda || !numserie || !numfactura || !n) return res.status(400).json({ error: 'Faltan datos de la factura' });
   if (await bloqueadoPorAlcance(req.user, codTienda)) return res.status(403).json({ error: FUERA_ALCANCE });
+  // Al meter el gasto al flujo, el Analista dice por dónde se paga: la tienda o una mayor.
+  let pagadoPor;
+  if (etapa === 'ANALISTA' && decision === 'APROBADO') {
+    pagadoPor = Number((req.body || {}).pagadoPor);
+    if (!pagadoPor || !(await pagadores.esValido(codTienda, pagadoPor))) {
+      return res.status(400).json({ error: 'Indica por dónde se paga el gasto (la tienda o una de las mayores).' });
+    }
+  }
   const out = await facturasService.accionFactura(etapa, estadosReq, mapEstado, {
     codTienda: Number(codTienda), numserie, numfactura: Number(numfactura), n, marca, decision, comentario,
-    idUsuario: req.user.idUsuario,
+    idUsuario: req.user.idUsuario, pagadoPor,
   });
   if (out.error) return res.status(out.status).json({ error: out.error });
   res.json({ ok: true, estado: out.estado });
@@ -213,7 +229,8 @@ router.get('/bandeja', async (req, res, next) => {
     const estado = req.query.estado || 'PENDIENTE_AUDITORIA';
     const alcance = await alcanceDe(req.user);
     const out = await facturasService.bandeja(estado, alcance);
-    res.json(out);
+    const puedeVer = await tiposGasto.filtroDe(req.user);
+    res.json(out.filter((x) => puedeVer(x.tipoGasto)));
   } catch (e) { next(e); }
 });
 

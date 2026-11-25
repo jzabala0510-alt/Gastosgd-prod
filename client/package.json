@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "axios": "^1.7.7",
+    "exceljs": "^4.4.0",
     "pinia": "^2.2.6",
     "vue": "^3.5.12",
     "vue-router": "^4.4.5",

@@ -324,7 +324,7 @@ async function estadoPanel() {
     modos: { reabiertos: modoReabiertos(), transferidos: traspasos.modo() },
     reabiertos: await conDatosIcg(await listarReabiertos()),
     transferencias: r ? {
-      casos: r.casos, resumen: r.resumen, errores: r.errores, segundos: r.segundos,
+      casos: r.casos, resumen: r.resumen, errores: r.errores, segundos: r.segundos, corte: r.corte,
       transferirOmitido: r.transferirOmitido || 0, erroresAplicar: (r.aplicado && r.aplicado.errores) || [],
     } : null,
     transferenciasRevisadasEn: transferencias.revisadoEn,
@@ -367,4 +367,4 @@ function iniciar() {
   setInterval(correr, INTERVALO_MS);
 }
 
-module.exports = { revisar, iniciar, listarReabiertos, aplicarReabiertos, estadoPanel, revisarTransferencias, modoReabiertos };
+module.exports = { revisar, iniciar, listarReabiertos, aplicarReabiertos, estadoPanel, revisarTransferencias, modoReabiertos, conDatosIcg };
